@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SuperPay Admin
 
-## Getting Started
+Next.js 16 + Tailwind CSS v4 admin console for the `superpayment` API.
 
-First, run the development server:
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The API is expected at `http://localhost:3001` (override with `BACKEND_URL`).
+Log in with an account from the `user_password` table, e.g. `admin` / `admin`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable         | Default                 | Notes                                        |
+| ---------------- | ----------------------- | -------------------------------------------- |
+| `BACKEND_URL`    | `http://localhost:3001` | superpayment API; server-side only           |
+| `SESSION_SECRET` | dev-only fallback       | **required in production** — signs sessions  |
+| `PORT`           | `3000` (`4600` in Docker) |                                            |
 
-## Learn More
+## Docker
 
-To learn more about Next.js, take a look at the following resources:
+The image listens on **port 4600**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker build -t superpay-admin .
+docker run -p 4600:4600 \
+  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  -e BACKEND_URL=http://host.docker.internal:3001 \
+  superpay-admin
+# → http://localhost:4600
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Inside a container `localhost` is the container itself, so point `BACKEND_URL`
+at the API's reachable address: `host.docker.internal` when the API runs on the
+Docker host, or the service name (e.g. `http://superpayment:3001`) on a shared
+Docker network.

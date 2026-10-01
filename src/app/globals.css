@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
+/* Design tokens — "Royal Gold" dark palette. A theme swap is this one block. */
+@theme {
+  --color-bg: #08080a;
+  --color-surface: #141317;
+  --color-surface-alt: #1b1a20;
+  --color-line: #302a20;
+  --color-ink: #f1ece1;
+  --color-muted: #a89e88;
+  --color-soft: #756c5b;
+
+  --color-primary: #d4af37;
+  --color-primary-600: #b8942a;
+  --color-primary-50: rgba(212, 175, 55, 0.14);
+  --color-primary-alt: #f3d778;
+  /* gold is a light fill — ink on it must be dark */
+  --color-primary-fg: #16120a;
+  --color-accent: #f7e08c;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  --color-sidebar: #050506;
+  --color-sidebar-2: #131117;
+  --color-sidebar-ink: #b8ae9a;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 20px 40px rgba(0, 0, 0, 0.55);
+  --shadow-active: 0 6px 16px rgba(212, 175, 55, 0.28);
+  --shadow-ring: 0 0 0 3px rgba(212, 175, 55, 0.22);
+
+  --font-sans: "Segoe UI", "Inter", "Sarabun", system-ui, -apple-system, sans-serif;
+}
+
+/* "Midnight" — deep navy with a cool blue accent. Same token names, so every utility follows. */
+html[data-theme="midnight"] {
+  --color-bg: #0a0f1c;
+  --color-surface: #111827;
+  --color-surface-alt: #172033;
+  --color-line: #253049;
+  --color-ink: #e6ebf5;
+  --color-muted: #94a3b8;
+  --color-soft: #64748b;
+  --color-primary: #60a5fa;
+  --color-primary-600: #3b82f6;
+  --color-primary-50: rgba(96, 165, 250, 0.14);
+  --color-primary-alt: #93c5fd;
+  --color-primary-fg: #0a0f1c;
+  --color-accent: #bfdbfe;
+  --color-sidebar: #060a14;
+  --color-sidebar-2: #0d1424;
+  --color-sidebar-ink: #a5b4cf;
+  --shadow-active: 0 6px 16px rgba(96, 165, 250, 0.28);
+  --shadow-ring: 0 0 0 3px rgba(96, 165, 250, 0.22);
+  --auth-shell-bg: linear-gradient(135deg, #0a0f1c 0%, #0d1730 100%);
+  --auth-art-bg: linear-gradient(140deg, #020617 0%, #0b1a3a 55%, #1e3a8a 100%);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --auth-shell-bg: linear-gradient(135deg, #08080a 0%, #14110a 100%);
+  --auth-art-bg: linear-gradient(140deg, #000000 0%, #1c1608 55%, #43350e 100%);
+  scrollbar-color: rgba(212, 175, 55, 0.22) transparent;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* 14px base text, set on body (not html) so rem-based spacing stays 16px. */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+/* Console pages render at 80% on desktop; anything sized to the viewport
+   is divided by the same factor so it still fills the screen. */
+@media (min-width: 1024px) {
+  .ui-compact {
+    zoom: 0.8;
+    min-height: calc(100vh / 0.8);
+  }
+  .ui-compact .h-viewport {
+    height: calc(100vh / 0.8);
+  }
 }
