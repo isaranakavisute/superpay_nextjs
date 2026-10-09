@@ -30,8 +30,12 @@ USER node
 EXPOSE 4600
 
 # Inject at runtime -- no .env is baked into the image:
-#   SESSION_SECRET  required; signs login cookies
-#   BACKEND_URL     superpayment API, e.g. http://host.docker.internal:3001
+#   SESSION_SECRET   required; signs login cookies
+#   CONSOLE_API_KEY  required; must equal the backend's CONSOLE_API_KEY
+#   BACKEND_URL      superpayment API. Its Docker image listens on 4650 (3001 is
+#                    only the local dev port), e.g. http://<server-ip>:4650 or
+#                    http://superpayment:4650 on a shared Docker network.
+#                    Inside a container "localhost" is the container itself.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4600)+'/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 

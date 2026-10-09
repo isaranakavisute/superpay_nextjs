@@ -83,9 +83,12 @@ export async function rotateWebhookSecret(id: number) {
 export async function getPortalUsers(id: number) {
   return okId(id) ? read(`/api/console/merchants/${id}/portal-users`) : bad("ร้านไม่ถูกต้อง");
 }
-export async function addPortalUser(id: number, username: string, fullName: string, tier: string) {
+/** email + password (both optional) let this user sign in to the merchant API (POST /api/v1/auth/login). */
+export async function addPortalUser(id: number, username: string, fullName: string, tier: string, email = "", password = "") {
   if (!okId(id) || !username.trim() || !fullName.trim()) return bad("กรุณากรอก username และชื่อ");
-  return as((actor) => consoleWrite("POST", `/api/console/merchants/${id}/portal-users`, actor, { username, fullName, tier }));
+  if (!!email.trim() !== !!password) return bad("ใส่อีเมลและรหัสผ่านคู่กัน เพื่อให้ผู้ใช้นี้ login API ได้ (หรือเว้นว่างทั้งคู่)");
+  if (password && password.length < 8) return bad("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+  return as((actor) => consoleWrite("POST", `/api/console/merchants/${id}/portal-users`, actor, { username, fullName, tier, email: email.trim(), password }));
 }
 export async function togglePortalUser(id: number, userId: number) {
   return okId(id) && okId(userId) ? as((actor) => consoleWrite("POST", `/api/console/merchants/${id}/portal-users/${userId}/toggle`, actor)) : bad("ผู้ใช้ไม่ถูกต้อง");

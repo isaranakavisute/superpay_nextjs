@@ -43,7 +43,7 @@ export default async function ApiDocsPage() {
             <h2 className="mb-2 text-xl font-semibold">Authentication</h2>
             <div className={sub}>
               ทุก request ใต้ <code>/api/v1/</code> ต้องส่ง header <code>X-API-Key: YOUR_KEY</code> (ยกเว้น <code>/collect</code> ที่ใช้ฟิลด์ <code>key</code> ใน body และเส้น public{" "}
-              <code>/payment/checkout/:transactionId</code> + <code>/payment/qr/:token.png</code>) — ออก key ผ่านหน้า <a href="/merchants" className="text-primary">ร้านค้า</a> (admin only) หรือผ่าน <code>POST /api/auth/login</code> ด้านล่าง
+              <code>/payment/checkout/:transactionId</code> + <code>/payment/qr/:token.png</code>) — ออก key ผ่านหน้า <a href="/merchants" className="text-primary">ร้านค้า</a> (admin only) หรือผ่าน <code>POST /auth/login</code> ด้านล่าง (ใช้บัญชีผู้ใช้ร้านค้า)
             </div>
             <pre className="mb-3 overflow-x-auto rounded-lg border border-line bg-bg px-4 py-3 font-mono text-[12.5px] leading-[1.6]">
               {`curl -X POST ${base}/payment/create \\\n  -H `}<span className="text-[#86efac]">&quot;X-API-Key: sk_live_YOUR_API_KEY&quot;</span>{` \\\n  -H `}<span className="text-[#86efac]">&quot;Content-Type: application/json&quot;</span>{` \\\n  -d `}<span className="text-[#86efac]">{`'{ "amount": 100, "orderId": "ORDER-001" }'`}</span>

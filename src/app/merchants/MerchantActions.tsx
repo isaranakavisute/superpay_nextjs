@@ -277,7 +277,8 @@ function WebhookDialog({ m, onClose }: { m: MerchantForActions; onClose: () => v
 function PortalDialog({ m, onClose }: { m: MerchantForActions; onClose: () => void }) {
   const { data, error, reload } = useLoad(() => getPortalUsers(m.id), [m.id]);
   const items = (data?.items as Row[]) ?? [];
-  const [f, setF] = useState({ username: "", fullName: "", tier: "staff" });
+  const empty = { username: "", fullName: "", tier: "staff", email: "", password: "" };
+  const [f, setF] = useState(empty);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const act = (fn: () => Promise<ActionResult>, after?: () => void) =>
@@ -293,23 +294,30 @@ function PortalDialog({ m, onClose }: { m: MerchantForActions; onClose: () => vo
 
   return (
     <Modal title={`Portal Users — ${m.name}`} onClose={onClose} width={900}>
-      <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_1fr_160px_auto]">
-        <input className={field} placeholder="username" value={f.username} onChange={(e) => setF({ ...f, username: e.target.value })} />
-        <input className={field} placeholder="ชื่อ-นามสกุล" value={f.fullName} onChange={(e) => setF({ ...f, fullName: e.target.value })} />
-        <select className={field} value={f.tier} onChange={(e) => setF({ ...f, tier: e.target.value })}>
+      <div className="mb-1.5 grid gap-2 sm:grid-cols-[1fr_1fr_160px]">
+        <input className={field} aria-label="username" placeholder="username" value={f.username} onChange={(e) => setF({ ...f, username: e.target.value })} />
+        <input className={field} aria-label="ชื่อ-นามสกุล" placeholder="ชื่อ-นามสกุล" value={f.fullName} onChange={(e) => setF({ ...f, fullName: e.target.value })} />
+        <select className={field} aria-label="ระดับ" value={f.tier} onChange={(e) => setF({ ...f, tier: e.target.value })}>
           {Object.entries(TIER).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || !f.username.trim() || !f.fullName.trim()} onClick={() => act(() => addPortalUser(m.id, f.username, f.fullName, f.tier), () => setF({ username: "", fullName: "", tier: "staff" }))}>
+      </div>
+      <div className="mb-1.5 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <input className={field} aria-label="อีเมล" type="email" placeholder="อีเมล (สำหรับ login API)" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
+        <input className={field} aria-label="รหัสผ่าน" type="password" placeholder="รหัสผ่าน ≥ 8 ตัว (สำหรับ login API)" autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+        <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || !f.username.trim() || !f.fullName.trim()} onClick={() => act(() => addPortalUser(m.id, f.username, f.fullName, f.tier, f.email, f.password), () => setF(empty))}>
           <Plus size={15} /> เพิ่ม
         </button>
       </div>
+      <p className="mb-4 text-[12px] text-muted">ใส่อีเมล + รหัสผ่าน เพื่อให้ผู้ใช้นี้ขอ API key ได้เองผ่าน <code>POST /api/v1/auth/login</code> และเข้า Merchant Portal ได้ · บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ login API ไม่ได้</p>
       {(error || err) && <p className="mb-3 text-[13px] text-danger">{error || err}</p>}
       <table className="w-full border-collapse">
-        <thead><tr>{["ผู้ใช้", "ระดับ", "สถานะ", "เข้าใช้ล่าสุด", ""].map((h) => <th key={h} className={th}>{h}</th>)}</tr></thead>
+        <thead><tr>{["ผู้ใช้", "อีเมล", "Login API", "ระดับ", "สถานะ", "เข้าใช้ล่าสุด", ""].map((h) => <th key={h} className={th}>{h}</th>)}</tr></thead>
         <tbody>
           {items.map((u) => (
             <tr key={String(u.id)}>
               <td className={td}><div className="font-medium">{u.fullName}</div><div className="text-[11.5px] text-muted">@{u.username}</div></td>
+              <td className={`${td} text-[12.5px]`}>{(u.email as string | null) ?? <span className="text-muted">—</span>}</td>
+              <td className={td}>{u.canApiLogin ? <span className="text-success">ได้</span> : <span className="text-muted">ไม่ได้</span>}</td>
               <td className={td}>{TIER[String(u.tier)] ?? u.tier}</td>
               <td className={td}>{u.status === "active" ? <span className="text-success">ใช้งาน</span> : <span className="text-muted">ปิดใช้</span>}</td>
               <td className={`${td} text-muted`}>{fmtDateTime(u.lastLoginAt as string | null)}</td>
@@ -318,7 +326,7 @@ function PortalDialog({ m, onClose }: { m: MerchantForActions; onClose: () => vo
               </td>
             </tr>
           ))}
-          {data && items.length === 0 && <tr><td className={`${td} text-center text-muted`} colSpan={5}>ยังไม่มีผู้ใช้ portal</td></tr>}
+          {data && items.length === 0 && <tr><td className={`${td} text-center text-muted`} colSpan={7}>ยังไม่มีผู้ใช้ portal</td></tr>}
         </tbody>
       </table>
     </Modal>

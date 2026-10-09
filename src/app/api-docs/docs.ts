@@ -201,7 +201,7 @@ export const SECTIONS: Section[] = [
 ];
 
 export const LOGIN: Ep = {
-  m: "POST", p: "/api/auth/login", d: "Login ด้วย email + password เพื่อรับ API Key",
+  m: "POST", p: "/auth/login", d: "Login ด้วย email + password ของผู้ใช้ร้านค้า เพื่อรับ API Key",
   auth: "ไม่ต้องมี key (rate-limited 10 ครั้ง/นาที/IP + lockout 15 นาทีเมื่อผิด 5 ครั้ง)",
   body: `{
   "email": "user@example.com",   // required (หรือส่ง "username") — ผู้ใช้ portal ของร้าน
@@ -214,5 +214,5 @@ export const LOGIN: Ep = {
   "role": "MERCHANT", "tier": "owner",
   "permissions": ["view_dashboard", "view_transactions", "create_payment", ...]
 }`,
-  note: "ใช้ได้เฉพาะผู้ใช้ portal ที่ตั้งอีเมล + รหัสผ่านไว้ (หน้า ร้านค้า → ผู้ใช้ portal) · login แต่ละครั้ง<strong>ออก key ใหม่และเพิกถอน key เดิมที่ออกจากเส้นนี้</strong> (key ที่ออกจากหน้าร้านค้าไม่ถูกแตะ) · ทุกครั้งมี audit log",
+  note: "URL เต็ม: <code>{BASE}/auth/login</code> (เรียก <code>{SITE}/api/auth/login</code> ก็ได้ผลเหมือนกัน) · <strong>ใช้บัญชีผู้ใช้ร้านค้า (Merchant Portal) เท่านั้น</strong> — บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ไม่ได้ · ใช้ได้เฉพาะผู้ใช้ portal ที่ตั้งอีเมล + รหัสผ่านไว้ (หน้า ร้านค้า → ผู้ใช้ portal) · login แต่ละครั้ง<strong>ออก key ใหม่และเพิกถอน key เดิมที่ออกจากเส้นนี้</strong> (key ที่ออกจากหน้าร้านค้าไม่ถูกแตะ) · ทุกครั้งมี audit log",
 };

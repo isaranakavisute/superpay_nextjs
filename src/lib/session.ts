@@ -9,6 +9,12 @@ export type SessionUser = { id: number; username: string; fullName: string; role
 
 export const SESSION_COOKIE = "sp_session";
 const MAX_AGE = 60 * 60 * 8; // 8 hours
+/**
+ * Secure cookies are only sent over https. Default: on in production. Set
+ * COOKIE_SECURE=false when the site is served over plain http (e.g. http://<ip>:4600),
+ * otherwise the browser drops the login cookie and every login bounces back.
+ */
+const SECURE_COOKIES = process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE !== "false" : process.env.NODE_ENV === "production";
 /** Read lazily so `next build` works without it; a deployed server refuses to run unsigned. */
 function secret() {
   const s = process.env.SESSION_SECRET;
@@ -26,7 +32,7 @@ export async function createSession(user: { id: number; username: string; fullNa
   (await cookies()).set(SESSION_COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: SECURE_COOKIES,
     path: "/",
     maxAge: MAX_AGE,
   });
@@ -63,7 +69,7 @@ const signPortal = (payload: string) => createHmac("sha256", secret()).update(`p
 
 export async function createPortalSession(u: PortalUser) {
   const payload = Buffer.from(JSON.stringify({ ...u, exp: Date.now() + PORTAL_AGE * 1000 })).toString("base64url");
-  (await cookies()).set(PORTAL_COOKIE, `${payload}.${signPortal(payload)}`, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: PORTAL_AGE });
+  (await cookies()).set(PORTAL_COOKIE, `${payload}.${signPortal(payload)}`, { httpOnly: true, sameSite: "lax", secure: SECURE_COOKIES, path: "/", maxAge: PORTAL_AGE });
 }
 
 export async function destroyPortalSession() {
