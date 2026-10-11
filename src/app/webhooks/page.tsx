@@ -12,7 +12,7 @@ import type { MerchantRow, WebhookRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { DeliveryTable } from "./DeliveryTable";
 
-export const metadata: Metadata = { title: "Webhook ร้านค้า — SuperPay Admin" };
+export const metadata: Metadata = { title: "Webhook ร้านค้า — Option Pay Admin" };
 
 const PATH = "/webhooks";
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";

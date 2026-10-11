@@ -1,6 +1,8 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { consoleHeaders, type ActionResult } from "./api";
+import { getBranding } from "./branding";
+import type { MerchantPermission } from "./merchant-perms";
 import { getPortalUser, type PortalUser } from "./session";
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
@@ -10,6 +12,11 @@ export async function requirePortal(path: string): Promise<PortalUser> {
   const u = await getPortalUser();
   if (!u) redirect(`/merchant/login?returnTo=${encodeURIComponent(path)}`);
   return u;
+}
+
+/** What this portal user may do (Settings → สิทธิ์ผู้ใช้ร้านค้า, by level). */
+export async function portalPerms(u: PortalUser): Promise<Set<MerchantPermission | string>> {
+  return new Set((await getBranding()).merchantPerms[u.tier] ?? []);
 }
 
 const headers = (u: PortalUser) => ({ "content-type": "application/json", ...consoleHeaders(u.username), "x-portal-tier": u.tier });

@@ -10,7 +10,7 @@ import { fmtDateTime, fmtMoney } from "@/lib/format";
 import type { P2pRow } from "@/lib/rows";
 import { PairActions } from "./PairActions";
 
-export const metadata: Metadata = { title: "จับคู่ P2P — SuperPay Admin" };
+export const metadata: Metadata = { title: "จับคู่ P2P — Option Pay Admin" };
 
 const PATH = "/p2p";
 const TABS = [

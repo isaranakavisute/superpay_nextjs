@@ -20,7 +20,7 @@ import { CreateOutflow } from "./CreateOutflow";
 import { OUTFLOW_CATEGORIES } from "./categories";
 import { CopyButton, OutflowActions } from "./OutflowActions";
 
-export const metadata: Metadata = { title: "รายการเงินออก — SuperPay Admin" };
+export const metadata: Metadata = { title: "รายการเงินออก — Option Pay Admin" };
 
 const PATH = "/outflows";
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";

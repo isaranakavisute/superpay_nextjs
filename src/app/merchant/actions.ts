@@ -33,7 +33,7 @@ export async function logoutPortal() {
 async function call(method: "POST", path: string, body: unknown, page: string): Promise<ActionResult> {
   const u = await getPortalUser();
   if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" };
-  if (u.tier !== "owner" && !path.endsWith("/password")) return { ok: false, error: "เฉพาะเจ้าของร้านเท่านั้น" };
+  // Permissions are enforced by the backend (configurable per level); its 403 message is shown as is.
   const r = await portalCall(u, method, path, body);
   if (r.ok) revalidatePath(page);
   return r;
@@ -52,4 +52,30 @@ export async function changePassword(current: string, next: string) {
   const u = await getPortalUser();
   if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" } as ActionResult;
   return call("POST", `/users/${u.id}/password`, { current, next }, "/merchant/settings");
+}
+
+/** The signed-in user's own secret key for POST /api/v1/auth/login (any level). */
+async function ownSecretKey(suffix: string) {
+  const u = await getPortalUser();
+  if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" } as ActionResult;
+  return call("POST", `/users/${u.id}/secret-key${suffix}`, {}, "/merchant/settings");
+}
+export const createSecretKey = async () => ownSecretKey("");
+export const revokeSecretKey = async () => ownSecretKey("/revoke");
+
+/** A pending order made by hand (Transactions → สร้างรายการชำระ); orderId is generated when left empty. */
+export async function createPortalPayment(b: { amount: number; orderId?: string; description?: string; customerName?: string }) {
+  if (!(b.amount > 0)) return { ok: false, error: "ยอดต้องมากกว่า 0" } as ActionResult;
+  const now = new Date(Date.now() + 7 * 3600_000).toISOString().replace(/\D/g, "").slice(2, 14); // Bangkok YYMMDDhhmmss
+  const orderId = b.orderId?.trim() || `POS-${now}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const customerName = b.customerName?.trim();
+  return call("POST", "/payments", { amount: b.amount, orderId, description: b.description?.trim() || undefined, metadata: customerName ? { memberName: customerName } : undefined }, "/merchant/transactions");
+}
+
+/** Full secret key + latest login API key, after the user re-enters their own login and password. */
+export async function revealKeys(login: string, password: string) {
+  const u = await getPortalUser();
+  if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" } as ActionResult;
+  if (!login.trim() || !password) return { ok: false, error: "กรอกอีเมลหรือชื่อผู้ใช้ และรหัสผ่าน" } as ActionResult;
+  return portalCall<{ secretKey: string | null; apiKey: string | null }>(u, "POST", `/users/${u.id}/secret-key/reveal`, { login: login.trim().toLowerCase(), password });
 }

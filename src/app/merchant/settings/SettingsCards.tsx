@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Copy, KeyRound, Plus, Trash2 } from "lucide-react";
-import { btn, field, fieldLabel } from "@/components/interactive/Modal";
+import { useEffect, useState, useTransition } from "react";
+import { Copy, Eye, EyeOff, KeyRound, Plus, Trash2 } from "lucide-react";
+import { btn, field, fieldLabel, Modal } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import { BANKS } from "@/lib/domain";
 import { fmtDateTime } from "@/lib/format";
-import { addAccount, changePassword, createKey, removeAccount, revokeKey, rotateSecret, setWebhook } from "../actions";
+import { CodeBlock } from "../docs/CodeBlock";
+import { addAccount, changePassword, createKey, createSecretKey, removeAccount, revealKeys, revokeKey, revokeSecretKey, rotateSecret, setWebhook } from "../actions";
 
 const B = (v: keyof typeof btn, s: "sm" | "md" = "md") => `${btn.base} ${btn[s]} ${btn[v]}`;
 const card = "rounded-xl border border-line bg-surface shadow-sm";
@@ -27,6 +28,90 @@ function OnceSecret({ label, value }: { label: string; value: string }) {
       <div className="flex items-center gap-2"><code className="flex-1 font-mono text-[12px] break-all select-all">{value}</code>
         <button type="button" className={B("ghost", "sm")} onClick={() => navigator.clipboard?.writeText(value)}><Copy size={13} /> คัดลอก</button></div>
     </div>
+  );
+}
+
+type KeyInfo = { masked: string; revealable: boolean; createdAt: string; lastUsedAt: string | null };
+type FullKeys = { secretKey: string | null; apiKey: string | null };
+
+/** Masked key with copy once revealed. */
+function KeyLine({ title, info, full, empty, onView, onHide, children }: {
+  title: string; info: KeyInfo | null; full: string | null | undefined; empty: React.ReactNode; onView: () => void; onHide: () => void; children?: React.ReactNode;
+}) {
+  const revealed = full !== undefined;
+  return (
+    <div className="flex flex-wrap items-center gap-3 px-3.5 py-2.5">
+      <KeyRound size={15} className="text-muted" />
+      {info ? (
+        <div className="min-w-0 flex-1">
+          <div className="text-[11.5px] text-muted">{title}</div>
+          <div className="font-mono text-[12px] break-all select-all">{revealed ? (full ?? <span className="font-sans text-warning">ดูแบบเต็มไม่ได้ — key นี้ออกก่อนเปิดฟีเจอร์ดู key (สร้างใหม่ / login ใหม่เพื่อให้ดูได้)</span>) : info.masked}</div>
+          <div className="text-[11.5px] text-muted">สร้างเมื่อ {fmtDateTime(info.createdAt)} · ใช้ล่าสุด {info.lastUsedAt ? fmtDateTime(info.lastUsedAt) : "ยังไม่เคยใช้"}</div>
+        </div>
+      ) : <div className="min-w-0 flex-1"><div className="text-[11.5px] text-muted">{title}</div><div className="text-muted">{empty}</div></div>}
+      {info && full && <button type="button" className={B("ghost", "sm")} onClick={() => navigator.clipboard?.writeText(full)}><Copy size={13} /> คัดลอก</button>}
+      {info && (revealed
+        ? <button type="button" className={B("ghost", "sm")} onClick={onHide}><EyeOff size={13} /> ซ่อน</button>
+        : <button type="button" className={B("ghost", "sm")} onClick={onView}><Eye size={13} /> ดู</button>)}
+      {children}
+    </div>
+  );
+}
+
+/** Re-enter the portal login + password before full keys are shown. */
+function RevealDialog({ onClose, onDone }: { onClose: () => void; onDone: (k: FullKeys) => void }) {
+  const [v, setV] = useState({ login: "", password: "" });
+  const { r, pending, run } = useRun();
+  return (
+    <Modal title="ยืนยันตัวตนเพื่อดู key แบบเต็ม" onClose={onClose} width={440}
+      footer={<><button type="button" className={B("ghost")} onClick={onClose}>ยกเลิก</button><button type="submit" form="reveal-form" disabled={pending} className={B("primary")}>{pending ? "กำลังตรวจสอบ..." : "ยืนยันและแสดง"}</button></>}>
+      <form id="reveal-form" className="grid gap-3" onSubmit={(e) => { e.preventDefault(); run(() => revealKeys(v.login, v.password), (x) => { if (x.ok) onDone({ secretKey: (x.secretKey as string | null) ?? null, apiKey: (x.apiKey as string | null) ?? null }); }); }}>
+        <p className="text-[13px] text-muted">ใส่อีเมลหรือชื่อผู้ใช้ และรหัสผ่านที่ใช้เข้า Merchant Portal ของบัญชีนี้ — ใส่ผิด 5 ครั้งบัญชีจะถูกล็อก 15 นาที</p>
+        <Err r={r} />
+        <div><label htmlFor="rv-login" className={fieldLabel}>อีเมล หรือ ชื่อผู้ใช้</label><input id="rv-login" required autoFocus autoComplete="username" className={field} value={v.login} onChange={(e) => setV({ ...v, login: e.target.value })} /></div>
+        <div><label htmlFor="rv-pass" className={fieldLabel}>รหัสผ่าน</label><input id="rv-pass" type="password" required autoComplete="current-password" className={field} value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} /></div>
+      </form>
+    </Modal>
+  );
+}
+
+/** The user's own secret key (sent to POST /api/v1/auth/login instead of a password) and the API key their latest login issued. */
+export function SecretKeyCard({ secretKey, apiKey, apiBase }: { secretKey: KeyInfo | null; apiKey: KeyInfo | null; apiBase: string }) {
+  const [shown, setShown] = useState<FullKeys | null>(null);
+  const [full, setFull] = useState<FullKeys | null>(null);
+  const [asking, setAsking] = useState(false);
+  const { r, pending, run } = useRun();
+  // Full keys are cleared after a minute.
+  useEffect(() => { if (!full) return; const t = setTimeout(() => setFull(null), 60_000); return () => clearTimeout(t); }, [full]);
+  const create = () => {
+    if (secretKey && !confirm("สร้าง secret key ใหม่? อันเดิมและ API key ที่ login ด้วยอันเดิมจะใช้ไม่ได้ทันที")) return;
+    run(() => createSecretKey(), (x) => { if (x.ok) { setShown({ secretKey: String(x.secretKey), apiKey: (x.apiKey as string | undefined) ?? null }); setFull(null); } });
+  };
+  const view = () => setAsking(true);
+  const hide = () => setFull(null);
+  return (
+    <section className={card}>
+      <div className={head}><h2 className="text-lg font-semibold">Secret key และ API key (สำหรับ API)</h2><span className="text-[12.5px] text-muted">ของคุณเอง · ใช้แทนรหัสผ่าน</span></div>
+      <div className="px-[22px] py-5 text-[13px]">
+        <Err r={r} />
+        {shown?.secretKey && <OnceSecret label="Secret key ใหม่" value={shown.secretKey} />}
+        {shown?.apiKey && <OnceSecret label="API key ใหม่ (ใช้ใน X-API-Key ได้ทันที)" value={shown.apiKey} />}
+        <p className="mb-3 text-muted">สร้าง secret key แล้วได้ <strong className="text-ink">API key ทันที</strong> ตามสิทธิ์ระดับของคุณ — ใช้ใน header <code>X-API-Key</code> ได้เลย · ต้องการ API key ใหม่ให้เรียก <code>POST /auth/login</code> ด้วย secret key (อันเดิมถูกยกเลิก) · กด <strong className="text-ink">ดู</strong> เพื่อแสดงแบบเต็ม (ต้องยืนยันรหัสผ่าน แสดง 1 นาที) · เก็บไว้ในเซิร์ฟเวอร์ของร้านเท่านั้น</p>
+        <div className="mb-4 divide-y divide-line rounded-lg border border-line">
+          <KeyLine title="Secret key" info={secretKey} full={full ? full.secretKey : undefined} empty="ยังไม่มี secret key" onView={view} onHide={hide}>
+            {secretKey && <button type="button" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => { if (confirm("ยกเลิก secret key? ระบบที่ใช้ key นี้จะ login ไม่ได้ และ API key ที่ได้จากมันจะถูกเพิกถอน")) run(() => revokeSecretKey(), () => { setShown(null); setFull(null); }); }}>ยกเลิก</button>}
+            <button type="button" disabled={pending} className={B("primary", "sm")} onClick={create}><Plus size={14} /> {secretKey ? "สร้างใหม่" : "สร้าง secret key"}</button>
+          </KeyLine>
+          <KeyLine title="API key (จาก /auth/login ครั้งล่าสุด)" info={apiKey} full={full ? full.apiKey : undefined} onView={view} onHide={hide}
+            empty={secretKey ? "ยังไม่มี — กดสร้าง secret key ใหม่ หรือเรียก POST /auth/login เพื่อรับ API key" : "สร้าง secret key แล้ว API key จะแสดงที่นี่ทันที"} />
+        </div>
+        <div className="mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตัวอย่าง</div>
+        <CodeBlock code={`curl -X POST "${apiBase}/auth/login" \\
+  -H "Content-Type: application/json" \\
+  -d '{"secretKey":"${shown?.secretKey ?? full?.secretKey ?? "ms_live_YOUR_SECRET_KEY"}"}'`} />
+      </div>
+      {asking && <RevealDialog onClose={() => setAsking(false)} onDone={(k) => { setFull(k); setAsking(false); }} />}
+    </section>
   );
 }
 

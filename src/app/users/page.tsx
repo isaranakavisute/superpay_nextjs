@@ -11,7 +11,7 @@ import { getSessionUser } from "@/lib/session";
 import { FilterCard } from "../payments/FilterCard";
 import { NewUserButton, UserActions } from "./UserControls";
 
-export const metadata: Metadata = { title: "จัดการผู้ใช้ — SuperPay Admin" };
+export const metadata: Metadata = { title: "จัดการผู้ใช้ — Option Pay Admin" };
 
 type PortalUser = { id: number; username: string; fullName: string; tier: string; status: string; merchantName: string; lastLoginAt: string | null };
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";

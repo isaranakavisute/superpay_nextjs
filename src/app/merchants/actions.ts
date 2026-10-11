@@ -83,7 +83,7 @@ export async function rotateWebhookSecret(id: number) {
 export async function getPortalUsers(id: number) {
   return okId(id) ? read(`/api/console/merchants/${id}/portal-users`) : bad("ร้านไม่ถูกต้อง");
 }
-/** email + password (both optional) let this user sign in to the merchant API (POST /api/v1/auth/login). */
+/** email + password (both optional) let this user sign in to the Merchant Portal (the API login uses their secret key). */
 export async function addPortalUser(id: number, username: string, fullName: string, tier: string, email = "", password = "") {
   if (!okId(id) || !username.trim() || !fullName.trim()) return bad("กรุณากรอก username และชื่อ");
   if (!!email.trim() !== !!password) return bad("ใส่อีเมลและรหัสผ่านคู่กัน เพื่อให้ผู้ใช้นี้ login API ได้ (หรือเว้นว่างทั้งคู่)");

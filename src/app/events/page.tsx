@@ -9,7 +9,7 @@ import type { AccountRow, ChannelRow, EventRow, MerchantRow } from "@/lib/rows";
 import { RecheckTodayButton, SimulateButton } from "./Controls";
 import { EventList } from "./EventList";
 
-export const metadata: Metadata = { title: "กล่องรับ Event — SuperPay Admin" };
+export const metadata: Metadata = { title: "กล่องรับ Event — Option Pay Admin" };
 
 const DIRS = [
   { value: "", label: "ทั้งหมด", on: "bg-primary text-primary-fg border-primary" },

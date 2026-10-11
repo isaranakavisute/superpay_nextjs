@@ -201,11 +201,10 @@ export const SECTIONS: Section[] = [
 ];
 
 export const LOGIN: Ep = {
-  m: "POST", p: "/auth/login", d: "Login ด้วย email + password ของผู้ใช้ร้านค้า เพื่อรับ API Key",
-  auth: "ไม่ต้องมี key (rate-limited 10 ครั้ง/นาที/IP + lockout 15 นาทีเมื่อผิด 5 ครั้ง)",
+  m: "POST", p: "/auth/login", d: "Login ด้วย secret key ของผู้ใช้ร้านค้า เพื่อรับ API Key",
+  auth: "ไม่ต้องมี X-API-Key — ส่ง secret key ใน body (rate-limited 10 ครั้ง/นาที/IP)",
   body: `{
-  "email": "user@example.com",   // required (หรือส่ง "username") — ผู้ใช้ portal ของร้าน
-  "password": "password123"      // required
+  "secretKey": "ms_live_<your-secret-key>"   // required — สร้างที่ Merchant Portal → ตั้งค่า → Secret key
 }`,
   res: `{
   "apiKey": "sk_live_<your-api-key>",
@@ -214,5 +213,5 @@ export const LOGIN: Ep = {
   "role": "MERCHANT", "tier": "owner",
   "permissions": ["view_dashboard", "view_transactions", "create_payment", ...]
 }`,
-  note: "URL เต็ม: <code>{BASE}/auth/login</code> (เรียก <code>{SITE}/api/auth/login</code> ก็ได้ผลเหมือนกัน) · <strong>ใช้บัญชีผู้ใช้ร้านค้า (Merchant Portal) เท่านั้น</strong> — บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ไม่ได้ · ใช้ได้เฉพาะผู้ใช้ portal ที่ตั้งอีเมล + รหัสผ่านไว้ (หน้า ร้านค้า → ผู้ใช้ portal) · login แต่ละครั้ง<strong>ออก key ใหม่และเพิกถอน key เดิมที่ออกจากเส้นนี้</strong> (key ที่ออกจากหน้าร้านค้าไม่ถูกแตะ) · ทุกครั้งมี audit log",
+  note: "URL เต็ม: <code>{BASE}/auth/login</code> (เรียก <code>{SITE}/api/auth/login</code> ก็ได้ผลเหมือนกัน) · <strong>ใช้บัญชีผู้ใช้ร้านค้า (Merchant Portal) เท่านั้น</strong> — บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ไม่ได้ · <strong>ไม่รับอีเมล/รหัสผ่าน</strong> (ส่ง password มาจะได้ <code>400 SECRET_KEY_REQUIRED</code>) — ผู้ใช้ portal สร้าง secret key ของตัวเองที่ Merchant Portal → ตั้งค่า (แสดงครั้งเดียว เก็บเป็น hash) · key ผิดหรือถูกยกเลิก: <code>401 INVALID_SECRET_KEY</code> · สร้างใหม่หรือยกเลิก secret key จะเพิกถอน API key ที่ login ด้วยอันเดิมด้วย · <strong>สิทธิ์ของ key = ระดับของผู้ใช้</strong> (owner / staff / viewer — กำหนดในหน้าตั้งค่าระบบ) และส่งกลับมาใน <code>permissions</code> · เรียกเส้นที่ไม่มีสิทธิ์ได้ <code>403 PERMISSION_DENIED</code> · key ที่ผู้ดูแลออกให้ร้านใช้ได้ทุกเส้น · login แต่ละครั้ง<strong>ออก key ใหม่และเพิกถอน key เดิมที่ออกจากเส้นนี้</strong> (key ที่ออกจากหน้าร้านค้าไม่ถูกแตะ) · ทุกครั้งมี audit log",
 };

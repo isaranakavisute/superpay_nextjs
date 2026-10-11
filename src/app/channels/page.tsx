@@ -11,7 +11,7 @@ import { AddChannel } from "./AddChannel";
 import { ChannelCard } from "./ChannelCard";
 import { TYPES } from "./fields";
 
-export const metadata: Metadata = { title: "ช่องทางตรวจสอบ — SuperPay Admin" };
+export const metadata: Metadata = { title: "ช่องทางตรวจสอบ — Option Pay Admin" };
 
 type Endpoint = { id: number; merchantName: string; url: string; status: string };
 

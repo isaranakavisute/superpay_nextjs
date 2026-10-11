@@ -6,7 +6,7 @@ import { getBranding } from "@/lib/branding";
 import { LOGIN, SECTIONS, type Ep } from "./docs";
 import { Endpoint, ToggleAll } from "./Endpoint";
 
-export const metadata: Metadata = { title: "API Documentation — SuperPay Admin" };
+export const metadata: Metadata = { title: "API Documentation — Option Pay Admin" };
 
 const code = "rounded bg-surface-alt px-1.5 py-0.5 font-mono text-[12.5px]";
 const sub = "mb-4 text-[13.5px] leading-[1.7] text-muted [&_code]:rounded [&_code]:bg-surface-alt [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[12.5px] [&_code]:text-ink [&_strong]:text-ink";

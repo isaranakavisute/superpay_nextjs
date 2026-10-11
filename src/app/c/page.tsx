@@ -104,7 +104,8 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/c">) {
           </div>
         </div>
 
-        <CheckoutLive token={tx.id} status={tx.status} amount={tx.amount} expiresAt={tx.qrExpiry} hasSlip={c.hasSlip} />
+        <CheckoutLive token={tx.id} status={tx.status} amount={tx.amount} expiresAt={tx.qrExpiry} hasSlip={c.hasSlip} slipLocked={c.slipLocked ?? c.hasSlip} slipProblems={c.slipProblems ?? null}
+          order={{ ref: tx.orderId, amount: tx.amount, customerName: c.customerName ?? null, bankName: c.account.bankName, accountName: c.account.accountName, accountNo: c.account.accountNumber }} />
       </div>
     </Shell>
   );

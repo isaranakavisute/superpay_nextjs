@@ -308,7 +308,7 @@ function PortalDialog({ m, onClose }: { m: MerchantForActions; onClose: () => vo
           <Plus size={15} /> เพิ่ม
         </button>
       </div>
-      <p className="mb-4 text-[12px] text-muted">ใส่อีเมล + รหัสผ่าน เพื่อให้ผู้ใช้นี้ขอ API key ได้เองผ่าน <code>POST /api/v1/auth/login</code> และเข้า Merchant Portal ได้ · บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ login API ไม่ได้</p>
+      <p className="mb-4 text-[12px] text-muted">ใส่อีเมล + รหัสผ่าน เพื่อให้ผู้ใช้นี้เข้า Merchant Portal ได้ · การขอ API key ผ่าน <code>POST /api/v1/auth/login</code> ใช้ secret key ที่ผู้ใช้สร้างเองใน Portal (ตั้งค่า → Secret key) ไม่ใช้รหัสผ่าน · บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ login API ไม่ได้</p>
       {(error || err) && <p className="mb-3 text-[13px] text-danger">{error || err}</p>}
       <table className="w-full border-collapse">
         <thead><tr>{["ผู้ใช้", "อีเมล", "Login API", "ระดับ", "สถานะ", "เข้าใช้ล่าสุด", ""].map((h) => <th key={h} className={th}>{h}</th>)}</tr></thead>

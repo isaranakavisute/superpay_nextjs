@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { consoleHeaders } from "./api";
+import { DEFAULT_MERCHANT_PERMS, type MerchantPermMatrix } from "./merchant-perms";
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 
@@ -16,13 +17,15 @@ export type Branding = {
   theme: { default: ThemeId; allowUser: boolean; enabled: ThemeId[] };
   security: { enforce2fa: boolean; ownerUserId: number | null };
   sounds: { sequence: string[] };
+  merchantPerms: MerchantPermMatrix;
 };
 
 export const DEFAULT_BRANDING: Branding = {
-  brand: { siteName: "SuperPay", tagline: "Payment Console", loginHeadline: "", loginSubtext: "", logoScale: 100, logoAsset: null, faviconAsset: null },
+  brand: { siteName: "Option Pay", tagline: "Payment Console", loginHeadline: "", loginSubtext: "", logoScale: 100, logoAsset: null, faviconAsset: null },
   theme: { default: "royal-gold", allowUser: true, enabled: ["royal-gold", "midnight"] },
   security: { enforce2fa: false, ownerUserId: null },
   sounds: { sequence: ["builtin:chime"] },
+  merchantPerms: DEFAULT_MERCHANT_PERMS,
 };
 
 /** Public settings for this request (deduped). A backend outage falls back to the defaults. */
@@ -31,7 +34,7 @@ export const getBranding = cache(async (): Promise<Branding> => {
     const r = await fetch(`${BASE}/api/console/config/public`, { headers: consoleHeaders(), cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (!r.ok) return DEFAULT_BRANDING;
     const j = (await r.json()) as Branding;
-    return { brand: j.brand, theme: j.theme, security: j.security, sounds: j.sounds };
+    return { brand: j.brand, theme: j.theme, security: j.security, sounds: j.sounds, merchantPerms: j.merchantPerms ?? DEFAULT_MERCHANT_PERMS };
   } catch {
     return DEFAULT_BRANDING;
   }

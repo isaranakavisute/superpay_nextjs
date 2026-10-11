@@ -9,7 +9,7 @@ import { bkkDayStart } from "@/lib/domain";
 import { requestTime } from "@/lib/request-time";
 import { getSessionUser } from "@/lib/session";
 
-export const metadata: Metadata = { title: "แดชบอร์ด — SuperPay Admin" };
+export const metadata: Metadata = { title: "แดชบอร์ด — Option Pay Admin" };
 
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const today = bkkDayStart(await requestTime());

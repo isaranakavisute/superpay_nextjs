@@ -6,7 +6,7 @@ import { param, type Params } from "@/components/list/query";
 import { Card, CardHead, PageHeader, StatusBadge } from "@/components/ui";
 import { listResource } from "@/lib/api";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
-import { requirePortal } from "@/lib/portal";
+import { portalPerms, requirePortal } from "@/lib/portal";
 import type { MerchantRow, WithdrawalRow } from "@/lib/rows";
 import { PortalShell } from "../PortalShell";
 import { WithdrawForm } from "./WithdrawForm";
@@ -27,13 +27,13 @@ export default async function PortalWithdrawals({ searchParams }: PageProps<"/me
   return (
     <PortalShell user={user} path={PATH}>
       <PageHeader title="ถอนเงิน" subtitle="ขอถอนเงินจากยอดของร้าน — ผู้ดูแลตรวจและโอนให้ แล้วสถานะจะอัปเดตที่นี่" />
-      {user.tier === "owner" ? (
+      {(await portalPerms(user)).has("request_withdrawal") ? (
         <Card className="mb-5">
           <CardHead title="ขอถอนเงิน">{shop && <span className="text-[13px] text-muted">ยอดคงเหลือ {fmtMoney(shop.currentBalance)}</span>}</CardHead>
           <WithdrawForm available={Number(shop?.currentBalance ?? 0)} minBalance={Number(shop?.minBalance ?? 0)} />
         </Card>
       ) : (
-        <Card className="mb-5 p-5 text-[13px] text-muted">เฉพาะเจ้าของร้านเท่านั้นที่ขอถอนเงินได้</Card>
+        <Card className="mb-5 p-5 text-[13px] text-muted">ระดับผู้ใช้ของคุณไม่มีสิทธิ์ขอถอนเงิน — ติดต่อเจ้าของร้านหรือผู้ดูแลระบบ</Card>
       )}
       <Card>
         <CardHead title="คำขอถอนของร้าน" />

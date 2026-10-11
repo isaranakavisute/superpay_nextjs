@@ -6,7 +6,7 @@ import { consoleHeaders, listResource } from "@/lib/api";
 import type { ChannelRow } from "@/lib/rows";
 import { AlertsEditor, type Bot } from "./AlertsEditor";
 
-export const metadata: Metadata = { title: "แจ้งเตือน Telegram — SuperPay Admin" };
+export const metadata: Metadata = { title: "แจ้งเตือน Telegram — Option Pay Admin" };
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 

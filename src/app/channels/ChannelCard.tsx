@@ -204,8 +204,8 @@ export function ChannelCard({
 
       {type === "sms" && (
         <div className="mt-4 flex flex-wrap gap-4 sm:pl-[58px]">
-          <QrToggle label="QR ดาวน์โหลดแอป" value="https://superpay.local/forwarder/download" hint="สแกนด้วยมือถือเพื่อติดตั้งแอป Forwarder" />
-          <QrToggle label="แสดง QR จับคู่แอป Forwarder" value={`superpay-forwarder://pair?url=${encodeURIComponent(webhookUrl)}&channel=${c.id}`} hint="เปิดแอปแล้วสแกน QR นี้เพื่อจับคู่เครื่องกับช่องทางนี้" />
+          <QrToggle label="QR ดาวน์โหลดแอป" value="https://optionpay.co/forwarder/download" hint="สแกนด้วยมือถือเพื่อติดตั้งแอป Forwarder" />
+          <QrToggle label="แสดง QR จับคู่แอป Forwarder" value={`optionpay-forwarder://pair?url=${encodeURIComponent(webhookUrl)}&channel=${c.id}`} hint="เปิดแอปแล้วสแกน QR นี้เพื่อจับคู่เครื่องกับช่องทางนี้" />
         </div>
       )}
 

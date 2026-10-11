@@ -5,7 +5,7 @@ import { Card, PageHeader } from "@/components/ui";
 import { consoleHeaders, listResource } from "@/lib/api";
 import { RoleMatrix, type Group, type Role } from "./RoleMatrix";
 
-export const metadata: Metadata = { title: "สิทธิ์การเข้าถึง — SuperPay Admin" };
+export const metadata: Metadata = { title: "สิทธิ์การเข้าถึง — Option Pay Admin" };
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 

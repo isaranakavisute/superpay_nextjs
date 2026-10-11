@@ -3,7 +3,7 @@ import { MerchantView } from "@/components/merchant/MerchantView";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
 import { PageHeader } from "@/components/ui";
 
-export const metadata: Metadata = { title: "แดชบอร์ดร้านค้า — SuperPay Admin" };
+export const metadata: Metadata = { title: "แดชบอร์ดร้านค้า — Option Pay Admin" };
 
 export default async function MerchantDashboardPage({ searchParams }: PageProps<"/merchant-dashboard">) {
   return (

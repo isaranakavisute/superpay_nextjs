@@ -10,7 +10,7 @@ import { getBranding } from "@/lib/branding";
 import { getSessionUser } from "@/lib/session";
 import { InfoForm, PasswordForm, TwoFactorCard } from "./ProfileForms";
 
-export const metadata: Metadata = { title: "โปรไฟล์ — SuperPay Admin" };
+export const metadata: Metadata = { title: "โปรไฟล์ — Option Pay Admin" };
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 type Profile = { id: number; username: string; fullName: string; email: string | null; phone: string | null; roleCode: string; status: string; createdAt: string; twoFactorEnabledAt: string | null };

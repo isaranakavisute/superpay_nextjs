@@ -15,7 +15,7 @@ import type { MerchantRow, WithdrawalRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { WithdrawalActions } from "./WithdrawalActions";
 
-export const metadata: Metadata = { title: "คำขอถอนเงิน — SuperPay Admin" };
+export const metadata: Metadata = { title: "คำขอถอนเงิน — Option Pay Admin" };
 
 const PATH = "/withdrawals";
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";

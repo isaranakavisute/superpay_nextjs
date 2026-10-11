@@ -14,7 +14,7 @@ import type { DoubleCreditRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { Board } from "./Board";
 
-export const metadata: Metadata = { title: "ตรวจเติมเงินซ้ำ — SuperPay Admin" };
+export const metadata: Metadata = { title: "ตรวจเติมเงินซ้ำ — Option Pay Admin" };
 
 const PATH = "/double-credits";
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";

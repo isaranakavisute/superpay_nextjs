@@ -7,9 +7,11 @@ import { param, withParams, type Params } from "@/components/list/query";
 import { Card, PageHeader, StatusBadge } from "@/components/ui";
 import { listResource } from "@/lib/api";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
-import { requirePortal } from "@/lib/portal";
+import { portalPerms, requirePortal } from "@/lib/portal";
 import type { PaymentRow } from "@/lib/rows";
 import { PortalShell } from "../PortalShell";
+import { CreatePortalPayment } from "./CreatePortalPayment";
+import { SampleSlipButton } from "./SampleSlipButton";
 
 export const metadata: Metadata = { title: "รายการชำระเงิน — Merchant Portal" };
 const PATH = "/merchant/transactions";
@@ -20,11 +22,12 @@ export default async function PortalTransactions({ searchParams }: PageProps<"/m
   const params: Params = await searchParams;
   const status = param(params, "status") ?? "";
   const pg = pageState(params, "t");
+  const can = await portalPerms(user);
   const res = await listResource<PaymentRow>("payments", { merchantId: user.merchantId, status: status || undefined, q: param(params, "q"), limit: pg.size, offset: (pg.page - 1) * pg.size }).catch(() => null);
 
   return (
     <PortalShell user={user} path={PATH}>
-      <PageHeader title="รายการชำระเงิน" subtitle="ออเดอร์ของร้านทั้งหมด — รวมที่สร้างผ่าน API และที่แอดมินสร้างให้" />
+      <PageHeader title="รายการชำระเงิน" subtitle="ออเดอร์ของร้านทั้งหมด — รวมที่สร้างผ่าน API, ที่สร้างในหน้านี้ และที่แอดมินสร้างให้" actions={can.has("create_payment") ? <CreatePortalPayment /> : undefined} />
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-[22px] py-3.5">
           <div className="flex flex-wrap gap-1.5">
@@ -49,7 +52,12 @@ export default async function PortalTransactions({ searchParams }: PageProps<"/m
                 { header: "ค่าธรรมเนียม", align: "right", cell: (p) => <span className="text-muted tabular-nums">{fmtMoney(p.fee)}</span> },
                 { header: "สถานะ", cell: (p) => <StatusBadge status={p.status} /> },
                 { header: "เวลา", cell: (p) => <span className="whitespace-nowrap text-muted">{fmtDateTime(p.createdAt)}</span> },
-                { header: "", align: "right", cell: (p) => (p.status === "pending" && p.checkoutToken ? <a href={`/c?t=${p.checkoutToken}`} target="_blank" rel="noreferrer" className="text-[12.5px] text-primary hover:underline">หน้าชำระเงิน ↗</a> : null) },
+                { header: "", align: "right", cell: (p) => (p.status === "pending" ? (
+                  <div className="flex items-center justify-end gap-3 whitespace-nowrap">
+                    <SampleSlipButton slip={{ ref: p.ref, amount: Number(p.amount), customerName: p.customerName && p.customerName !== "-" ? p.customerName : null, bankName: p.accountBankName, accountName: p.accountName, accountNo: p.accountNo }} />
+                    {p.checkoutToken && <a href={`/c?t=${p.checkoutToken}`} target="_blank" rel="noreferrer" className="text-[12.5px] text-primary hover:underline">หน้าชำระเงิน ↗</a>}
+                  </div>
+                ) : null) },
               ]}
             />
             <div className="border-t border-line px-[22px] py-3"><Pager path={PATH} params={params} bucket="t" page={pg.page} size={pg.size} total={res.pagination.total} /></div>

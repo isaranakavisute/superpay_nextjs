@@ -19,7 +19,7 @@ import { CreatePayment } from "./CreatePayment";
 import { FilterCard } from "./FilterCard";
 import { PaymentActions } from "./PaymentActions";
 
-export const metadata: Metadata = { title: "รายการชำระเงิน — SuperPay Admin" };
+export const metadata: Metadata = { title: "รายการชำระเงิน — Option Pay Admin" };
 
 const PATH = "/payments";
 const STATUS_OPTIONS = [

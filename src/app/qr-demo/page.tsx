@@ -4,7 +4,7 @@ import { listResource } from "@/lib/api";
 import type { AccountRow } from "@/lib/rows";
 import { QrDemo } from "./QrDemo";
 
-export const metadata: Metadata = { title: "ตัวอย่าง QR + สลิป — SuperPay Admin" };
+export const metadata: Metadata = { title: "ตัวอย่าง QR + สลิป — Option Pay Admin" };
 
 export default async function QrDemoPage() {
   const accounts = (await listResource<AccountRow & { promptpayId: string | null }>("accounts", { limit: 200 }).catch(() => null))?.data ?? [];

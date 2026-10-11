@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
 
-const SECTIONS = ["brand", "theme", "sounds", "slip", "quota", "balance", "limits", "security", "outbound"] as const;
+const SECTIONS = ["brand", "theme", "sounds", "slip", "quota", "balance", "limits", "security", "merchantPerms", "outbound"] as const;
 export type Section = (typeof SECTIONS)[number];
 
 async function as(path: string, body: unknown): Promise<ActionResult> {

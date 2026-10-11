@@ -7,7 +7,13 @@ export type Checkout = {
   merchant: { name: string };
   account: { bankCode: string; bankName: string; accountName: string | null; accountNumber: string | null; promptPayId: string | null };
   qrPayload: string | null;
+  /** The payer's name the shop entered; the slip's sender must match it. */
+  customerName?: string | null;
   hasSlip: boolean;
+  /** Why the last slip was refused (null when none was). */
+  slipProblems?: string[] | null;
+  /** An accepted / in-review slip is attached: the customer can't send another. */
+  slipLocked?: boolean;
 };
 
 export const isToken = (t: unknown): t is string => typeof t === "string" && /^[a-f0-9]{32}$/.test(t);
@@ -23,6 +29,6 @@ export async function getCheckout(token: string): Promise<Checkout | null> {
 export async function postCheckoutSlip(token: string, body: { image: string; mime: string }) {
   const r = await fetch(`${BASE}/api/v1/payment/checkout/${token}/slip`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), cache: "no-store" });
   const j = await r.json().catch(() => null);
-  if (!r.ok) return { ok: false as const, error: (j?.error?.message as string) ?? `HTTP ${r.status}` };
-  return { ok: true as const, result: j.result as string, message: j.message as string | null, status: j.status as string };
+  if (!r.ok) return { ok: false as const, error: (j?.error?.message as string) ?? `HTTP ${r.status}`, code: j?.error?.code as string | undefined };
+  return { ok: true as const, result: j.result as string, message: j.message as string | null, mismatches: (j.mismatches as string[] | undefined) ?? [], status: j.status as string };
 }

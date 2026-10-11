@@ -14,7 +14,7 @@ import { AccountActions, AccountSwitch, NewAccountButton, ResetAllButton } from 
 type Account = AccountRow & { promptpayId: string | null; merchantId: number | null };
 type Shop = { id: number; name: string };
 
-export const metadata: Metadata = { title: "บัญชีธนาคาร — SuperPay Admin" };
+export const metadata: Metadata = { title: "บัญชีธนาคาร — Option Pay Admin" };
 
 const TABS = [
   { value: "", label: "ทั้งหมด" },

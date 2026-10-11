@@ -11,6 +11,7 @@ const NAV = [
   { href: "/merchant/transactions", label: "รายการชำระเงิน" },
   { href: "/merchant/withdrawals", label: "ถอนเงิน" },
   { href: "/merchant/settings", label: "ตั้งค่า" },
+  { href: "/merchant/docs", label: "คู่มือ" },
 ];
 const TIER: Record<string, string> = { owner: "เจ้าของร้าน", staff: "พนักงาน", viewer: "ดูอย่างเดียว" };
 

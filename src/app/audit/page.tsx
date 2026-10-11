@@ -10,7 +10,7 @@ import type { AuditRow, UserRow } from "@/lib/rows";
 import { AuditToolbar } from "./AuditToolbar";
 import { FAMILIES, RANGES, auditWindow } from "./filters";
 
-export const metadata: Metadata = { title: "บันทึกการตรวจสอบ — SuperPay Admin" };
+export const metadata: Metadata = { title: "บันทึกการตรวจสอบ — Option Pay Admin" };
 
 const LIMIT = 500;
 const td = "border-b border-line px-[18px] py-3 align-top";

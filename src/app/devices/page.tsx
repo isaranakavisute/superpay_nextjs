@@ -9,7 +9,7 @@ import type { ChannelRow, DeviceRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { DeviceActions } from "./DeviceActions";
 
-export const metadata: Metadata = { title: "อุปกรณ์ Forwarder — SuperPay Admin" };
+export const metadata: Metadata = { title: "อุปกรณ์ Forwarder — Option Pay Admin" };
 
 const LATEST = "2.4.1";
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";
