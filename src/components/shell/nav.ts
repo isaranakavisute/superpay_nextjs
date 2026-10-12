@@ -9,6 +9,8 @@ import {
   Landmark,
   LayoutDashboard,
   Link,
+  Megaphone,
+  MessageSquare,
   type LucideIcon,
   QrCode,
   Radio,
@@ -67,6 +69,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: "settings", label: "ตั้งค่าระบบ", href: "/settings", icon: Settings },
       { key: "alerts", label: "แจ้งเตือน Telegram", href: "/alerts", icon: Bell },
+      { key: "support-bot", label: "บอทตอบคำถาม", href: "/support-bot", icon: MessageSquare },
+      { key: "announcements", label: "ประชาสัมพันธ์", href: "/announcements", icon: Megaphone },
       { key: "roles", label: "สิทธิ์การเข้าถึง", href: "/roles", icon: Shield },
       { key: "users", label: "จัดการผู้ใช้", href: "/users", icon: Users },
       { key: "audit", label: "บันทึกการตรวจสอบ", href: "/audit", icon: FileText },
