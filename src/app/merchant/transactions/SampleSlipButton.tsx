@@ -22,7 +22,7 @@ export function SampleSlipButton({ slip }: { slip: SampleSlip }) {
         <Modal title={`ตัวอย่างสลิปที่ถูกต้อง — ${slip.ref}`} onClose={() => setImg(null)} width={560}
           footer={<><button type="button" className={B("ghost")} onClick={() => setImg(null)}>ปิด</button>
             <a href={img} download={`ตัวอย่างสลิป-${slip.ref}.jpg`} className={B("primary")}><Download size={15} /> ดาวน์โหลด JPG</a></>}>
-          <div className="grid gap-4 text-[13px] md:grid-cols-[220px_1fr]">
+          <div className="grid gap-4 text-left text-[13px] whitespace-normal md:grid-cols-[220px_1fr]">
             {/* eslint-disable-next-line @next/next/no-img-element -- generated data: URL */}
             <img src={img} alt={`ตัวอย่างสลิปของ ${slip.ref}`} className="w-full rounded-lg border border-line" />
             <div>

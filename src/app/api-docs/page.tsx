@@ -42,15 +42,18 @@ export default async function ApiDocsPage() {
           <section id="auth" className="mb-8 scroll-mt-24">
             <h2 className="mb-2 text-xl font-semibold">Authentication</h2>
             <div className={sub}>
-              ทุก request ใต้ <code>/api/v1/</code> ต้องส่ง header <code>X-API-Key: YOUR_KEY</code> (ยกเว้น <code>/collect</code> ที่ใช้ฟิลด์ <code>key</code> ใน body และเส้น public{" "}
-              <code>/payment/checkout/:transactionId</code> + <code>/payment/qr/:token.png</code>) — ออก key ผ่านหน้า <a href="/merchants" className="text-primary">ร้านค้า</a> (admin only) หรือผ่าน <code>POST /auth/login</code> ด้านล่าง (ใช้บัญชีผู้ใช้ร้านค้า)
+              ทุก request ใต้ <code>/api/v1/</code> ต้องส่ง <code>X-API-Key</code> (<code>ak_live_…</code>) + <code>X-Timestamp</code> (unix วินาที) + <code>X-Signature</code> = HMAC-SHA256(secret, <code>{"timestamp.METHOD.path.body"}</code>) แบบ hex — <strong>บังคับทุก endpoint</strong> (ยกเว้นหน้า checkout / QR / แนบสลิปของลูกค้า) · secret = secret key ของผู้ใช้ (<code>sk_live_…</code>) หรือ signing secret ของ key ระดับร้าน (<code>ss_live_…</code>) และห้ามส่งไปกับคำขอ · ออก key ระดับร้านในหน้า <a href="/merchants" className="text-primary">ร้านค้า</a> (ได้ signing secret พร้อมกัน) หรือผู้ใช้ร้านค้าสร้างเองใน Merchant Portal → ตั้งค่า · ตัวอย่างจริงทุก endpoint (curl + Next.js) อยู่ในคู่มือ API ของ Merchant Portal
             </div>
-            <pre className="mb-3 overflow-x-auto rounded-lg border border-line bg-bg px-4 py-3 font-mono text-[12.5px] leading-[1.6]">
-              {`curl -X POST ${base}/payment/create \\\n  -H `}<span className="text-[#86efac]">&quot;X-API-Key: sk_live_YOUR_API_KEY&quot;</span>{` \\\n  -H `}<span className="text-[#86efac]">&quot;Content-Type: application/json&quot;</span>{` \\\n  -d `}<span className="text-[#86efac]">{`'{ "amount": 100, "orderId": "ORDER-001" }'`}</span>
-            </pre>
+            <pre className="mb-3 overflow-x-auto rounded-lg border border-line bg-bg px-4 py-3 font-mono text-[12.5px] leading-[1.6]">{`API_KEY="ak_live_YOUR_API_KEY"; SECRET="sk_live_YOUR_SECRET_KEY"   # SECRET ห้ามส่ง
+BODY='{"amount":100,"orderId":"ORD-001"}'
+TS=$(date +%s)
+SIG=$(printf '%s' "$TS.POST./api/v1/payment/create.$BODY" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $NF}')
+curl -X POST ${base}/payment/create \\
+  -H "X-API-Key: $API_KEY" -H "X-Timestamp: $TS" -H "X-Signature: $SIG" \\
+  -H "Content-Type: application/json" --data-raw "$BODY"`}</pre>
             <Endpoint ep={ep(LOGIN)} />
             <div className={`${sub} mt-3 rounded-lg border-l-[3px] border-primary bg-primary-50 px-3.5 py-2.5`}>
-              <strong>Key format</strong>: <code>sk_live_</code> + 32-byte base64url (~51 ตัวอักษร). เก็บ key ทันทีที่ออก — กลับมาดูภายหลังจะเห็นเฉพาะ prefix 12 ตัวแรก · Error ทุกเส้นมีรูปแบบ <span className={code}>{`{ "error": { "code", "message", "details" } }`}</span>
+              <strong>Key format</strong>: API key <code>ak_live_</code> · secret key <code>sk_live_</code> · signing secret <code>ss_live_</code> (+ base64url) — key รูปแบบเดิม (<code>sk_live_</code> เป็น API key) ถูกยกเลิกแล้ว · Error ทุกเส้นมีรูปแบบ <span className={code}>{`{ "error": { "code", "message", "details" } }`}</span>
             </div>
           </section>
 

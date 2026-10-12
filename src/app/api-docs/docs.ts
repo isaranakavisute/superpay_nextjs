@@ -2,7 +2,7 @@
 export type Ep = { m: "GET" | "POST" | "PATCH" | "DELETE"; p: string; d: string; auth?: string; body?: string; res?: string; note?: string };
 export type Section = { id: string; nav: string; title: string; sub?: string; eps: Ep[] };
 
-const KEY = "<code>X-API-Key: YOUR_KEY</code>";
+const KEY = "<code>X-API-Key</code> + <code>X-Timestamp</code> + <code>X-Signature</code>";
 const TXN = `{
   "id": "a1b2c3d4e5f6...",          // transaction id (ใช้กับ checkout/cancel)
   "ref": "TXN173530",
@@ -33,6 +33,9 @@ const WDR = `{ "requestRef": "WDR90031", "merchantRef": "W-001", "amount": 1000,
   "bankCode": "KBANK", "accountNumber": "9876543210", "accountName": "นาย ก",
   "note": null, "rejectReason": null, "createdAt": "...", "decidedAt": null }`;
 
+/** How every slip upload is checked (slip/verify, :ref/slip, checkout slip). */
+const SLIP_RULES = "<strong>การตรวจสลิป</strong> — (1) <strong>สลิปตัวอย่าง</strong>จาก Option Pay → <code>400 SAMPLE_SLIP</code> · (2) <strong>สลิปซ้ำ</strong>: สลิปเดียวกัน (ไฟล์เดียวกัน หรือ QR ธนาคารเดียวกัน) ที่อยู่กับรายการอื่นแล้ว → <code>INVALID_SLIP</code> · (3) <strong>เทียบข้อมูลในสลิปกับรายการ</strong>: ยอดเงินตรงทุกสตางค์ · บัญชีผู้รับ + ธนาคารเป็นบัญชีของรายการ · ชื่อผู้โอนตรงกับ <code>metadata.memberName</code> (ถ้าส่ง) · เวลาโอนหลังสร้างรายการและไม่เก่าเกินกำหนด — ทุกข้อที่ไม่ตรงอยู่ใน <code>mismatches</code> · <strong>มีผู้ให้บริการตรวจสลิป</strong> (EasySlip / SlipOK ในตั้งค่าระบบ): ตรวจกับธนาคารจริง ผ่านครบ → <code>PAID</code> อัตโนมัติ (เว้นแต่ตั้ง “ต้องให้ผู้ดูแลยืนยันก่อน”) · <strong>ไม่มีผู้ให้บริการ / ผู้ให้บริการไม่ตอบ</strong>: ระบบอ่านข้อมูลจากภาพสลิป (OCR ไทย+อังกฤษ) — ยอด บัญชีผู้รับ หรือเวลาไม่ตรง → <code>INVALID_SLIP</code> · ตรงครบ หรืออ่านไม่ได้ → <code>PENDING_REVIEW</code> ให้ผู้ดูแลยืนยัน (<strong>ไม่อนุมัติอัตโนมัติ</strong> เพราะภาพแก้ไขได้) · ชื่อผู้โอน/ธนาคารที่ยืนยันจากภาพไม่ได้ จะแจ้งผู้ดูแลแทนการปฏิเสธ · <strong>Errors</strong>: ไฟล์ไม่ใช่รูป/ใหญ่เกิน → <code>400 INVALID_SLIP</code> · ออเดอร์ไม่ PENDING → <code>409 ORDER_NOT_PENDING</code> · ไม่พบ orderId → <code>404 ORDER_NOT_FOUND</code>";
+
 export const SECTIONS: Section[] = [
   {
     id: "payment", nav: "Payment", title: "Payment",
@@ -47,7 +50,7 @@ export const SECTIONS: Section[] = [
   "metadata": {                                // optional ทั้ง block
     "senderAccountNumber": "1234567890",       // เลขบัญชีผู้โอน (≥8 หลักถ้าส่ง)
     "senderBankCode": "SCB",                   // ธนาคารผู้โอน
-    "memberName": "นาย ก ข ค",                 // ชื่อสมาชิก/ผู้โอน
+    "memberName": "สมชาย ใจดี",                // ชื่อลูกค้า = ชื่อบัญชีที่จะโอน (ใช้ตรวจชื่อผู้โอนในสลิป)
     "memberNameEn": "Mr. A",                   // optional
     "customerId": "CUST-9"                     // id ลูกค้าฝั่งร้าน, optional
   },
@@ -82,14 +85,26 @@ export const SECTIONS: Section[] = [
 }`,
         res: `{
   "success": true,
-  "verified": true,
-  "result": "PAID",              // PAID | PENDING_REVIEW | INVALID_SLIP
-  "message": "ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว",
-  "transaction": { ... status: "PAID" ... }
+  "verified": false,
+  "result": "PENDING_REVIEW",    // PAID | PENDING_REVIEW | INVALID_SLIP
+  "message": "ตรงกับรายการ: ยอด ฿250.00, บัญชีผู้รับ 4182186378, เวลาโอน ... — อ่านจากภาพสลิป รอผู้ดูแลยืนยัน",
+  "mismatches": [],              // INVALID_SLIP: ทุกข้อที่ไม่ตรง แยกเป็นรายการ
+  "transaction": { ... }
+}
+
+// ตัวอย่างสลิปไม่ผ่าน
+{
+  "success": false, "verified": false, "result": "INVALID_SLIP",
+  "message": "ยอดเงินในสลิป ฿200.00 ไม่ตรงกับยอดที่ต้องชำระ ฿250.00 — ต้องโอนตรงยอดทุกสตางค์ · บัญชีผู้รับในสลิป (XXX-XXX111-1) ไม่ใช่บัญชีของรายการนี้ — ต้องโอนเข้า SCB 4182186378 (...)",
+  "mismatches": [
+    "ยอดเงินในสลิป ฿200.00 ไม่ตรงกับยอดที่ต้องชำระ ฿250.00 — ต้องโอนตรงยอดทุกสตางค์",
+    "บัญชีผู้รับในสลิป (XXX-XXX111-1) ไม่ใช่บัญชีของรายการนี้ — ต้องโอนเข้า SCB 4182186378 (...)"
+  ],
+  "transaction": { ... status: "PENDING" ... }
 }`,
-        note: "ตรวจกับผู้ให้บริการที่ตั้งในหน้า <strong>ตั้งค่าระบบ → การตรวจสลิป</strong> (EasySlip / SlipOK, มีตัวสำรองอัตโนมัติ) — ยอดต้องตรง, อายุสลิปตามที่ตั้ง, และสลิปเดียวใช้ซ้ำไม่ได้ · ถ้าไม่ได้เปิดการตรวจ หรือผู้ให้บริการไม่ตอบ จะเป็น <code>PENDING_REVIEW</code> ให้ผู้ดูแลตรวจ · ถ้าตั้ง “ต้องให้ผู้ดูแลยืนยันก่อน” สลิปที่ผ่านก็จะรอผู้ดูแล",
+        note: SLIP_RULES,
       },
-      { m: "POST", p: "/payment/:ref/slip", d: "แนบสลิปเข้าออเดอร์ตาม ref หรือ transaction id — shape เดิม", auth: KEY, body: `{ "image": "<base64>", "mime": "image/png" }`, res: "เหมือน /payment/slip/verify" },
+      { m: "POST", p: "/payment/:ref/slip", d: "แนบสลิปเข้าออเดอร์ตาม ref หรือ transaction id — shape เดิม", auth: KEY, body: `{ "image": "<base64>", "mime": "image/png" }`, res: "เหมือน /payment/slip/verify", note: "ตรวจสลิปตามกฎเดียวกับ /payment/slip/verify · แนบทับสลิปเดิมได้ (หน้าชำระเงินของลูกค้าแนบได้ครั้งเดียว)" },
       { m: "GET", p: "/payment/order/:orderId", d: "ตรวจสอบ Payment ตาม Order ID", auth: KEY, res: `{ "success": true, "transaction": { ... } }`, note: "404 <code>ORDER_NOT_FOUND</code> ถ้าไม่พบ" },
       {
         m: "GET", p: "/payment/checkout/:transactionId", d: "Checkout Page Data (ไม่ต้องส่ง API Key)", auth: "ไม่ต้องมี key — transaction id เป็นความลับของลูกค้าคนนั้น",
@@ -100,15 +115,24 @@ export const SECTIONS: Section[] = [
   "merchant": { "name": "ร้าน ABC" },
   "account": { "bankCode": "KBANK", "bankName": "...", "accountName": "...", "accountNumber": "...", "promptPayId": "0812345678" },
   "qrPayload": "00020101021229370016A000000677010111...",   // EMVCo PromptPay (null เมื่อไม่ PENDING)
-  "hasSlip": false
+  "customerName": "สมชาย ใจดี",   // ชื่อที่สลิปต้องเป็นผู้โอน (null = ไม่ตรวจ)
+  "hasSlip": false,               // เคยแนบสลิปแล้วหรือยัง
+  "slipLocked": false,            // true = มีสลิปที่รับแล้ว/รอตรวจ — แนบเพิ่มไม่ได้
+  "slipProblems": null            // สลิปล่าสุดไม่ผ่าน: รายการเหตุผล (แนบใหม่ได้)
 }`,
-        note: "หน้าชำระเงินสำเร็จรูปสำหรับลูกค้า: <code>{SITE}/c?t={transactionId}</code> — แสดง QR, นับถอยหลัง, แนบสลิป และอัปเดตสถานะอัตโนมัติ",
+        note: "หน้าชำระเงินสำเร็จรูปสำหรับลูกค้า: <code>{SITE}/c?t={transactionId}</code> — แสดงยอด บัญชีรับเงิน นับถอยหลัง แนบสลิป แนวทางการแนบสลิป ปุ่มดาวน์โหลดตัวอย่างสลิป (JPG) และอัปเดตสถานะอัตโนมัติ",
+      },
+      {
+        m: "POST", p: "/payment/checkout/:transactionId/slip", d: "ลูกค้าแนบสลิปจากหน้าชำระเงิน (ไม่ต้องส่ง API Key)", auth: "ไม่ต้องมี key — transaction id เป็นความลับของลูกค้าคนนั้น",
+        body: `{ "image": "<base64>", "mime": "image/jpeg" }   // png | jpeg | webp, ไม่เกิน 8 MB`,
+        res: `{ "success": true, "verified": false, "result": "PENDING_REVIEW", "message": "...", "mismatches": [], "status": "PENDING" }`,
+        note: "ตรวจตามกฎเดียวกับ /payment/slip/verify · <strong>แนบได้ครั้งเดียวต่อรายการ</strong> — มีสลิปที่รับแล้ว/รอตรวจอยู่ → <code>409 SLIP_ALREADY_UPLOADED</code> (แนบใหม่ได้เฉพาะเมื่อสลิปก่อนหน้าไม่ผ่าน) · สลิปตัวอย่าง → <code>400 SAMPLE_SLIP</code>",
       },
       { m: "GET", p: "/payment/qr/:token.png", d: "รูป QR ของออเดอร์ (PNG, ไม่ต้องส่ง API Key)", auth: "ไม่ต้องมี key", res: "image/png (480×480)", note: "ตอบ <code>410</code> เมื่อออเดอร์ไม่ PENDING แล้ว หรือบัญชีรับเงินไม่มี PromptPay" },
       {
-        m: "POST", p: "/collect", d: "สร้าง Payment โดย auth ด้วย key ใน body — shape เดิม", auth: "<code>key</code> ใน body (ไม่ต้องมี header)",
-        body: `{ "key": "sk_live_...", "amount": 100, "orderId": "ORD-003" }`, res: "เหมือน /payment/create",
-        note: "สำหรับระบบที่ตั้ง header เองไม่ได้ · <strong>อย่าฝัง key ในหน้าเว็บที่ลูกค้าเห็น</strong> — key เดียวกันใช้ทำทุกอย่างได้ ให้ออก key แยกสำหรับงานนี้และเพิกถอนได้ทันทีในหน้าร้านค้า",
+        m: "POST", p: "/collect", d: "สร้าง Payment (ชื่อเดิม) — เหมือน /payment/create", auth: KEY,
+        body: `{ "amount": 150, "orderId": "ORD-004" }   // ไม่มีฟิลด์ key ใน body แล้ว`, res: "เหมือน /payment/create",
+        note: "ใช้ header และลายเซ็นเหมือนทุก endpoint (<code>X-API-Key</code> + <code>X-Timestamp</code> + <code>X-Signature</code>) · ส่ง <code>key</code> ใน body ไม่ได้แล้ว · ระบบใหม่ใช้ <code>/payment/create</code> แทนได้เลย",
       },
     ],
   },
@@ -201,17 +225,13 @@ export const SECTIONS: Section[] = [
 ];
 
 export const LOGIN: Ep = {
-  m: "POST", p: "/auth/login", d: "Login ด้วย secret key ของผู้ใช้ร้านค้า เพื่อรับ API Key",
-  auth: "ไม่ต้องมี X-API-Key — ส่ง secret key ใน body (rate-limited 10 ครั้ง/นาที/IP)",
+  m: "POST", p: "/auth/login", d: "ออก API Key ใหม่ด้วย secret key — ใช้ได้เฉพาะภายใน Merchant Portal",
+  auth: "เฉพาะ Merchant Portal (เซิร์ฟเวอร์ของระบบ) — เรียกจากภายนอกได้ <code>403 LOGIN_PORTAL_ONLY</code>",
   body: `{
-  "secretKey": "ms_live_<your-secret-key>"   // required — สร้างที่ Merchant Portal → ตั้งค่า → Secret key
+  "secretKey": "ms_live_<secret-key>"   // Merchant Portal ส่งให้เอง
 }`,
-  res: `{
-  "apiKey": "sk_live_<your-api-key>",
-  "merchant": { "id": "1", "username": "shop-a.owner", "email": "user@example.com",
-                "businessName": "ร้าน ABC", "status": "ACTIVE" },
-  "role": "MERCHANT", "tier": "owner",
-  "permissions": ["view_dashboard", "view_transactions", "create_payment", ...]
-}`,
-  note: "URL เต็ม: <code>{BASE}/auth/login</code> (เรียก <code>{SITE}/api/auth/login</code> ก็ได้ผลเหมือนกัน) · <strong>ใช้บัญชีผู้ใช้ร้านค้า (Merchant Portal) เท่านั้น</strong> — บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ไม่ได้ · <strong>ไม่รับอีเมล/รหัสผ่าน</strong> (ส่ง password มาจะได้ <code>400 SECRET_KEY_REQUIRED</code>) — ผู้ใช้ portal สร้าง secret key ของตัวเองที่ Merchant Portal → ตั้งค่า (แสดงครั้งเดียว เก็บเป็น hash) · key ผิดหรือถูกยกเลิก: <code>401 INVALID_SECRET_KEY</code> · สร้างใหม่หรือยกเลิก secret key จะเพิกถอน API key ที่ login ด้วยอันเดิมด้วย · <strong>สิทธิ์ของ key = ระดับของผู้ใช้</strong> (owner / staff / viewer — กำหนดในหน้าตั้งค่าระบบ) และส่งกลับมาใน <code>permissions</code> · เรียกเส้นที่ไม่มีสิทธิ์ได้ <code>403 PERMISSION_DENIED</code> · key ที่ผู้ดูแลออกให้ร้านใช้ได้ทุกเส้น · login แต่ละครั้ง<strong>ออก key ใหม่และเพิกถอน key เดิมที่ออกจากเส้นนี้</strong> (key ที่ออกจากหน้าร้านค้าไม่ถูกแตะ) · ทุกครั้งมี audit log",
+  res: `// เรียกจากภายนอก
+{ "error": { "code": "LOGIN_PORTAL_ONLY",
+             "message": "เรียก /auth/login จากภายนอกไม่ได้ — รับ API key ได้ที่ Merchant Portal → ตั้งค่า → Secret key และ API key (สร้าง secret key แล้วได้ API key ทันที)" } }`,
+  note: "<strong>ระบบของร้านไม่ต้องเรียกเส้นนี้</strong> — รับ API key ที่ Merchant Portal → ตั้งค่า → <strong>Secret key และ API key</strong>: กด <strong>สร้าง secret key</strong> ได้ API key ทันที (แสดงในหน้าตั้งค่า) · กด <strong>สร้างใหม่</strong> เมื่อต้องการเปลี่ยน key — ได้ทั้ง secret key และ API key ใหม่ อันเดิมใช้ไม่ได้ทันที · กด <strong>ดู</strong> + ยืนยันชื่อผู้ใช้/รหัสผ่าน เพื่อแสดง key แบบเต็ม · <strong>สิทธิ์ของ API key = ระดับของผู้ใช้</strong> (owner / staff / viewer — กำหนดในหน้าตั้งค่าระบบ) เรียกเส้นที่ไม่มีสิทธิ์ได้ <code>403 PERMISSION_DENIED</code> · key ที่ผู้ดูแลออกให้ร้านใช้ได้ทุกเส้น · ทุกการออก/ดู key มี audit log",
 };

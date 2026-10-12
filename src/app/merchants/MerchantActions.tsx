@@ -170,6 +170,7 @@ function KeysDialog({ m, onClose }: { m: MerchantForActions; onClose: () => void
   const { data, error, reload } = useLoad(() => getApiKeys(m.id), [m.id]);
   const [label, setLabel] = useState("");
   const [fresh, setFresh] = useState<string | null>(null);
+  const [freshSecret, setFreshSecret] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const items = (data?.items as Row[]) ?? [];
@@ -185,10 +186,11 @@ function KeysDialog({ m, onClose }: { m: MerchantForActions; onClose: () => void
 
   return (
     <Modal title={`API Keys — ${m.name}`} onClose={onClose} width={900}>
-      {fresh && <OneTimeSecret title="✓ API Key ออกแล้ว" value={fresh} />}
+      {fresh && <OneTimeSecret title="✓ API Key ออกแล้ว (X-API-Key)" value={fresh} />}
+      {freshSecret && <OneTimeSecret title="✓ Signing secret ของ key นี้ — ใช้เซ็นทุกคำขอ (X-Signature) ห้ามส่งไปกับคำขอ" value={freshSecret} />}
       <div className="mb-4 flex gap-2">
         <input className={field} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ชื่อ key เช่น Production" />
-        <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || !label.trim()} onClick={() => act(() => createApiKey(m.id, label), (r) => { setFresh(String(r.key)); setLabel(""); })}>
+        <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || !label.trim()} onClick={() => act(() => createApiKey(m.id, label), (r) => { setFresh(String(r.key)); setFreshSecret(r.signingSecret ? String(r.signingSecret) : null); setLabel(""); })}>
           <Plus size={15} /> ออก key ใหม่
         </button>
       </div>
@@ -308,7 +310,7 @@ function PortalDialog({ m, onClose }: { m: MerchantForActions; onClose: () => vo
           <Plus size={15} /> เพิ่ม
         </button>
       </div>
-      <p className="mb-4 text-[12px] text-muted">ใส่อีเมล + รหัสผ่าน เพื่อให้ผู้ใช้นี้เข้า Merchant Portal ได้ · การขอ API key ผ่าน <code>POST /api/v1/auth/login</code> ใช้ secret key ที่ผู้ใช้สร้างเองใน Portal (ตั้งค่า → Secret key) ไม่ใช้รหัสผ่าน · บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ login API ไม่ได้</p>
+      <p className="mb-4 text-[12px] text-muted">ใส่อีเมล + รหัสผ่าน เพื่อให้ผู้ใช้นี้เข้า Merchant Portal ได้ · ผู้ใช้ขอ secret key / API key ของตัวเองได้ใน Portal (ตั้งค่า → Secret key และ API key) · บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ login API ไม่ได้</p>
       {(error || err) && <p className="mb-3 text-[13px] text-danger">{error || err}</p>}
       <table className="w-full border-collapse">
         <thead><tr>{["ผู้ใช้", "อีเมล", "Login API", "ระดับ", "สถานะ", "เข้าใช้ล่าสุด", ""].map((h) => <th key={h} className={th}>{h}</th>)}</tr></thead>

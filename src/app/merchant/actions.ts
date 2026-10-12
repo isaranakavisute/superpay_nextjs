@@ -54,7 +54,7 @@ export async function changePassword(current: string, next: string) {
   return call("POST", `/users/${u.id}/password`, { current, next }, "/merchant/settings");
 }
 
-/** The signed-in user's own secret key for POST /api/v1/auth/login (any level). */
+/** The signed-in user's own secret key + API key (any level). */
 async function ownSecretKey(suffix: string) {
   const u = await getPortalUser();
   if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" } as ActionResult;

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { Copy, Eye, EyeOff, KeyRound, Plus, Trash2 } from "lucide-react";
 import { btn, field, fieldLabel, Modal } from "@/components/interactive/Modal";
@@ -75,7 +76,7 @@ function RevealDialog({ onClose, onDone }: { onClose: () => void; onDone: (k: Fu
   );
 }
 
-/** The user's own secret key (sent to POST /api/v1/auth/login instead of a password) and the API key their latest login issued. */
+/** The user's own secret key and API key (issued here only; /auth/login is portal-internal). */
 export function SecretKeyCard({ secretKey, apiKey, apiBase }: { secretKey: KeyInfo | null; apiKey: KeyInfo | null; apiBase: string }) {
   const [shown, setShown] = useState<FullKeys | null>(null);
   const [full, setFull] = useState<FullKeys | null>(null);
@@ -96,19 +97,22 @@ export function SecretKeyCard({ secretKey, apiKey, apiBase }: { secretKey: KeyIn
         <Err r={r} />
         {shown?.secretKey && <OnceSecret label="Secret key ใหม่" value={shown.secretKey} />}
         {shown?.apiKey && <OnceSecret label="API key ใหม่ (ใช้ใน X-API-Key ได้ทันที)" value={shown.apiKey} />}
-        <p className="mb-3 text-muted">สร้าง secret key แล้วได้ <strong className="text-ink">API key ทันที</strong> ตามสิทธิ์ระดับของคุณ — ใช้ใน header <code>X-API-Key</code> ได้เลย · ต้องการ API key ใหม่ให้เรียก <code>POST /auth/login</code> ด้วย secret key (อันเดิมถูกยกเลิก) · กด <strong className="text-ink">ดู</strong> เพื่อแสดงแบบเต็ม (ต้องยืนยันรหัสผ่าน แสดง 1 นาที) · เก็บไว้ในเซิร์ฟเวอร์ของร้านเท่านั้น</p>
+        <p className="mb-3 text-muted"><strong className="text-ink">API key</strong> (<code>ak_live_</code>) ส่งใน header <code>X-API-Key</code> · <strong className="text-ink">Secret key</strong> (<code>sk_live_</code>) ใช้<strong className="text-ink">เซ็นทุกคำขอ</strong> (<code>X-Timestamp</code> + <code>X-Signature</code>) และห้ามส่งไปกับคำขอ · สร้าง secret key แล้วได้ API key ทันที · กด <strong className="text-ink">สร้างใหม่</strong> เพื่อเปลี่ยนทั้งคู่ (อันเดิมใช้ไม่ได้ทันที) · กด <strong className="text-ink">ดู</strong> เพื่อแสดงแบบเต็ม (ยืนยันรหัสผ่าน แสดง 1 นาที)</p>
         <div className="mb-4 divide-y divide-line rounded-lg border border-line">
           <KeyLine title="Secret key" info={secretKey} full={full ? full.secretKey : undefined} empty="ยังไม่มี secret key" onView={view} onHide={hide}>
             {secretKey && <button type="button" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => { if (confirm("ยกเลิก secret key? ระบบที่ใช้ key นี้จะ login ไม่ได้ และ API key ที่ได้จากมันจะถูกเพิกถอน")) run(() => revokeSecretKey(), () => { setShown(null); setFull(null); }); }}>ยกเลิก</button>}
             <button type="button" disabled={pending} className={B("primary", "sm")} onClick={create}><Plus size={14} /> {secretKey ? "สร้างใหม่" : "สร้าง secret key"}</button>
           </KeyLine>
-          <KeyLine title="API key (จาก /auth/login ครั้งล่าสุด)" info={apiKey} full={full ? full.apiKey : undefined} onView={view} onHide={hide}
-            empty={secretKey ? "ยังไม่มี — กดสร้าง secret key ใหม่ หรือเรียก POST /auth/login เพื่อรับ API key" : "สร้าง secret key แล้ว API key จะแสดงที่นี่ทันที"} />
+          <KeyLine title="API key" info={apiKey} full={full ? full.apiKey : undefined} onView={view} onHide={hide}
+            empty={secretKey ? "ยังไม่มี — กดสร้าง secret key ใหม่ แล้วจะได้ API key ทันที" : "สร้าง secret key แล้ว API key จะแสดงที่นี่ทันที"} />
         </div>
         <div className="mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตัวอย่าง</div>
-        <CodeBlock code={`curl -X POST "${apiBase}/auth/login" \\
-  -H "Content-Type: application/json" \\
-  -d '{"secretKey":"${shown?.secretKey ?? full?.secretKey ?? "ms_live_YOUR_SECRET_KEY"}"}'`} />
+        <CodeBlock code={`API_KEY="${shown?.apiKey ?? full?.apiKey ?? "ak_live_YOUR_API_KEY"}"     # ส่งไปกับคำขอ
+SECRET="${shown?.secretKey ?? full?.secretKey ?? "sk_live_YOUR_SECRET_KEY"}"   # ใช้เซ็นเท่านั้น ห้ามส่ง
+TS=$(date +%s)
+SIG=$(printf '%s' "$TS.GET./api/v1/balance." | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $NF}')
+curl "${apiBase}/balance" \\
+  -H "X-API-Key: $API_KEY" -H "X-Timestamp: $TS" -H "X-Signature: $SIG"`} />
       </div>
       {asking && <RevealDialog onClose={() => setAsking(false)} onDone={(k) => { setFull(k); setAsking(false); }} />}
     </section>
@@ -119,15 +123,17 @@ type Key = { id: number; label: string; keyPrefix: string; status: string; lastU
 export function KeysCard({ keys, owner }: { keys: Key[]; owner: boolean }) {
   const [label, setLabel] = useState("");
   const [shown, setShown] = useState<string | null>(null);
+  const [shownSecret, setShownSecret] = useState<string | null>(null);
   const { r, pending, run } = useRun();
   return (
     <section className={card}>
-      <div className={head}><h2 className="text-lg font-semibold">API Keys</h2><a href="/api-docs" className="text-[12.5px] text-muted">ใช้กับ X-API-Key · ดูเอกสาร API จากผู้ดูแล</a></div>
+      <div className={head}><h2 className="text-lg font-semibold">API Keys</h2><Link href="/merchant/docs/api" className="text-[12.5px] text-muted">key ระดับร้าน + signing secret · ดูคู่มือ API</Link></div>
       <div className="px-[22px] py-5">
         <Err r={r} />
-        {shown && <OnceSecret label="API key ใหม่" value={shown} />}
+        {shown && <OnceSecret label="API key ใหม่ (X-API-Key)" value={shown} />}
+        {shownSecret && <OnceSecret label="Signing secret ของ key นี้ — ใช้เซ็นทุกคำขอ ห้ามส่งไปกับคำขอ" value={shownSecret} />}
         {owner && (
-          <form className="mb-4 flex gap-2" onSubmit={(e) => { e.preventDefault(); run(() => createKey(label.trim()), (x) => { if (x.ok) { setShown(String(x.key)); setLabel(""); } }); }}>
+          <form className="mb-4 flex gap-2" onSubmit={(e) => { e.preventDefault(); run(() => createKey(label.trim()), (x) => { if (x.ok) { setShown(String(x.key)); setShownSecret(x.signingSecret ? String(x.signingSecret) : null); setLabel(""); } }); }}>
             <input aria-label="ชื่อ key" required maxLength={60} placeholder="ชื่อ key เช่น Production" className={field} value={label} onChange={(e) => setLabel(e.target.value)} />
             <button type="submit" disabled={pending} className={B("primary")}><Plus size={15} /> ออก key</button>
           </form>

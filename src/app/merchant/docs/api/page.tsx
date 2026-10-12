@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { API_BASE, CURL_EXAMPLES } from "@/lib/api-curl-examples";
+import { API_BASE, CURL_EXAMPLES, LIVE_RUN, NEXT_HELPER, SIGNATURE_ERRORS } from "@/lib/api-curl-examples";
 import { MERCHANT_PERMISSIONS } from "@/lib/merchant-perms";
 import { requirePortal } from "@/lib/portal";
 import { LOGIN, SECTIONS, type Ep } from "../../../api-docs/docs";
@@ -17,8 +17,20 @@ const METHOD: Record<Ep["m"], string> = {
   PATCH: "bg-[rgba(245,158,11,0.18)] text-[#fcd34d]", DELETE: "bg-[rgba(239,68,68,0.18)] text-[#fca5a5]",
 };
 const permLabel = (code: string) => MERCHANT_PERMISSIONS.find((p) => p.code === code)?.label ?? code;
-const GROUPS = [{ id: "auth", title: "การยืนยันตัวตน (Authentication)", sub: `ทุก request ใต้ <code>/api/v1/</code> ต้องส่ง header <code>X-API-Key</code> ยกเว้น login, <code>/collect</code> (ส่ง key ใน body) และหน้า checkout/QR ของลูกค้า`, eps: [LOGIN] }, ...SECTIONS];
+const GROUPS = [{ id: "auth", title: "การยืนยันตัวตน (Authentication)", sub: `ทุก request ใต้ <code>/api/v1/</code> ต้องส่ง <code>X-API-Key</code> + <code>X-Timestamp</code> + <code>X-Signature</code> (ดูหัวข้อ “การเซ็นคำขอ”) ยกเว้นหน้า checkout / QR / แนบสลิปของลูกค้า · <code>/auth/login</code> ใช้ได้เฉพาะภายใน Merchant Portal`, eps: [LOGIN] }, ...SECTIONS];
 const slug = (e: Ep) => `${e.m}-${e.p}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+
+function Steps3() {
+  return (
+    <ol className="mt-2 list-decimal space-y-1 pl-5">
+      <li><code>X-Timestamp</code> = เวลาปัจจุบันแบบ unix วินาที (คลาดได้ไม่เกิน 5 นาที)</li>
+      <li><code>X-Signature</code> = <strong>HMAC-SHA256</strong>(secret, <code>{"<timestamp>.<METHOD>.<path>.<body>"}</code>) แบบ hex ตัวเล็ก — secret = secret key ของผู้ใช้ (<code>sk_live_</code>) หรือ signing secret ของ key ระดับร้าน (<code>ss_live_</code>)</li>
+      <li>ส่ง <code>X-API-Key</code> + <code>X-Timestamp</code> + <code>X-Signature</code> และ body เดียวกับที่เซ็น — <strong>ห้ามส่ง secret</strong></li>
+    </ol>
+  );
+}
+
+const H = "mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase";
 
 function Endpoint({ e }: { e: Ep }) {
   const c = CURL_EXAMPLES[`${e.m} ${e.p}`];
@@ -33,10 +45,16 @@ function Endpoint({ e }: { e: Ep }) {
         {c?.perm ? <span className="rounded-md bg-primary-50 px-2 py-0.5 text-primary">สิทธิ์: <b>{c.perm}</b> · {permLabel(c.perm)}</span> : <span className="rounded-md bg-surface-alt px-2 py-0.5 text-muted">ไม่ต้องใช้สิทธิ์</span>}
         {e.auth && <span className="text-muted">AUTH: <span dangerouslySetInnerHTML={{ __html: e.auth }} /></span>}
       </div>
-      {c && <><div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตัวอย่างคำสั่ง</div><CodeBlock code={c.cmd} /></>}
-      {c?.also && <><div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">{c.also.label}</div><CodeBlock code={c.also.cmd} /></>}
-      {e.body && <><div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">คำอธิบายฟิลด์</div><CodeBlock code={fill(e.body)} light /></>}
-      {e.res && <><div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตัวอย่าง Response</div><CodeBlock code={fill(e.res)} light /></>}
+      {e.body && <><div className={H}>คำอธิบายฟิลด์</div><CodeBlock code={fill(e.body)} light /></>}
+      {c && <>
+        <div className={H}>ตัวอย่างจริง — curl {c.live.signature ? "(เซ็นด้วย openssl)" : ""}</div><CodeBlock code={c.cmd} />
+        <div className={H}>ตัวอย่างจริง — Next.js (route handler · สร้างลายเซ็น)</div><CodeBlock code={c.next} />
+        {c.live.signature && <>
+          <div className={H}>ค่าจริงตอนรัน</div>
+          <CodeBlock light code={`X-Timestamp : ${c.live.timestamp}\nสตริงที่เซ็น : ${c.live.toSign}\nX-Signature : ${c.live.signature}`} />
+        </>}
+        <div className={H}>ผลลัพธ์จริง — HTTP {c.live.status}</div><CodeBlock light code={c.live.response} />
+      </>}
       {e.note && <div className="mt-3 rounded-lg border-l-[3px] border-primary bg-primary-50 px-3.5 py-2.5 text-[13px] leading-relaxed" dangerouslySetInnerHTML={{ __html: fill(e.note) }} />}
     </div>
   );
@@ -44,41 +62,68 @@ function Endpoint({ e }: { e: Ep }) {
 
 export default async function ApiGuidePage() {
   const user = await requirePortal("/merchant/docs/api");
-  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
+  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
   return (
     <PortalShell user={user} path="/merchant/docs">
-      <DocLayout title="คู่มือ API v1" subtitle={`ตัวอย่างคำสั่ง curl แบบเต็มสำหรับทุก endpoint พร้อมสิทธิ์ที่ต้องใช้ · Base URL: ${API_BASE}`} pdf="api-v1.pdf" toc={toc}>
-        <Note>ตัวอย่างใช้ค่าสมมติ (เช่น <code>sk_live_YOUR_API_KEY</code>, <code>ORD-001</code>) — แทนด้วยค่าจริงของร้านก่อนรัน · กด <strong>คัดลอก</strong> ที่มุมขวาของแต่ละคำสั่ง · เก็บ API key เป็นความลับ</Note>
+      <DocLayout title="คู่มือ API v1" subtitle={`ตัวอย่างจริงทุก endpoint: curl + Next.js พร้อมการสร้างลายเซ็น และผลลัพธ์จริง · Base URL: ${API_BASE}`} pdf="api-v1.pdf" toc={toc}>
+        <Note>ตัวอย่างทุก endpoint เป็น<strong>ค่าจริงจากการรันกับระบบจริง</strong> เมื่อ {new Date(LIVE_RUN.capturedAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "long", timeStyle: "short" })} (ร้านทดสอบ my-shop) — key ที่ใช้ในตัวอย่าง (<code>{LIVE_RUN.apiKey.slice(0, 14)}…</code>, <code>{LIVE_RUN.secretKey.slice(0, 14)}…</code>) <strong>ถูกยกเลิกแล้ว</strong> ใช้ key ของร้านคุณแทน · ลายเซ็นในตัวอย่างคำนวณซ้ำได้จากค่าที่แสดง · กด <strong>คัดลอก</strong> ที่มุมขวาของแต่ละคำสั่ง</Note>
         <Section id="start" title="เริ่มต้นใช้งาน">
           <ol className="list-decimal space-y-1 pl-5">
-            <li><strong>ขอ API key</strong> — สร้าง secret key ที่หน้า <Link href="/merchant/settings" className="text-primary hover:underline">ตั้งค่า</Link> แล้ว login ผ่าน <code>POST /auth/login</code> (API ไม่รับรหัสผ่าน) หรือออก key ในหน้า <Link href="/merchant/settings" className="text-primary hover:underline">ตั้งค่า</Link></li>
-            <li><strong>สร้างออเดอร์</strong> — <code>POST /payment/create</code></li>
-            <li><strong>ให้ลูกค้าจ่าย</strong> — พาไปที่ <code>checkoutUrl</code> หรือแสดงรูป <code>qrCode</code></li>
+            <li><strong>รับ key</strong> — หน้า <Link href="/merchant/settings" className="text-primary hover:underline">ตั้งค่า</Link> → กด <strong>สร้าง secret key</strong> ได้ <strong>API key</strong> (<code>ak_live_…</code>) และ <strong>secret key</strong> (<code>sk_live_…</code>) ทันที</li>
+            <li><strong>เซ็นทุกคำขอ</strong> — ส่ง <code>X-API-Key</code>, <code>X-Timestamp</code>, <code>X-Signature</code> (ดูหัวข้อ “การเซ็นคำขอ”)</li>
+            <li><strong>สร้างออเดอร์</strong> — <code>POST /payment/create</code> แล้วพาลูกค้าไปที่ <code>checkoutUrl</code></li>
             <li><strong>รับผล</strong> — ตั้ง webhook หรือเช็ค <code>GET /payment/order/:orderId</code></li>
           </ol>
-          <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตัวอย่างเต็ม: login → สร้างออเดอร์ → เช็คสถานะ</div>
-          <CodeBlock code={`# 1) login ด้วย secret key เพื่อรับ API key (เก็บไว้ในตัวแปร KEY)
-KEY=$(curl -s -X POST "${API_BASE}/auth/login" \\
-  -H "Content-Type: application/json" \\
-  -d '{"secretKey":"ms_live_YOUR_SECRET_KEY"}' | sed -E 's/.*"apiKey":"([^"]+)".*/\\1/')
-
-# 2) สร้างออเดอร์ 100 บาท
-curl -X POST "${API_BASE}/payment/create" \\
-  -H "X-API-Key: $KEY" -H "Content-Type: application/json" \\
-  -d '{"amount":100,"orderId":"ORD-001"}'
-
-# 3) เช็คสถานะออเดอร์
-curl "${API_BASE}/payment/order/ORD-001" -H "X-API-Key: $KEY"`} />
-          <Note>ทุก login ออก key ใหม่และเพิกถอน key ที่ได้จาก login ครั้งก่อน — ใช้ key จากการ login ล่าสุดเสมอ · เก็บ secret key ไว้ในเซิร์ฟเวอร์ของร้านเท่านั้น ถ้าหลุดให้กด <strong>สร้างใหม่</strong> ในหน้าตั้งค่าทันที</Note>
+          <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตัวอย่างจริง: สร้างออเดอร์ (curl)</div>
+          <CodeBlock code={CURL_EXAMPLES["POST /payment/create"].cmd} />
+          <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ผลลัพธ์จริง — HTTP {CURL_EXAMPLES["POST /payment/create"].live.status}</div>
+          <CodeBlock light code={CURL_EXAMPLES["POST /payment/create"].live.response} />
         </Section>
-        <Section id="secret" title="Secret key (ใช้ login แทนรหัสผ่าน)">
-          <p><code>POST /auth/login</code> ไม่รับอีเมล/รหัสผ่าน — ส่ง <code>secretKey</code> ของผู้ใช้ร้านค้าแทน ได้ API key ตามสิทธิ์ระดับของผู้ใช้นั้น (owner / staff / viewer)</p>
+        <Section id="secret" title="Secret key และ API key">
+          <Table head={["", "รูปแบบ", "ส่งไปกับคำขอ?", "ใช้ทำอะไร"]} rows={[
+            ["API key", <code key="a">ak_live_…</code>, "ส่ง — header X-API-Key", "บอกว่าใครเรียก (ร้าน + ผู้ใช้)"],
+            ["Secret key", <code key="s">sk_live_…</code>, <strong key="n">ห้ามส่ง</strong>, "เซ็นทุกคำขอ (X-Signature) ของ API key ผู้ใช้"],
+            ["Signing secret", <code key="ss">ss_live_…</code>, <strong key="n2">ห้ามส่ง</strong>, "เซ็นคำขอของ API key ระดับร้าน (ที่ออกในการ์ด API Keys หรือโดยผู้ดูแล)"],
+          ]} />
           <ol className="mt-2 list-decimal space-y-1 pl-5">
-            <li>เข้า Merchant Portal ด้วยอีเมล/username + รหัสผ่าน แล้วไปที่ <Link href="/merchant/settings" className="text-primary hover:underline">ตั้งค่า</Link> → <strong>Secret key (สำหรับ login ผ่าน API)</strong></li>
-            <li>กด <strong>สร้าง secret key</strong> แล้วคัดลอก <code>ms_live_...</code> เก็บไว้ทันที — แสดงครั้งเดียว ระบบเก็บเฉพาะ hash</li>
-            <li>ระบบของร้านเรียก <code>POST /auth/login</code> ด้วย <code>{"{\"secretKey\": \"ms_live_...\"}"}</code> แล้วใช้ <code>apiKey</code> ที่ได้ใน header <code>X-API-Key</code></li>
+            <li>Merchant Portal → <Link href="/merchant/settings" className="text-primary hover:underline">ตั้งค่า</Link> → <strong>Secret key และ API key</strong> → กด <strong>สร้าง secret key</strong> — ได้ทั้งคู่ทันที แสดงแบบเต็มครั้งแรก</li>
+            <li>ภายหลังแสดงแบบปิดบางส่วน — กด <strong>ดู</strong> + ยืนยันชื่อผู้ใช้/รหัสผ่าน เพื่อแสดงแบบเต็ม 1 นาที</li>
+            <li>กด <strong>สร้างใหม่</strong> เพื่อเปลี่ยนทั้งคู่ (อันเดิมใช้ไม่ได้ทันที) · API key มีสิทธิ์ตามระดับผู้ใช้</li>
+            <li>API key ระดับร้าน (การ์ด <strong>API Keys</strong>) ออกพร้อม <strong>signing secret</strong> แสดงครั้งเดียว — ใช้ทั้งคู่แทน API key + secret key ของผู้ใช้</li>
           </ol>
-          <Note tone="warn">ทุกผู้ใช้ทุกระดับสร้าง secret key ของตัวเองได้ · secret key ใช้แทน <code>X-API-Key</code> ไม่ได้ (ใช้ได้กับ login เท่านั้น) · ถ้าหลุดให้กด <strong>สร้างใหม่</strong> หรือ <strong>ยกเลิก</strong> — อันเดิมและ API key ที่ login ด้วยอันเดิมใช้ไม่ได้ทันที · เก็บไว้ในเซิร์ฟเวอร์ของร้านเท่านั้น</Note>
+          <Note tone="warn">ขอ key ได้ใน Merchant Portal เท่านั้น (<code>/auth/login</code> เรียกจากภายนอกได้ <code>403 LOGIN_PORTAL_ONLY</code>) · key รูปแบบเดิม (<code>sk_live_</code> เป็น API key, <code>ms_live_</code>) ถูกยกเลิกทั้งหมดแล้ว · เก็บ secret ไว้ในเซิร์ฟเวอร์ของร้านเท่านั้น</Note>
+        </Section>
+        <Section id="sign" title="การเซ็นคำขอ (X-Timestamp + X-Signature)">
+          <p><strong>บังคับทุก endpoint</strong> ที่ใช้ <code>X-API-Key</code> — ไม่มีเปิด/ปิด</p>
+          <Steps3 />
+          <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">สตริงที่เซ็น</div>
+          <CodeBlock light code={`<timestamp>.<METHOD>.<path รวม query>.<body>
+
+ตัวอย่างจริง:
+${CURL_EXAMPLES["POST /payment/create"].live.toSign}
+${CURL_EXAMPLES["GET /transactions"].live.toSign}        ← GET ไม่มี body ลงท้ายด้วย "."`} />
+          <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">Next.js — helper ใช้ซ้ำได้ทุก endpoint</div>
+          <CodeBlock code={NEXT_HELPER} />
+          <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ผลลัพธ์จริงเมื่อเซ็นไม่ถูกต้อง</div>
+          <Table head={["กรณี", "HTTP", "ผลลัพธ์จริง"]} rows={SIGNATURE_ERRORS.map((x) => [x.label, String(x.status), <code key="r" className="whitespace-pre-wrap">{JSON.parse(x.response).error.code}: {JSON.parse(x.response).error.message}</code>])} />
+          <Note tone="warn">ส่ง body ให้ตรงกับสตริงที่เซ็นทุกตัวอักษร (อย่าจัดรูปแบบ JSON ใหม่หลังเซ็น) · timestamp คลาดได้ไม่เกิน 5 นาที · ลายเซ็นใช้ได้ครั้งเดียว · ห้ามเซ็นในหน้าเว็บหรือแอปที่ลูกค้าเห็น</Note>
+        </Section>
+        <Section id="slip" title="การตรวจสลิป">
+          <p>ใช้กับ <code>POST /payment/slip/verify</code>, <code>POST /payment/:ref/slip</code>, <code>POST /payment/slip/create</code> (เมื่อส่ง image) และการแนบสลิปจากหน้าชำระเงินของลูกค้า</p>
+          <Table head={["ข้อมูลบนสลิป", "ต้องตรงกับ", "ถ้าไม่ตรง"]} rows={[
+            ["ยอดเงิน", "ยอดของรายการ ทุกสตางค์", "INVALID_SLIP"],
+            ["บัญชีผู้รับ + ธนาคาร", "บัญชีรับเงินของรายการ", "INVALID_SLIP"],
+            ["วันเวลาที่โอน", "หลังสร้างรายการ และไม่เก่าเกินกำหนด", "INVALID_SLIP"],
+            ["ชื่อผู้โอน", <><code key="c">metadata.memberName</code> ตอนสร้างรายการ (ถ้าส่ง)</>, "INVALID_SLIP (ผู้ให้บริการตรวจ) / แจ้งผู้ดูแล (อ่านจากภาพ)"],
+            ["สลิปเดียวกัน", "ใช้ได้กับรายการเดียว (ตรวจจากไฟล์ และ QR ธนาคาร)", "INVALID_SLIP"],
+            ["สลิปตัวอย่างจาก Option Pay", "ใช้แนบไม่ได้", <code key="c">400 SAMPLE_SLIP</code>],
+          ]} />
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li><strong>มีผู้ให้บริการตรวจสลิป</strong> (EasySlip / SlipOK): ตรวจกับธนาคารจริง — ผ่านครบได้ <code>PAID</code> อัตโนมัติ</li>
+            <li><strong>ไม่มีผู้ให้บริการ</strong>: ระบบอ่านข้อมูลจากภาพสลิป — ไม่ตรงได้ <code>INVALID_SLIP</code> · ตรงครบได้ <code>PENDING_REVIEW</code> รอผู้ดูแลยืนยัน (ไม่อนุมัติอัตโนมัติ)</li>
+            <li>ทุกข้อที่ไม่ตรงอยู่ใน <code>mismatches</code> (array) พร้อมข้อความบอกสิ่งที่ต้องแก้ · หน้าชำระเงินแนบได้ครั้งเดียว (<code>409 SLIP_ALREADY_UPLOADED</code>) เว้นแต่สลิปก่อนหน้าไม่ผ่าน</li>
+          </ul>
+          <Note tone="warn">ส่ง <code>metadata.memberName</code> ให้ตรงกับชื่อบัญชีธนาคารที่ลูกค้าจะใช้โอน (ไม่ต้องมีคำนำหน้า) หรือไม่ต้องส่งถ้าไม่ทราบ</Note>
         </Section>
         <Section id="perms" title="สิทธิ์และข้อผิดพลาด">
           <p>key ของผู้ใช้ร้านค้าใช้ได้เฉพาะสิทธิ์ของระดับผู้ใช้ (รายการสิทธิ์ส่งกลับใน <code>permissions</code> ตอน login) · key ที่ผู้ดูแลออกให้ร้านใช้ได้ทุกเส้น · ค่าเริ่มต้น (ผู้ดูแลระบบปรับได้):</p>
@@ -86,11 +131,13 @@ curl "${API_BASE}/payment/order/ORD-001" -H "X-API-Key: $KEY"`} />
           <Table head={["HTTP", "code", "เมื่อไร"]} rows={[
             ["400", <code key="c">validation_error</code>, "ขาด field / รูปแบบผิด (ดู details)"],
             ["400", <code key="c">INSUFFICIENT_BALANCE · below_min_balance · below_min_amount</code>, "ยอดไม่พอ / ต่ำกว่าขั้นต่ำ"],
-            ["400", <code key="c">SECRET_KEY_REQUIRED</code>, "login ด้วยอีเมล/รหัสผ่าน — API รับเฉพาะ secretKey"],
-            ["401", <code key="c">INVALID_API_KEY · INVALID_SECRET_KEY</code>, "API key ผิดหรือถูกเพิกถอน · secret key ผิดหรือถูกยกเลิก"],
+            ["400", <code key="c">INVALID_SLIP · SAMPLE_SLIP</code>, "ไฟล์สลิปไม่ใช่รูป/ใหญ่เกิน 8 MB · แนบสลิปตัวอย่าง"],
+            ["401", <code key="c">INVALID_API_KEY</code>, "API key ผิด ถูกเพิกถอน หรือเป็นรูปแบบเดิม (ต้องเป็น ak_live_)"],
+            ["401", <code key="c">SIGNATURE_REQUIRED · INVALID_SIGNATURE · TIMESTAMP_EXPIRED · SIGNATURE_REUSED</code>, "ไม่ได้เซ็น · ลายเซ็นไม่ตรง · เวลาคลาดเกิน 5 นาที · ส่งลายเซ็นเดิมซ้ำ"],
+            ["403", <code key="c">LOGIN_PORTAL_ONLY</code>, "เรียก /auth/login จากภายนอก — ขอ API key ใน Merchant Portal → ตั้งค่า"],
             ["403", <code key="c">PERMISSION_DENIED</code>, "ระดับผู้ใช้ไม่มีสิทธิ์ทำสิ่งนี้"],
             ["404", <code key="c">ORDER_NOT_FOUND · TRANSACTION_NOT_FOUND</code>, "ไม่พบรายการของร้านนี้"],
-            ["409", <code key="c">DUPLICATE_ORDER_ID · ORDER_NOT_PENDING</code>, "ซ้ำ / สถานะไม่อนุญาต"],
+            ["409", <code key="c">DUPLICATE_ORDER_ID · ORDER_NOT_PENDING · SLIP_ALREADY_UPLOADED</code>, "ซ้ำ / สถานะไม่อนุญาต / หน้าชำระเงินแนบสลิปไปแล้ว"],
             ["429", <code key="c">RATE_LIMITED</code>, "login ถี่เกิน 10 ครั้งต่อนาที"],
           ]} />
           <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตรวจลายเซ็น Webhook (Node.js)</div>

@@ -24,7 +24,7 @@ export function MerchantPermsCard({ matrix }: { matrix: MerchantPermMatrix }) {
   return (
     <SCard title="สิทธิ์ผู้ใช้ร้านค้า (Merchant API & Portal)" note="กำหนดว่าผู้ใช้ร้านค้าแต่ละระดับทำอะไรได้ — มีผลทันที">
       <div className={`${hint} mt-0 mb-3`}>
-        ใช้กับ API key ที่ผู้ใช้ร้านค้าได้จาก <code>POST /api/v1/auth/login</code> (ด้วย secret key ของผู้ใช้) และการใช้งานใน Merchant Portal · เรียกสิ่งที่ไม่มีสิทธิ์จะได้ <code>403 PERMISSION_DENIED</code> ·
+        ใช้กับ API key ของผู้ใช้ร้านค้า (ออกใน Merchant Portal → ตั้งค่า → Secret key และ API key) และการใช้งานใน Merchant Portal · เรียกสิ่งที่ไม่มีสิทธิ์จะได้ <code>403 PERMISSION_DENIED</code> ·
         API key ที่ผู้ดูแลออกให้ร้านในหน้า <strong className="text-ink">ร้านค้า</strong> หรือที่ออกใน Portal เป็น key ระดับร้าน <strong className="text-ink">ใช้ได้ทุกอย่าง</strong> · การเปลี่ยนรหัสผ่านของตัวเองใน Portal ทำได้เสมอ
       </div>
       <Msg r={r} />

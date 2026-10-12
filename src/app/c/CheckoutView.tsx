@@ -72,7 +72,7 @@ export function CheckoutLive({ token, status, amount, expiresAt, hasSlip, slipLo
           </div>
         ) : (<>
         <div className="mb-1 text-[13px] font-semibold">โอนแล้ว? แนบสลิปเพื่อยืนยัน</div>
-        <div className="mb-2.5 text-[12px] text-muted">ระบบอ่านข้อมูลในสลิปเพื่อตรวจกับรายการนี้ แล้วเจ้าหน้าที่ยืนยัน · ยอดในสลิปต้องเป็น ฿{money(amount)} · แนบได้ครั้งเดียว</div>
+        <div className="mb-2.5 text-[12px] text-muted">ระบบตรวจสลิปกับธนาคารทันที — ข้อมูลตรงครบ ยืนยันการชำระอัตโนมัติ · ยอดในสลิปต้องเป็น ฿{money(amount)} · แนบได้ครั้งเดียว</div>
         <div className="flex flex-wrap items-center gap-2">
           <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="เลือกรูปสลิป" className="min-w-0 flex-1 text-[12.5px]" onChange={(e) => { setSlip(e.target.files?.[0] ?? null); setMsg(null); }} />
           <button type="button" disabled={!slip || pending} onClick={send} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-[13px] font-medium text-primary-fg disabled:opacity-50"><Upload size={14} /> {pending ? "กำลังส่ง..." : "ส่งสลิป"}</button>
@@ -111,12 +111,12 @@ function SlipGuideline({ order }: { order: SampleSlip }) {
   return (
     <div className="mt-4 border-t border-line pt-3.5 text-[12px] leading-relaxed text-muted">
       <div className="mb-2 text-[13px] font-semibold text-ink">แนวทางการแนบสลิป</div>
-      <div className={h}>ต้องตรงกับรายการนี้ (ระบบอ่านจากสลิป — ยอด บัญชี หรือเวลาไม่ตรง สลิปไม่ผ่านทันที)</div>
+      <div className={h}>ต้องตรงกับรายการนี้ทุกข้อ (ระบบตรวจกับธนาคาร — ไม่ตรงข้อใด สลิปไม่ผ่าน)</div>
       <ul className="mb-3 list-disc space-y-0.5 pl-5">
         <li>ยอดเงิน <strong className="text-ink">฿{money(amount)}</strong> — ตรงทุกสตางค์ ห้ามปัดเศษ</li>
         <li>บัญชีผู้รับ <strong className="text-ink">{receiver}</strong> — ธนาคารและเลขบัญชีต้องตรง</li>
         {customerName
-          ? <li>ชื่อผู้โอน <strong className="text-ink">{customerName}</strong> — ต้องโอนจากบัญชีชื่อนี้ (ถ้าไม่ตรง เจ้าหน้าที่จะตรวจก่อน)</li>
+          ? <li>ชื่อผู้โอน <strong className="text-ink">{customerName}</strong> — ต้องโอนจากบัญชีชื่อนี้</li>
           : <li>ชื่อผู้โอน — รายการนี้ไม่ได้ระบุ จึงไม่ตรวจ</li>}
         <li>วันเวลาที่โอน — <strong className="text-ink">หลังสร้างรายการนี้</strong> และไม่ใช่สลิปเก่า</li>
       </ul>

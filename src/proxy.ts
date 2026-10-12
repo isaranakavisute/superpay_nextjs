@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
 
   // Public: customer checkout, brand images (login page / favicon), merchant API.
   // The Merchant Portal (/merchant/*) has its own login and session (sp_portal), checked by its pages.
-  if (pathname === "/c" || pathname === "/c/status" || pathname === "/branding/logo" || pathname === "/branding/favicon" || pathname.startsWith("/api/v1/") || pathname === "/api/auth/login" || pathname.startsWith("/merchant/")) {
+  if (pathname === "/c" || pathname === "/c/status" || pathname === "/branding/logo" || pathname === "/branding/favicon" || pathname.startsWith("/api/v1/") || pathname === "/api/telegram/slip-bot" || pathname === "/api/auth/login" || pathname.startsWith("/merchant/")) {
     return NextResponse.next();
   }
   if (pathname === "/login") {
