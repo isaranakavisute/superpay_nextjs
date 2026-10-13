@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
-/** Centered dialog with a dimmed backdrop; Esc and the backdrop close it. */
+/**
+ * Centered dialog with a dimmed backdrop; Esc and the backdrop close it.
+ * Rendered into <body> (portal): inside a card that moves on hover (transform), a fixed overlay would be
+ * positioned against the card instead of the screen — the dialog jumped and flickered.
+ */
 export function Modal({
   title,
   onClose,
@@ -23,7 +28,7 @@ export function Modal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  const dialog = (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-4 backdrop-blur-[2px]" onMouseDown={onClose}>
       <div
         role="dialog"
@@ -44,6 +49,7 @@ export function Modal({
       </div>
     </div>
   );
+  return typeof document === "undefined" ? dialog : createPortal(dialog, document.body);
 }
 
 /** Button styles matching the console (.btn variants). */

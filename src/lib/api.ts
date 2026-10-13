@@ -66,6 +66,8 @@ export type DashboardSummary = {
     slug: string;
     feePercent: Money;
     feeFlat: Money;
+    outFeePercent?: Money;
+    outFeeFlat?: Money;
     status: "active" | "suspended";
     depositTotal: Money;
     depositCount: number;

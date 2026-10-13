@@ -179,7 +179,7 @@ export function WebhookCard({ url, secretPrefix, owner }: { url: string | null; 
   );
 }
 
-type Acct = { id: string; type: string; accountNumber: string | null; accountName: string | null; bankCode: string | null; bankName: string | null; status: string };
+type Acct = { id: string; type: string; accountNumber: string | null; accountName: string | null; bankCode: string | null; bankName: string | null; status: string; shared?: boolean };
 export function AccountsCard({ accounts, note, owner }: { accounts: Acct[]; note: string | null; owner: boolean }) {
   const [f, setF] = useState({ type: "BANK" as "BANK" | "PROMPTPAY", bankCode: "KBANK", accountNumber: "", accountName: "", promptPayId: "" });
   const { r, pending, run } = useRun();
@@ -193,8 +193,8 @@ export function AccountsCard({ accounts, note, owner }: { accounts: Acct[]; note
           {accounts.length === 0 && <div className="p-4 text-center text-[13px] text-muted">ยังไม่มีบัญชีของร้าน</div>}
           {accounts.map((a) => (
             <div key={a.id} className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] ${a.status !== "ACTIVE" ? "opacity-55" : ""}`}>
-              <div className="min-w-0 flex-1"><div className="font-medium">{a.bankName ?? a.bankCode} · {a.type === "PROMPTPAY" ? "PromptPay" : "บัญชีธนาคาร"}</div><div className="font-mono text-[12px] text-muted">{a.accountNumber}{a.accountName ? ` · ${a.accountName}` : ""}</div></div>
-              {a.status === "ACTIVE" ? (owner && <button type="button" aria-label="ลบบัญชี" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => { if (confirm("ลบบัญชีนี้? ออเดอร์ใหม่จะไม่ใช้บัญชีนี้อีก")) run(() => removeAccount(Number(a.id))); }}><Trash2 size={13} /></button>) : <span className="text-[11.5px] text-muted">ปิดใช้แล้ว</span>}
+              <div className="min-w-0 flex-1"><div className="font-medium">{a.bankName ?? a.bankCode} · {a.type === "PROMPTPAY" ? "PromptPay" : "บัญชีธนาคาร"}{a.shared && <span className="ml-2 rounded-full bg-sky-400/15 px-2 py-0.5 text-[11px] text-sky-300">ใช้ร่วมกับร้านอื่น</span>}</div><div className="font-mono text-[12px] text-muted">{a.accountNumber}{a.accountName ? ` · ${a.accountName}` : ""}</div></div>
+              {a.status === "ACTIVE" ? (owner && <button type="button" aria-label="ลบบัญชี" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => { if (confirm(a.shared ? "เลิกใช้บัญชีนี้? บัญชียังใช้งานกับร้านอื่นที่ใช้ร่วม — เฉพาะร้านคุณที่จะไม่ใช้บัญชีนี้อีก" : "ลบบัญชีนี้? ออเดอร์ใหม่จะไม่ใช้บัญชีนี้อีก")) run(() => removeAccount(Number(a.id))); }}><Trash2 size={13} /></button>) : <span className="text-[11.5px] text-muted">ปิดใช้แล้ว</span>}
             </div>
           ))}
         </div>

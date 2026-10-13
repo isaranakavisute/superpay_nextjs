@@ -2,18 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Bell, Menu, Search } from "lucide-react";
+import { AlertTriangle, Menu, Search } from "lucide-react";
 import type { LogoBrand } from "../Logo";
 import type { SessionUser } from "@/lib/session";
 import { PayoutSound } from "./PayoutSound";
 import { Sidebar } from "./Sidebar";
+import { BellMenu, type BellItem } from "./BellMenu";
 import { ThemeButton, type ThemeOption } from "./ThemeButton";
 
 export type ShellAlerts = {
   /** Menu badge per nav key (payments, outflows, …). */
   badges: Record<string, number>;
-  /** Bell count: everything waiting on an admin. */
+  /** Bell count: everything waiting on an admin (sum of `bell`). */
   pendingTotal: number;
+  /** The bell's list: each waiting queue with its page. */
+  bell: BellItem[];
   lowBalance: { names: string[]; count: number } | null;
 };
 
@@ -91,21 +94,7 @@ export function AppShell({
                 />
               </form>
             )}
-            <Link
-              href="/payments?status=pending&range=all"
-              className={`relative grid size-[38px] place-items-center rounded-full border bg-surface-alt transition hover:bg-surface hover:text-ink ${
-                alerts?.pendingTotal ? "border-warning text-warning" : "border-line text-muted hover:border-primary"
-              }`}
-              aria-label="รายการค้างรออนุมัติ"
-              title="รายการค้างรออนุมัติ"
-            >
-              <Bell size={18} />
-              {!!alerts?.pendingTotal && (
-                <span className="absolute -top-[5px] -right-[5px] h-[18px] min-w-[18px] rounded-full bg-danger px-[5px] text-center text-[11px] leading-[18px] font-bold text-white shadow-[0_0_0_2px_var(--color-surface)]">
-                  {alerts.pendingTotal}
-                </span>
-              )}
-            </Link>
+            <BellMenu items={alerts?.bell ?? []} total={alerts?.pendingTotal ?? 0} />
             <ThemeButton current={look.theme.current} options={look.theme.options} allowUser={look.theme.allowUser} />
           </div>
         </header>

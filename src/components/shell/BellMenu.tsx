@@ -1,0 +1,67 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { Bell, ChevronRight } from "lucide-react";
+
+export type BellItem = { key: string; label: string; note: string; count: number; href: string };
+
+/** The bell: what is waiting on an admin, per queue, each linking to its page. */
+export function BellMenu({ items, total }: { items: BellItem[]; total: number }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
+  }, [open]);
+  const waiting = items.filter((i) => i.count > 0);
+  return (
+    <div ref={box} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label={total ? `งานรอดำเนินการ ${total} รายการ` : "ไม่มีงานรอดำเนินการ"}
+        title="งานรอดำเนินการ"
+        className={`relative grid size-[38px] place-items-center rounded-full border bg-surface-alt transition hover:bg-surface hover:text-ink ${total ? "border-warning text-warning" : "border-line text-muted hover:border-primary"}`}
+      >
+        <Bell size={18} />
+        {!!total && (
+          <span className="absolute -top-[5px] -right-[5px] h-[18px] min-w-[18px] rounded-full bg-danger px-[5px] text-center text-[11px] leading-[18px] font-bold text-white shadow-[0_0_0_2px_var(--color-surface)]">{total}</span>
+        )}
+      </button>
+      {open && (
+        <div role="dialog" aria-label="งานรอดำเนินการ" className="absolute right-0 z-40 mt-2 w-[340px] overflow-hidden rounded-xl border border-line bg-surface shadow-2xl">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+            <div className="font-semibold">งานรอดำเนินการ</div>
+            <span className="text-[12px] text-muted">{total ? `${total} รายการ` : "ไม่มี"}</span>
+          </div>
+          {waiting.length === 0 ? (
+            <div className="px-4 py-8 text-center text-[13px] text-muted">ไม่มีงานรอดำเนินการ 🎉</div>
+          ) : (
+            <ul className="divide-y divide-line">
+              {waiting.map((i) => (
+                <li key={i.key}>
+                  <Link href={i.href} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-alt">
+                    <span className="grid h-6 min-w-6 place-items-center rounded-full bg-danger px-1.5 text-[11.5px] font-bold text-white">{i.count}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13.5px] font-medium">{i.label}</span>
+                      <span className="block text-[11.5px] text-muted">{i.note}</span>
+                    </span>
+                    <ChevronRight size={16} className="text-soft" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

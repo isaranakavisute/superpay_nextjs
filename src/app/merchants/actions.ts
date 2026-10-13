@@ -29,12 +29,16 @@ export type MerchantInput = {
   slug?: string;
   feePercent: number;
   feeFlat: number;
+  outFeePercent: number;
+  outFeeFlat: number;
   minBalance: number;
   openingBalance?: number;
-  status: "active" | "suspended";
+  status: "active" | "suspended" | "pending";
   kycStatus: "pending" | "verified" | "rejected";
   contactEmail?: string;
   contactPhone?: string;
+  parentId?: number | null;
+  allowSubMerchants?: boolean;
 };
 
 export async function createMerchant(input: MerchantInput) {
@@ -44,8 +48,8 @@ export async function createMerchant(input: MerchantInput) {
 export async function updateMerchant(id: number, input: MerchantInput) {
   if (!okId(id)) return bad("ร้านไม่ถูกต้อง");
   // slug and opening balance are set at creation only.
-  const { name, feePercent, feeFlat, minBalance, status, kycStatus, contactEmail, contactPhone } = input;
-  const body = { name, feePercent, feeFlat, minBalance, status, kycStatus, contactEmail, contactPhone };
+  const { name, feePercent, feeFlat, outFeePercent, outFeeFlat, minBalance, status, kycStatus, contactEmail, contactPhone, parentId, allowSubMerchants } = input;
+  const body = { name, feePercent, feeFlat, outFeePercent, outFeeFlat, minBalance, status, kycStatus, contactEmail, contactPhone, parentId, allowSubMerchants };
   return as((actor) => consoleWrite("POST", `/api/console/merchants/${id}/update`, actor, body));
 }
 export async function deleteMerchant(id: number) {

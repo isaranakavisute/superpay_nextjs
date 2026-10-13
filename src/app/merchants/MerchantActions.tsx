@@ -29,12 +29,18 @@ export type MerchantForActions = {
   slug: string;
   feePercent: string;
   feeFlat: string;
+  outFeePercent: string;
+  outFeeFlat: string;
   minBalance: string;
-  status: "active" | "suspended";
+  status: "active" | "suspended" | "pending";
   kycStatus: "pending" | "verified" | "rejected";
   contactEmail: string | null;
   contactPhone: string | null;
+  parentId: number | null;
+  allowSubMerchants: boolean;
 };
+/** Shops that can be chosen as ร้านแม่ (tree order, depth for indentation). */
+export type ParentOption = { id: number; name: string; depth: number; path: number[] };
 
 type Dialog = null | "keys" | "webhook" | "portal" | "credit" | "edit" | "delete";
 type Row = Record<string, string | number | boolean | null>;
@@ -66,19 +72,25 @@ function OneTimeSecret({ title, value }: { title: string; value: string }) {
 }
 
 /** Create / edit form shared by "+ เพิ่ม Merchant" and the row's แก้ไข. */
-export function MerchantForm({ initial, onDone }: { initial?: MerchantForActions; onDone: () => void }) {
+export function MerchantForm({ initial, onDone, parents = [] }: { initial?: MerchantForActions; onDone: () => void; parents?: ParentOption[] }) {
   const [f, setF] = useState({
     name: initial?.name ?? "",
     slug: initial?.slug ?? "",
     feePercent: initial?.feePercent ? String(Number(initial.feePercent)) : "1.5",
     feeFlat: initial?.feeFlat ? String(Number(initial.feeFlat)) : "0",
+    outFeePercent: initial?.outFeePercent ? String(Number(initial.outFeePercent)) : "0",
+    outFeeFlat: initial?.outFeeFlat ? String(Number(initial.outFeeFlat)) : "0",
     minBalance: initial?.minBalance ? String(Number(initial.minBalance)) : "0",
     openingBalance: "0",
     status: initial?.status ?? "active",
     kycStatus: initial?.kycStatus ?? "pending",
     contactEmail: initial?.contactEmail ?? "",
     contactPhone: initial?.contactPhone ?? "",
+    parentId: initial?.parentId != null ? String(initial.parentId) : "",
+    allowSubMerchants: initial?.allowSubMerchants ?? true,
   });
+  // A shop can't move under itself or under its own sub-merchants.
+  const choosable = parents.filter((p) => !initial || (p.id !== initial.id && !p.path.includes(initial.id)));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
@@ -91,12 +103,16 @@ export function MerchantForm({ initial, onDone }: { initial?: MerchantForActions
         slug: f.slug,
         feePercent: Number(f.feePercent),
         feeFlat: Number(f.feeFlat),
+        outFeePercent: Number(f.outFeePercent),
+        outFeeFlat: Number(f.outFeeFlat),
         minBalance: Number(f.minBalance),
         openingBalance: Number(f.openingBalance),
         status: f.status as MerchantInput["status"],
         kycStatus: f.kycStatus as MerchantInput["kycStatus"],
         contactEmail: f.contactEmail,
         contactPhone: f.contactPhone,
+        parentId: f.parentId ? Number(f.parentId) : null,
+        allowSubMerchants: f.allowSubMerchants,
       };
       const r = initial ? await updateMerchant(initial.id, input) : await createMerchant(input);
       if (r.ok) onDone();
@@ -116,14 +132,28 @@ export function MerchantForm({ initial, onDone }: { initial?: MerchantForActions
           <label className={fieldLabel} htmlFor="mf-slug">Slug {initial ? "" : "*"}</label>
           <input id="mf-slug" className={field} value={f.slug} onChange={set("slug")} disabled={!!initial} placeholder="เช่น my-shop" />
         </div>
-        <div><label className={fieldLabel} htmlFor="mf-fp">ค่าธรรมเนียม (%)</label><input id="mf-fp" className={field} type="number" min="0" step="0.01" value={f.feePercent} onChange={set("feePercent")} /></div>
-        <div><label className={fieldLabel} htmlFor="mf-ff">ค่าธรรมเนียมคงที่ (บาท/รายการ)</label><input id="mf-ff" className={field} type="number" min="0" step="0.01" value={f.feeFlat} onChange={set("feeFlat")} /></div>
+        <div><label className={fieldLabel} htmlFor="mf-fp">ค่าธรรมเนียมเงินเข้า (%)</label><input id="mf-fp" className={field} type="number" min="0" step="0.01" value={f.feePercent} onChange={set("feePercent")} /></div>
+        <div><label className={fieldLabel} htmlFor="mf-ff">ค่าธรรมเนียมเงินเข้าคงที่ (บาท/รายการ)</label><input id="mf-ff" className={field} type="number" min="0" step="0.01" value={f.feeFlat} onChange={set("feeFlat")} /></div>
+        <div><label className={fieldLabel} htmlFor="mf-ofp">ค่าธรรมเนียมเงินออก (%)</label><input id="mf-ofp" className={field} type="number" min="0" step="0.01" value={f.outFeePercent} onChange={set("outFeePercent")} /></div>
+        <div><label className={fieldLabel} htmlFor="mf-off">ค่าธรรมเนียมเงินออกคงที่ (บาท/รายการ)</label><input id="mf-off" className={field} type="number" min="0" step="0.01" value={f.outFeeFlat} onChange={set("outFeeFlat")} /></div>
+        <p className="-mt-2 text-[11.5px] text-muted sm:col-span-2">เงินเข้า: หักจากยอดที่ลูกค้าโอน · เงินออก (ถอน / payout ที่ร้านสั่ง): บวกเพิ่มจากยอดโอน — ผู้รับได้เต็มยอด ร้านถูกหัก ยอด + ค่าธรรมเนียม</p>
         <div><label className={fieldLabel} htmlFor="mf-mb">ยอดคงเหลือขั้นต่ำ (บาท)</label><input id="mf-mb" className={field} type="number" min="0" step="0.01" value={f.minBalance} onChange={set("minBalance")} /></div>
         {!initial && <div><label className={fieldLabel} htmlFor="mf-ob">ยอดเริ่มต้น (บาท)</label><input id="mf-ob" className={field} type="number" min="0" step="0.01" value={f.openingBalance} onChange={set("openingBalance")} /></div>}
         <div>
           <label className={fieldLabel} htmlFor="mf-st">สถานะ</label>
-          <select id="mf-st" className={field} value={f.status} onChange={set("status")}><option value="active">ใช้งาน</option><option value="suspended">ระงับ</option></select>
+          <select id="mf-st" className={field} value={f.status} onChange={set("status")}>
+            <option value="active">{initial?.status === "pending" ? "ใช้งาน (อนุมัติร้านนี้)" : "ใช้งาน"}</option><option value="suspended">ระงับ</option><option value="pending">รออนุมัติ</option>
+          </select>
         </div>
+        <div>
+          <label className={fieldLabel} htmlFor="mf-parent">ร้านแม่</label>
+          <select id="mf-parent" className={field} value={f.parentId} onChange={set("parentId")}>
+            <option value="">— ไม่มี (ร้านระดับบนสุด)</option>
+            {choosable.map((p) => <option key={p.id} value={p.id}>{`${"\u00a0\u00a0".repeat(p.depth)}${p.depth ? "└ " : ""}${p.name}`}</option>)}
+          </select>
+          <div className="mt-1 text-[11px] text-muted">อัตราค่าธรรมเนียมต้องไม่ต่ำกว่าของร้านแม่ · ย้ายร้านพร้อมร้านย่อยทั้งหมดใต้ร้านนี้</div>
+        </div>
+        <label className="flex items-center gap-2 self-end pb-2 text-[13px]"><input type="checkbox" checked={f.allowSubMerchants} onChange={(e) => setF({ ...f, allowSubMerchants: e.target.checked })} /> อนุญาตให้สร้างร้านย่อย</label>
         <div>
           <label className={fieldLabel} htmlFor="mf-kyc">KYC</label>
           <select id="mf-kyc" className={field} value={f.kycStatus} onChange={set("kycStatus")}><option value="pending">รอ</option><option value="verified">ผ่าน</option><option value="rejected">ไม่ผ่าน</option></select>
@@ -136,12 +166,12 @@ export function MerchantForm({ initial, onDone }: { initial?: MerchantForActions
   );
 }
 
-export function NewMerchantButton() {
+export function NewMerchantButton({ parents = [] }: { parents?: ParentOption[] }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button className={`${btn.base} ${btn.md} ${btn.primary}`} onClick={() => setOpen(true)}><Plus size={16} /> เพิ่ม Merchant</button>
-      {open && <MerchantForm onDone={() => setOpen(false)} />}
+      {open && <MerchantForm onDone={() => setOpen(false)} parents={parents} />}
     </>
   );
 }
@@ -385,7 +415,7 @@ function CreditDialog({ m, onClose }: { m: MerchantForActions; onClose: () => vo
 }
 
 /** Row icon actions, in the original's order. */
-export function MerchantActions({ m }: { m: MerchantForActions }) {
+export function MerchantActions({ m, parents = [] }: { m: MerchantForActions; parents?: ParentOption[] }) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -405,7 +435,7 @@ export function MerchantActions({ m }: { m: MerchantForActions }) {
       {dialog === "webhook" && <WebhookDialog m={m} onClose={close} />}
       {dialog === "portal" && <PortalDialog m={m} onClose={close} />}
       {dialog === "credit" && <CreditDialog m={m} onClose={close} />}
-      {dialog === "edit" && <MerchantForm initial={m} onDone={close} />}
+      {dialog === "edit" && <MerchantForm initial={m} onDone={close} parents={parents} />}
       {dialog === "delete" && (
         <Modal
           title={`ลบ ${m.name}`}

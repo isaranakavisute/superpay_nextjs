@@ -1,0 +1,366 @@
+{
+ "shops": [
+  {
+   "id": 28,
+   "name": "Siam Holding",
+   "slug": "demo-siam-holding",
+   "parent_id": null,
+   "depth": 0,
+   "status": "active",
+   "fee_percent": "1.50",
+   "fee_flat": "0.00",
+   "out_fee_percent": "0.50",
+   "out_fee_flat": "5.00",
+   "balance": "10548.49",
+   "commission": "501.49",
+   "paid": "10200.00",
+   "fees": "153.00",
+   "n": 4
+  },
+  {
+   "id": 29,
+   "name": "ตัวแทนภาคเหนือ",
+   "slug": "demo-north",
+   "parent_id": 28,
+   "depth": 1,
+   "status": "active",
+   "fee_percent": "2.00",
+   "fee_flat": "0.00",
+   "out_fee_percent": "0.80",
+   "out_fee_flat": "5.00",
+   "balance": "8654.40",
+   "commission": "324.40",
+   "paid": "8500.00",
+   "fees": "170.00",
+   "n": 4
+  },
+  {
+   "id": 31,
+   "name": "เชียงใหม่ สาขา 1",
+   "slug": "demo-cm1",
+   "parent_id": 29,
+   "depth": 2,
+   "status": "active",
+   "fee_percent": "2.50",
+   "fee_flat": "0.00",
+   "out_fee_percent": "1.00",
+   "out_fee_flat": "10.00",
+   "balance": "14215.80",
+   "commission": "175.80",
+   "paid": "14400.00",
+   "fees": "360.00",
+   "n": 8
+  },
+  {
+   "id": 33,
+   "name": "ร้านนิมมาน",
+   "slug": "demo-nimman",
+   "parent_id": 31,
+   "depth": 3,
+   "status": "active",
+   "fee_percent": "3.00",
+   "fee_flat": "0.00",
+   "out_fee_percent": "1.20",
+   "out_fee_flat": "10.00",
+   "balance": "20227.60",
+   "commission": "0",
+   "paid": "26080.00",
+   "fees": "782.40",
+   "n": 15
+  },
+  {
+   "id": 34,
+   "name": "ร้านสันติธรรม",
+   "slug": "demo-santitham",
+   "parent_id": 31,
+   "depth": 3,
+   "status": "active",
+   "fee_percent": "2.80",
+   "fee_flat": "0.00",
+   "out_fee_percent": "1.00",
+   "out_fee_flat": "10.00",
+   "balance": "11469.60",
+   "commission": "0",
+   "paid": "11800.00",
+   "fees": "330.40",
+   "n": 12
+  },
+  {
+   "id": 32,
+   "name": "เชียงราย สาขา 1",
+   "slug": "demo-cr1",
+   "parent_id": 29,
+   "depth": 2,
+   "status": "active",
+   "fee_percent": "2.40",
+   "fee_flat": "0.00",
+   "out_fee_percent": "1.00",
+   "out_fee_flat": "5.00",
+   "balance": "11712.00",
+   "commission": "0",
+   "paid": "12000.00",
+   "fees": "288.00",
+   "n": 8
+  },
+  {
+   "id": 30,
+   "name": "ตัวแทนภาคใต้",
+   "slug": "demo-south",
+   "parent_id": 28,
+   "depth": 1,
+   "status": "active",
+   "fee_percent": "1.80",
+   "fee_flat": "0.00",
+   "out_fee_percent": "0.60",
+   "out_fee_flat": "5.00",
+   "balance": "7479.04",
+   "commission": "133.68",
+   "paid": "7480.00",
+   "fees": "134.64",
+   "n": 4
+  },
+  {
+   "id": 35,
+   "name": "ภูเก็ต สาขา 1",
+   "slug": "demo-pk1",
+   "parent_id": 30,
+   "depth": 2,
+   "status": "active",
+   "fee_percent": "2.20",
+   "fee_flat": "0.00",
+   "out_fee_percent": "0.80",
+   "out_fee_flat": "5.00",
+   "balance": "15735.17",
+   "commission": "87.17",
+   "paid": "16000.00",
+   "fees": "352.00",
+   "n": 10
+  },
+  {
+   "id": 36,
+   "name": "ร้านป่าตอง",
+   "slug": "demo-patong",
+   "parent_id": 35,
+   "depth": 3,
+   "status": "active",
+   "fee_percent": "2.70",
+   "fee_flat": "0.00",
+   "out_fee_percent": "1.00",
+   "out_fee_flat": "10.00",
+   "balance": "16949.59",
+   "commission": "0",
+   "paid": "17420.00",
+   "fees": "470.41",
+   "n": 14
+  },
+  {
+   "id": 37,
+   "name": "หาดใหญ่ สาขา 1",
+   "slug": "demo-hy1",
+   "parent_id": 30,
+   "depth": 2,
+   "status": "pending",
+   "fee_percent": "2.30",
+   "fee_flat": "0.00",
+   "out_fee_percent": "0.80",
+   "out_fee_flat": "5.00",
+   "balance": "0.00",
+   "commission": "0",
+   "paid": "0",
+   "fees": "0",
+   "n": 0
+  },
+  {
+   "id": 38,
+   "name": "ร้านตัวอย่าง API",
+   "slug": "demo-api-shop",
+   "parent_id": 28,
+   "depth": 1,
+   "status": "suspended",
+   "fee_percent": "2.40",
+   "fee_flat": "0.00",
+   "out_fee_percent": "0.80",
+   "out_fee_flat": "5.00",
+   "balance": "0.00",
+   "commission": "0",
+   "paid": "0",
+   "fees": "0",
+   "n": 0
+  }
+ ],
+ "pay": {
+  "ref": "TXN172891",
+  "amount": "10000.00",
+  "fee": "300.00",
+  "status": "approved"
+ },
+ "paySplits": [
+  {
+   "who": "Option Pay (ระบบ)",
+   "amount": "150.00"
+  },
+  {
+   "who": "Siam Holding",
+   "amount": "50.00"
+  },
+  {
+   "who": "ตัวแทนภาคเหนือ",
+   "amount": "50.00"
+  },
+  {
+   "who": "เชียงใหม่ สาขา 1",
+   "amount": "50.00"
+  }
+ ],
+ "out": {
+  "ref": "OUT40197",
+  "amount": "5000.00",
+  "fee": "70.00",
+  "status": "approved"
+ },
+ "outSplits": [
+  {
+   "who": "Option Pay (ระบบ)",
+   "amount": "30.00"
+  },
+  {
+   "who": "Siam Holding",
+   "amount": "15.00"
+  },
+  {
+   "who": "ตัวแทนภาคเหนือ",
+   "amount": "15.00"
+  },
+  {
+   "who": "เชียงใหม่ สาขา 1",
+   "amount": "10.00"
+  }
+ ],
+ "platform30": "1858.31",
+ "netTotals": {
+  "shops": 11,
+  "active": 8,
+  "pending": 2,
+  "suspended": 1,
+  "paidAmount": 113680,
+  "paidCount": 75,
+  "feesPaid": 2887.85,
+  "outAmount": 5000,
+  "outCount": 1,
+  "outFees": 70,
+  "commissionToMe": 501.49,
+  "balance": 106443.2,
+  "pendingPayments": 1,
+  "pendingWithdrawals": 3000
+ },
+ "example": {
+  "paymentRef": "TXN172891",
+  "withdrawalRef": "WDR90006",
+  "outflowRef": "OUT40197"
+ },
+ "commissionBy": {
+  "holding": [
+   {
+    "from": "ตัวแทนภาคเหนือ",
+    "kind": "payment",
+    "n": 4,
+    "base": "8500.00",
+    "commission": "42.48"
+   },
+   {
+    "from": "เชียงใหม่ สาขา 1",
+    "kind": "payment",
+    "n": 8,
+    "base": "14400.00",
+    "commission": "72.00"
+   },
+   {
+    "from": "ร้านนิมมาน",
+    "kind": "payment",
+    "n": 15,
+    "base": "26080.00",
+    "commission": "130.40"
+   },
+   {
+    "from": "ร้านนิมมาน",
+    "kind": "outflow",
+    "n": 1,
+    "base": "5000.00",
+    "commission": "15.00"
+   },
+   {
+    "from": "ร้านสันติธรรม",
+    "kind": "payment",
+    "n": 12,
+    "base": "11800.00",
+    "commission": "59.00"
+   },
+   {
+    "from": "เชียงราย สาขา 1",
+    "kind": "payment",
+    "n": 8,
+    "base": "12000.00",
+    "commission": "59.96"
+   },
+   {
+    "from": "ตัวแทนภาคใต้",
+    "kind": "payment",
+    "n": 4,
+    "base": "7480.00",
+    "commission": "22.44"
+   },
+   {
+    "from": "ภูเก็ต สาขา 1",
+    "kind": "payment",
+    "n": 10,
+    "base": "16000.00",
+    "commission": "48.00"
+   },
+   {
+    "from": "ร้านป่าตอง",
+    "kind": "payment",
+    "n": 14,
+    "base": "17420.00",
+    "commission": "52.21"
+   }
+  ],
+  "north": [
+   {
+    "from": "เชียงใหม่ สาขา 1",
+    "kind": "payment",
+    "n": 8,
+    "base": "14400.00",
+    "commission": "72.00"
+   },
+   {
+    "from": "ร้านนิมมาน",
+    "kind": "payment",
+    "n": 15,
+    "base": "26080.00",
+    "commission": "130.40"
+   },
+   {
+    "from": "ร้านนิมมาน",
+    "kind": "outflow",
+    "n": 1,
+    "base": "5000.00",
+    "commission": "15.00"
+   },
+   {
+    "from": "ร้านสันติธรรม",
+    "kind": "payment",
+    "n": 12,
+    "base": "11800.00",
+    "commission": "59.00"
+   },
+   {
+    "from": "เชียงราย สาขา 1",
+    "kind": "payment",
+    "n": 8,
+    "base": "12000.00",
+    "commission": "48.00"
+   }
+  ]
+ },
+ "platformFromSubtree": "1735.31"
+}

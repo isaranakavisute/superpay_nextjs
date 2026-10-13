@@ -78,7 +78,7 @@ export async function MerchantView({ params, pickerPath, merchantId, portal = fa
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
           <MerchantSelect value={m.id} options={sorted.map((x) => ({ id: x.id, label: x.status === "active" ? x.name : `${x.name} (${x.status})` }))} />
           <span className="text-xs text-muted">
-            <code className="text-[11px]">{m.slug}</code> · fee {n(m.feePercent)}% + {fmtMoney(m.feeFlat)} · {m.apiKeysActive}/{m.apiKeysTotal} API key
+            <code className="text-[11px]">{m.slug}</code> · fee เข้า {n(m.feePercent)}% + {fmtMoney(m.feeFlat)} · ออก {n(m.outFeePercent)}% + {fmtMoney(m.outFeeFlat)} · {m.apiKeysActive}/{m.apiKeysTotal} API key
           </span>
         </div>
       )}

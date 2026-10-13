@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/lib/api";
 import { portalCall, portalLogin } from "@/lib/portal";
-import { createPortalSession, destroyPortalSession, getPortalUser } from "@/lib/session";
+import { cookies } from "next/headers";
+import { viewableShops } from "@/lib/portal";
+import { createPortalSession, destroyPortalSession, getPortalUser, PORTAL_VIEW_COOKIE, SECURE_PORTAL_COOKIE } from "@/lib/session";
 
 export type PortalLoginState = { error?: string };
 
@@ -20,6 +22,8 @@ export async function loginPortal(_prev: PortalLoginState, form: FormData): Prom
   }
   if (!r.ok) return { error: r.error };
   await createPortalSession(r.user);
+  (await cookies()).delete(PORTAL_VIEW_COOKIE);
+  if (r.user.mustChangePassword) redirect("/merchant/settings?pw=1");
   const back = String(form.get("returnTo") ?? "");
   redirect(back.startsWith("/merchant/") && !back.startsWith("//") ? back : "/merchant/dashboard");
 }
@@ -51,8 +55,35 @@ export const removeAccount = async (id: number) => call("POST", `/accounts/${Num
 export async function changePassword(current: string, next: string) {
   const u = await getPortalUser();
   if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" } as ActionResult;
-  return call("POST", `/users/${u.id}/password`, { current, next }, "/merchant/settings");
+  const r = await call("POST", `/users/${u.id}/password`, { current, next }, "/merchant/settings");
+  // A temporary password is now replaced: the portal opens normally again.
+  if (r.ok && u.mustChangePassword) await createPortalSession({ ...u, mustChangePassword: false });
+  return r;
 }
+
+/** Shop switcher: view a sub-merchant (only shops below the user's own; id 0 = back to own shop). */
+export async function viewShop(id: number) {
+  const u = await getPortalUser();
+  if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" } as ActionResult;
+  const jar = await cookies();
+  if (!id || id === u.merchantId) {
+    jar.delete(PORTAL_VIEW_COOKIE);
+  } else {
+    if (!(await viewableShops(u)).some((s) => s.id === id)) return { ok: false, error: "ไม่มีสิทธิ์ดูร้านนี้" } as ActionResult;
+    jar.set(PORTAL_VIEW_COOKIE, String(id), { httpOnly: true, sameSite: "lax", secure: SECURE_PORTAL_COOKIE, path: "/", maxAge: 60 * 60 * 8 });
+  }
+  revalidatePath("/merchant", "layout");
+  return { ok: true } as ActionResult;
+}
+
+// ---- sub-merchants (owner of this shop) ----
+export type SubRates = { feePercent: number; feeFlat: number; outFeePercent: number; outFeeFlat: number };
+export const createSubMerchant = async (b: SubRates & { name: string; slug: string; allowSubMerchants: boolean; contactPhone?: string; owner: { fullName: string; email: string; password: string } }) =>
+  call("POST", "/sub-merchants", b, "/merchant/sub-merchants");
+export const updateSubMerchant = async (id: number, b: SubRates & { name: string; allowSubMerchants: boolean; status: "active" | "suspended" }) =>
+  call("POST", `/sub-merchants/${Number(id) || 0}`, b, "/merchant/sub-merchants");
+export const resetSubOwnerPassword = async (id: number, password: string) =>
+  call("POST", `/sub-merchants/${Number(id) || 0}/owner-password`, { password }, "/merchant/sub-merchants");
 
 /** The signed-in user's own secret key + API key (any level). */
 async function ownSecretKey(suffix: string) {

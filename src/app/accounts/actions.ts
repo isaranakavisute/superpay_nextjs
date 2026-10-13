@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
 
-export type AccountInput = { bankCode: string; accountNo: string; accountName: string; accountType: "receive" | "send" | "both"; promptpayId: string; merchantId: string };
+export type AccountInput = { bankCode: string; accountNo: string; accountName: string; accountType: "receive" | "send" | "both"; promptpayId: string; merchantIds: number[] };
 
 async function as(path: string, body: unknown): Promise<ActionResult> {
   const me = await getSessionUser();

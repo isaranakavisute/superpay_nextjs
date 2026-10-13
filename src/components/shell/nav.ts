@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   ArrowUp,
   Bell,
   Copy,
@@ -74,6 +75,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "roles", label: "สิทธิ์การเข้าถึง", href: "/roles", icon: Shield },
       { key: "users", label: "จัดการผู้ใช้", href: "/users", icon: Users },
       { key: "audit", label: "บันทึกการตรวจสอบ", href: "/audit", icon: FileText },
+      { key: "manual", label: "คู่มือผู้ดูแลระบบ", href: "/manual", icon: BookOpen },
     ],
   },
 ];

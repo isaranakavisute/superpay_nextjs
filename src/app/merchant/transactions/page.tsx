@@ -27,7 +27,7 @@ export default async function PortalTransactions({ searchParams }: PageProps<"/m
 
   return (
     <PortalShell user={user} path={PATH}>
-      <PageHeader title="รายการชำระเงิน" subtitle="ออเดอร์ของร้านทั้งหมด — รวมที่สร้างผ่าน API, ที่สร้างในหน้านี้ และที่แอดมินสร้างให้" actions={can.has("create_payment") ? <CreatePortalPayment /> : undefined} />
+      <PageHeader title="รายการชำระเงิน" subtitle="ออเดอร์ของร้านทั้งหมด — รวมที่สร้างผ่าน API, ที่สร้างในหน้านี้ และที่แอดมินสร้างให้" actions={can.has("create_payment") && !user.viewing ? <CreatePortalPayment /> : undefined} />
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-[22px] py-3.5">
           <div className="flex flex-wrap gap-1.5">

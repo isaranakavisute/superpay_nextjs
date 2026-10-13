@@ -62,7 +62,10 @@ function Row({ o, selectable, accounts }: { o: OutflowRow; selectable?: boolean;
           <CopyButton text={o.receiverAccount} />
         </div>
       </td>
-      <td className={`${td} whitespace-nowrap`}><strong className="text-danger tabular-nums">- {fmtMoney(o.amount)}</strong></td>
+      <td className={`${td} whitespace-nowrap`}>
+        <strong className="text-danger tabular-nums">- {fmtMoney(o.amount)}</strong>
+        {Number(o.fee) > 0 && <div className="mt-0.5 text-[10.5px] text-muted">+ ค่าธรรมเนียม {fmtMoney(o.fee)} (หักร้าน)</div>}
+      </td>
       <td className={td}>
         <StatusBadge status={o.status} kind="outflow" />
         {o.reviewNote && <div className="mt-1 max-w-[200px] text-[11px] text-muted">{o.reviewNote}</div>}

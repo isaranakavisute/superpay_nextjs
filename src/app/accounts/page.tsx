@@ -11,7 +11,7 @@ import { fmtDateTime, fmtMoney } from "@/lib/format";
 import type { AccountRow, MerchantRow } from "@/lib/rows";
 import { AccountActions, AccountSwitch, NewAccountButton, ResetAllButton } from "./AccountControls";
 
-type Account = AccountRow & { promptpayId: string | null; merchantId: number | null };
+type Account = AccountRow & { promptpayId: string | null; merchantIds: number[]; byShop: { merchantId: number | null; n: number; total: string }[] };
 type Shop = { id: number; name: string };
 
 export const metadata: Metadata = { title: "บัญชีธนาคาร — Option Pay Admin" };
@@ -28,7 +28,8 @@ const TYPE_LABEL: Record<AccountRow["accountType"], string> = { receive: "รั
 const formatAccountNo = (n: string | null) => (n && /^\d{10}$/.test(n) ? `${n.slice(0, 3)}-${n[3]}-${n.slice(4, 9)}-${n[9]}` : (n ?? ""));
 
 function AccountCard({ a, shops }: { a: Account; shops: Shop[] }) {
-  const owner = shops.find((s) => s.id === a.merchantId);
+  const owners = shops.filter((s) => (a.merchantIds ?? []).includes(s.id));
+  const shopName = (id: number | null) => (id == null ? "ไม่ระบุร้าน" : shops.find((s) => s.id === id)?.name ?? `#${id}`);
   const bank = findBank(a.bankCode);
   const balance = Number(a.balance);
   return (
@@ -50,7 +51,7 @@ function AccountCard({ a, shops }: { a: Account; shops: Shop[] }) {
       <div className="flex-1 px-5 py-[18px]">
         <div className="text-xs text-muted">ชื่อบัญชี</div>
         <div className="mb-2 font-semibold">{a.accountName ?? a.label}</div>
-        <div className="mb-2 text-[12px] text-muted">{a.promptpayId ? `PromptPay ${a.promptpayId}` : "ไม่มี PromptPay"} · {owner ? `ร้าน ${owner.name}` : "บัญชีกลาง"}</div>
+        <div className="mb-2 text-[12px] text-muted">{a.promptpayId ? `PromptPay ${a.promptpayId}` : "ไม่มี PromptPay"} · {owners.length > 1 ? `ใช้ร่วม ${owners.length} ร้าน: ${owners.map((s) => s.name).join(", ")}` : owners.length ? `ร้าน ${owners[0].name}` : "บัญชีกลาง"}</div>
         <div className="text-xs text-muted">ยอดคงเหลือ</div>
         <div className={`mt-2.5 mb-1 text-[22px] font-bold tabular-nums ${balance < 0 ? "text-danger" : "text-ink"}`}>{fmtMoney(balance)}</div>
         <div className="mt-1 text-[12.5px] text-muted">
@@ -58,6 +59,14 @@ function AccountCard({ a, shops }: { a: Account; shops: Shop[] }) {
           <strong className="text-danger">{a.outCount.toLocaleString("th-TH")}</strong> รายการ
           <div className="text-[11.5px]">{a.countersResetAt ? `นับตั้งแต่ reset ${fmtDateTime(a.countersResetAt)}` : "นับทั้งหมดตั้งแต่เริ่ม"}</div>
         </div>
+        {(owners.length > 1 || (a.byShop ?? []).length > 1) && (a.byShop ?? []).length > 0 && (
+          <div className="mt-2 rounded-lg border border-line px-3 py-2 text-[12px]">
+            <div className="mb-1 text-muted">รับเงินแยกตามร้าน</div>
+            {a.byShop.map((x) => (
+              <div key={String(x.merchantId)} className="flex justify-between gap-3"><span className="truncate">{shopName(x.merchantId)}</span><span className="tabular-nums">{fmtMoney(x.total)} · {x.n} รายการ</span></div>
+            ))}
+          </div>
+        )}
         <div className="flex items-center justify-between py-1 text-[12.5px] text-muted">
           <span>สถานะ</span>
           <span className="inline-flex items-center gap-2">
@@ -68,7 +77,7 @@ function AccountCard({ a, shops }: { a: Account; shops: Shop[] }) {
       </div>
 
       <div className="flex justify-end gap-2 border-t border-line px-5 py-3">
-        <AccountActions shops={shops} account={{ id: a.id, bankCode: a.bankCode, accountNo: a.accountNo, accountName: a.accountName, accountType: a.accountType, promptpayId: a.promptpayId, merchantId: a.merchantId, label: a.label }} />
+        <AccountActions shops={shops} account={{ id: a.id, bankCode: a.bankCode, accountNo: a.accountNo, accountName: a.accountName, accountType: a.accountType, promptpayId: a.promptpayId, merchantIds: a.merchantIds ?? [], label: a.label }} />
       </div>
     </div>
   );

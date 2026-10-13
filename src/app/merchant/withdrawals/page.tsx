@@ -27,10 +27,10 @@ export default async function PortalWithdrawals({ searchParams }: PageProps<"/me
   return (
     <PortalShell user={user} path={PATH}>
       <PageHeader title="ถอนเงิน" subtitle="ขอถอนเงินจากยอดของร้าน — ผู้ดูแลตรวจและโอนให้ แล้วสถานะจะอัปเดตที่นี่" />
-      {(await portalPerms(user)).has("request_withdrawal") ? (
+      {user.viewing ? null : (await portalPerms(user)).has("request_withdrawal") ? (
         <Card className="mb-5">
           <CardHead title="ขอถอนเงิน">{shop && <span className="text-[13px] text-muted">ยอดคงเหลือ {fmtMoney(shop.currentBalance)}</span>}</CardHead>
-          <WithdrawForm available={Number(shop?.currentBalance ?? 0)} minBalance={Number(shop?.minBalance ?? 0)} />
+          <WithdrawForm available={Number(shop?.currentBalance ?? 0)} minBalance={Number(shop?.minBalance ?? 0)} outFeePercent={Number(shop?.outFeePercent ?? 0)} outFeeFlat={Number(shop?.outFeeFlat ?? 0)} />
         </Card>
       ) : (
         <Card className="mb-5 p-5 text-[13px] text-muted">ระดับผู้ใช้ของคุณไม่มีสิทธิ์ขอถอนเงิน — ติดต่อเจ้าของร้านหรือผู้ดูแลระบบ</Card>
@@ -46,7 +46,7 @@ export default async function PortalWithdrawals({ searchParams }: PageProps<"/me
               columns={[
                 { header: "เลขที่", cell: (w) => <><strong>{w.ref}</strong>{w.merchantRef && <div className="text-[11.5px] text-muted">{w.merchantRef}</div>}</> },
                 { header: "เข้าบัญชี", cell: (w) => <BankCell code={w.receiverBankCode} bank={w.receiverBankName} name={w.receiverName} account={w.receiverAccount} /> },
-                { header: "ยอด", align: "right", cell: (w) => <strong className="tabular-nums">{fmtMoney(w.amount)}</strong> },
+                { header: "ยอด", align: "right", cell: (w) => <><strong className="tabular-nums">{fmtMoney(w.amount)}</strong>{Number(w.fee) > 0 && <div className="text-[11px] text-muted">+ ค่าธรรมเนียม {fmtMoney(w.fee)}</div>}</> },
                 { header: "สถานะ", cell: (w) => <><StatusBadge status={w.status} kind="outflow" />{w.rejectReason && <div className="mt-1 text-[11.5px] text-danger">{w.rejectReason}</div>}</> },
                 { header: "ขอเมื่อ", cell: (w) => <span className="whitespace-nowrap text-muted">{fmtDateTime(w.createdAt)}</span> },
               ]}

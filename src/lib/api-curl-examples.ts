@@ -12,6 +12,8 @@ export const API_BASE = "https://optionpay.co/api/v1";
 type LiveEntry = {
   method: string; path: string; body: string; signed: boolean; timestamp: string | null; toSign: string | null;
   signature: string | null; headers: Record<string, string>; file: string | null; status: number; response: string;
+  /** Captured later with its own (revoked) key pair; otherwise the run's keys below. */
+  apiKey?: string; secretKey?: string;
 };
 type Live = { capturedAt: string; site: string; apiKey: string; secretKey: string; entries: Record<string, LiveEntry>; errors: (LiveEntry & { label: string })[] };
 const live = LIVE as Live;
@@ -32,6 +34,9 @@ const PERMS: Record<string, string | null> = {
   "GET /payment/accounts": "manage_accounts", "POST /payment/accounts": "manage_accounts", "DELETE /payment/accounts/:id": "manage_accounts",
   "GET /webhooks": "manage_webhooks", "POST /webhooks": "manage_webhooks", "GET /balance": "view_dashboard",
   "GET /balance/line-summary": "view_dashboard", "GET /profile": "view_dashboard", "GET /dashboard": "view_dashboard",
+  "GET /sub-merchants": "view_dashboard", "GET /sub-merchants/overview": "view_dashboard", "GET /sub-merchants/:id": "view_dashboard",
+  "POST /sub-merchants": "manage_sub_merchants", "POST /sub-merchants/:id": "manage_sub_merchants", "POST /sub-merchants/:id/owner-password": "manage_sub_merchants",
+  "GET /balance (X-Sub-Merchant)": "view_dashboard",
 };
 
 const IMG = /"image":"[^"]*…\(base64 ของรูปสลิป\)"/;
@@ -56,8 +61,8 @@ curl -X POST "${url}" \\
     return `# ไม่ต้องมี key / ลายเซ็น — transaction id เป็นความลับของลูกค้าคนนั้น
 ${bodyLine}curl${e.method === "GET" ? "" : ` -X ${e.method}`} "${url}"${hasBody ? ` \\\n  -H "Content-Type: application/json" \\\n  --data-raw "$BODY"` : ""}${out}`;
   }
-  return `API_KEY="${live.apiKey}"   # ส่งไปกับคำขอ
-SECRET="${live.secretKey}"   # ใช้เซ็นเท่านั้น ห้ามส่ง
+  return `API_KEY="${e.apiKey ?? live.apiKey}"   # ส่งไปกับคำขอ
+SECRET="${e.secretKey ?? live.secretKey}"   # ใช้เซ็นเท่านั้น ห้ามส่ง
 TS="${e.timestamp}"   # ปกติใช้ TS=$(date +%s)
 ${bodyLine}SIG=$(printf '%s' "$TS.${e.method}.${e.path}.${hasBody ? "$BODY" : ""}" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $NF}')
 # SIG = ${e.signature}${IMG.test(e.body) ? " (กับรูปที่ใช้ตอนรันจริง)" : ""}
@@ -104,8 +109,8 @@ ${img ? `import { readFile } from "node:fs/promises";\n\n` : ""}export async fun
   return `// app/api/optionpay/route.ts — Next.js route handler (ทำงานฝั่งเซิร์ฟเวอร์เท่านั้น ห้ามใช้ในหน้าเว็บของลูกค้า)
 ${imports.join("\n")}
 
-const API_KEY = process.env.OPTIONPAY_API_KEY!;    // ค่าจริงตอนรัน: "${live.apiKey}"
-const SECRET = process.env.OPTIONPAY_SECRET_KEY!;  // ค่าจริงตอนรัน: "${live.secretKey}" — ห้ามส่งไปกับคำขอ
+const API_KEY = process.env.OPTIONPAY_API_KEY!;    // ค่าจริงตอนรัน: "${e.apiKey ?? live.apiKey}"
+const SECRET = process.env.OPTIONPAY_SECRET_KEY!;  // ค่าจริงตอนรัน: "${e.secretKey ?? live.secretKey}" — ห้ามส่งไปกับคำขอ
 
 export async function ${handler}() {
   const method = "${e.method}";

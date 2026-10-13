@@ -62,7 +62,15 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
 // ---- Merchant Portal session (separate cookie, same signing key, own purpose prefix) ----
 
-export type PortalUser = { id: number; merchantId: number; username: string; fullName: string; tier: "owner" | "staff" | "viewer"; merchantName: string };
+export type PortalUser = {
+  id: number; merchantId: number; username: string; fullName: string; tier: "owner" | "staff" | "viewer"; merchantName: string;
+  mustChangePassword?: boolean;
+  /** Set by requirePortal when the user views a shop below their own (sub-merchant): their own shop, view only. */
+  homeMerchantId?: number; homeMerchantName?: string; viewing?: boolean;
+};
+/** The sub-merchant a portal user is viewing (id only; checked against the user's subtree on every request). */
+export const PORTAL_VIEW_COOKIE = "sp_portal_view";
+export const SECURE_PORTAL_COOKIE = SECURE_COOKIES;
 export const PORTAL_COOKIE = "sp_portal";
 const PORTAL_AGE = 60 * 60 * 8;
 const signPortal = (payload: string) => createHmac("sha256", secret()).update(`portal.${payload}`).digest("base64url");
@@ -74,6 +82,7 @@ export async function createPortalSession(u: PortalUser) {
 
 export async function destroyPortalSession() {
   (await cookies()).delete(PORTAL_COOKIE);
+  (await cookies()).delete(PORTAL_VIEW_COOKIE);
 }
 
 export async function getPortalUser(): Promise<PortalUser | null> {
@@ -86,7 +95,7 @@ export async function getPortalUser(): Promise<PortalUser | null> {
   try {
     const p = JSON.parse(Buffer.from(payload, "base64url").toString());
     if (typeof p.exp !== "number" || p.exp < Date.now() || !Number.isInteger(p.merchantId)) return null;
-    return { id: p.id, merchantId: p.merchantId, username: p.username, fullName: p.fullName, tier: p.tier, merchantName: p.merchantName };
+    return { id: p.id, merchantId: p.merchantId, username: p.username, fullName: p.fullName, tier: p.tier, merchantName: p.merchantName, mustChangePassword: !!p.mustChangePassword };
   } catch {
     return null;
   }

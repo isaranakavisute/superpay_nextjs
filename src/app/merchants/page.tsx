@@ -12,7 +12,7 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { requestTime } from "@/lib/request-time";
 import type { MerchantRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
-import { MerchantActions, NewMerchantButton } from "./MerchantActions";
+import { MerchantActions, NewMerchantButton, type ParentOption } from "./MerchantActions";
 
 export const metadata: Metadata = { title: "Merchants — Option Pay Admin" };
 
@@ -23,7 +23,22 @@ const num = (s: string | number | null | undefined) => Number(s ?? 0);
 const STATUS: Record<string, [string, string]> = {
   active: ["ใช้งาน", "bg-[#dcfce7] text-[#166534]"],
   suspended: ["ระงับ", "bg-[#fee2e2] text-[#b91c1c]"],
+  pending: ["รออนุมัติ", "bg-[#fef3c7] text-[#92400e]"],
 };
+
+/** Shops in tree order: each top-level shop followed by its sub-merchants (depth-first, by id). */
+function treeOrder(list: MerchantRow[]): MerchantRow[] {
+  const kids = new Map<number | null, MerchantRow[]>();
+  const ids = new Set(list.map((m) => m.id));
+  for (const m of list) {
+    const p = m.parentId != null && ids.has(m.parentId) ? m.parentId : null;
+    kids.set(p, [...(kids.get(p) ?? []), m]);
+  }
+  const out: MerchantRow[] = [];
+  const walk = (p: number | null) => { for (const m of (kids.get(p) ?? []).sort((a, b) => a.id - b.id)) { out.push(m); walk(m.id); } };
+  walk(null);
+  return out;
+}
 const KYC: Record<string, [string, string]> = {
   verified: ["ผ่าน", "bg-[#dcfce7] text-[#166534]"],
   pending: ["รอ", "bg-[#fef3c7] text-[#92400e]"],
@@ -45,6 +60,7 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
     all = err instanceof Error ? err.message : String(err);
   }
 
+  const parents: ParentOption[] = typeof all === "string" ? [] : treeOrder(all).map((m) => ({ id: m.id, name: m.name, depth: m.depth, path: m.path ?? [] }));
   const body =
     typeof all === "string" ? (
       <Card className="flex items-start gap-3 p-5">
@@ -54,7 +70,9 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
     ) : (
       (() => {
         const needle = q?.toLowerCase();
-        const rows = all.filter((m) => !needle || m.name.toLowerCase().includes(needle) || m.slug.includes(needle)).sort((a, b) => a.id - b.id);
+        const rows = treeOrder(all.filter((m) => !needle || m.name.toLowerCase().includes(needle) || m.slug.includes(needle)));
+        const byId = new Map(all.map((m) => [m.id, m]));
+        const waiting = all.filter((m) => m.status === "pending").length;
         const sum = (f: (m: MerchantRow) => number) => rows.reduce((n, m) => n + f(m), 0);
         return (
           <>
@@ -63,7 +81,7 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
               <StatTile tone="emerald" icon={<DollarSign size={24} />} label="ยอดฝาก" value={fmtMoney(sum((m) => num(m.depositTotal)))} note={`${sum((m) => m.depositCount)} รายการสำเร็จ`} />
               <StatTile tone="rose" icon={<ArrowUp size={24} />} label="ยอดถอน" value={fmtMoney(sum((m) => num(m.withdrawTotal)))} note={`${sum((m) => m.withdrawCount)} รายการอนุมัติ`} />
               <StatTile tone="sky" icon={<Landmark size={24} />} label="ยอดคงเหลือรวม (ตอนนี้)" value={fmtMoney(sum((m) => num(m.currentBalance)))} note="คงเหลือในระบบทั้งหมด ไม่ขึ้นกับวันที่เลือก" />
-              <StatTile tone="amber" icon={<DollarSign size={24} />} label="ค่าธรรมเนียม" value={fmtMoney(sum((m) => num(m.feeTotal)))} note="รายได้ gateway" />
+              <StatTile tone="amber" icon={<DollarSign size={24} />} label="ค่าธรรมเนียม" value={fmtMoney(sum((m) => num(m.feeTotal)))} note={waiting ? `รายได้ gateway · ร้านรออนุมัติ ${waiting} ร้าน` : "รายได้ gateway"} />
             </StatGrid>
 
             <Card>
@@ -98,11 +116,11 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
                         const low = bal < 0 || bal < min;
                         return (
                           <tr key={m.id} className="hover:bg-surface-alt">
-                            <td className={`${td} whitespace-nowrap`}>
-                              <Link href={`/merchant-dashboard?merchantId=${m.id}`}><strong className="hover:text-primary">{m.name}</strong></Link>
-                              <div className="text-[11px] text-muted"><code>{m.slug}</code></div>
+                            <td className={`${td} whitespace-nowrap`} style={{ paddingLeft: `${18 + (m.depth ?? 0) * 22}px` }}>
+                              <Link href={`/merchant-dashboard?merchantId=${m.id}`}>{m.depth > 0 && <span className="mr-1 text-soft">└</span>}<strong className="hover:text-primary">{m.name}</strong></Link>
+                              <div className="text-[11px] text-muted"><code>{m.slug}</code>{m.parentId != null && <> · ร้านแม่ {byId.get(m.parentId)?.name ?? `#${m.parentId}`}</>}{!m.allowSubMerchants && " · ห้ามสร้างร้านย่อย"}</div>
                             </td>
-                            <td className={td}><Badge className={STATUS[m.status][1]}>{STATUS[m.status][0]}</Badge></td>
+                            <td className={td}><Badge className={(STATUS[m.status] ?? STATUS.active)[1]}>{(STATUS[m.status] ?? [m.status])[0]}</Badge></td>
                             <td className={td}><Badge className={KYC[m.kycStatus][1]}>{KYC[m.kycStatus][0]}</Badge></td>
                             <td className={`${td} text-right whitespace-nowrap`}>
                               <strong className={`tabular-nums ${low ? "text-danger" : ""}`}>{fmtMoney(bal)}</strong>
@@ -123,19 +141,19 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
                             </td>
                             <td className={`${td} text-right whitespace-nowrap`}>
                               {num(m.feeTotal) ? <strong className="tabular-nums">{fmtMoney(m.feeTotal)}</strong> : <span className="text-soft">—</span>}
+                              {num(m.outFeeTotal) > 0 && <div className="text-[10.5px] text-muted">เงินออก {fmtMoney(m.outFeeTotal)}</div>}
+                              {num(m.commissionEarned) > 0 && <div className="text-[10.5px] text-primary">ค่าคอมจากร้านย่อย {fmtMoney(m.commissionEarned)}</div>}
                             </td>
                             <td className={`${td} whitespace-nowrap`}>
-                              {num(m.feePercent) || num(m.feeFlat) ? (
-                                <><strong>{num(m.feePercent)}%</strong> + {fmtMoney(m.feeFlat)}</>
-                              ) : (
-                                <span className="text-soft">ฟรี</span>
-                              )}
+                              <div>เข้า {num(m.feePercent) || num(m.feeFlat) ? <><strong>{num(m.feePercent)}%</strong> + {fmtMoney(m.feeFlat)}</> : <span className="text-soft">ฟรี</span>}</div>
+                              <div className="text-[11.5px] text-muted">ออก {num(m.outFeePercent) || num(m.outFeeFlat) ? <><strong>{num(m.outFeePercent)}%</strong> + {fmtMoney(m.outFeeFlat)}</> : "ฟรี"}</div>
                             </td>
                             <td className={`${td} whitespace-nowrap`}>{m.apiKeysActive}/{m.apiKeysTotal}</td>
                             <td className={`${td} whitespace-nowrap text-muted`}>{fmtDate(m.createdAt)}</td>
                             <td className={td}>
                               <MerchantActions
-                                m={{ id: m.id, name: m.name, slug: m.slug, feePercent: m.feePercent, feeFlat: m.feeFlat, minBalance: m.minBalance, status: m.status, kycStatus: m.kycStatus, contactEmail: m.contactEmail, contactPhone: m.contactPhone }}
+                                m={{ id: m.id, name: m.name, slug: m.slug, feePercent: m.feePercent, feeFlat: m.feeFlat, outFeePercent: m.outFeePercent, outFeeFlat: m.outFeeFlat, minBalance: m.minBalance, status: m.status, kycStatus: m.kycStatus, contactEmail: m.contactEmail, contactPhone: m.contactPhone, parentId: m.parentId, allowSubMerchants: m.allowSubMerchants }}
+                                parents={parents}
                               />
                             </td>
                           </tr>
@@ -165,7 +183,7 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
 
   return (
     <ConsoleShell title="Merchants" path="/merchants" search={{ placeholder: "ค้นหา merchant...", params }}>
-      <PageHeader title="Merchants" subtitle="ร้านค้าที่ใช้บริการ Public Payment API ของคุณ (invite-only)" actions={<NewMerchantButton />} />
+      <PageHeader title="Merchants" subtitle="ร้านค้าที่ใช้บริการ Public Payment API ของคุณ (invite-only)" actions={<NewMerchantButton parents={parents} />} />
       <DayBar sel={sel} label={range.label} today={toDayKey(today)} />
       {body}
     </ConsoleShell>

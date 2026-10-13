@@ -40,7 +40,8 @@ function Pill({ w, now }: { w: WithdrawalRow; now: number }) {
 
 function Row({ w, now }: { w: WithdrawalRow; now: number }) {
   const before = Number(w.merchantBalance);
-  const after = before - Number(w.amount);
+  const fee = Number(w.fee ?? 0);
+  const after = before - Number(w.amount) - fee;
   return (
     <tr className="hover:bg-surface-alt">
       <td className={`${td} whitespace-nowrap`}>
@@ -54,6 +55,7 @@ function Row({ w, now }: { w: WithdrawalRow; now: number }) {
       </td>
       <td className={`${td} whitespace-nowrap`}>
         <strong className="text-danger tabular-nums">- {fmtMoney(w.amount)}</strong>
+        {fee > 0 && <div className="mt-0.5 text-[10.5px] text-muted">+ ค่าธรรมเนียม {fmtMoney(fee)} (หักร้านรวม {fmtMoney(Number(w.amount) + fee)})</div>}
         {w.status === "pending" && (
           <>
             <div className="mt-0.5 text-[10.5px] text-muted">ก่อนถอน {fmtMoney(before)}</div>

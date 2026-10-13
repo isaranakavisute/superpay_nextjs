@@ -18,14 +18,14 @@ export type OutflowRow = {
   ref: string; merchantId: number | null; merchantName: string | null; category: string;
   bankAccountId: number | null; fromAccount: string | null; fromBankCode: string | null; fromAccountName: string | null;
   receiverName: string; receiverBankCode: string; receiverBankName: string; receiverAccount: string;
-  amount: Money; currency: string; status: OutflowStatus; createdAt: When;
+  amount: Money; fee: Money; currency: string; status: OutflowStatus; createdAt: When;
   source: string; description: string | null; reviewNote: string | null; completedAt: When | null; hasSlipImage: boolean;
 };
 
 export type WithdrawalRow = {
   ref: string; merchantId: number; merchantName: string; merchantRef: string | null;
   receiverName: string; receiverBankCode: string; receiverBankName: string; receiverAccount: string;
-  amount: Money; note: string | null; status: OutflowStatus; approvedBy: string | null; rejectReason: string | null;
+  amount: Money; fee: Money; note: string | null; status: OutflowStatus; approvedBy: string | null; rejectReason: string | null;
   outflowRef: string | null; outflowStatus: OutflowStatus | null; hasSlipImage: boolean;
   p2pStatus: string | null; p2pRef: string | null; merchantBalance: Money; merchantMinBalance: Money;
   createdAt: When; decidedAt: When | null;
@@ -40,7 +40,8 @@ export type AccountRow = {
 };
 
 export type MerchantRow = {
-  id: number; name: string; slug: string; feePercent: Money; feeFlat: Money; status: "active" | "suspended";
+  id: number; name: string; slug: string; feePercent: Money; feeFlat: Money; outFeePercent: Money; outFeeFlat: Money; outFeeTotal: Money; status: "active" | "suspended" | "pending";
+  parentId: number | null; depth: number; path: number[]; allowSubMerchants: boolean; commissionEarned: Money;
   kycStatus: "pending" | "verified" | "rejected"; minBalance: Money; createdAt: When;
   depositTotal: Money; depositCount: number; feeTotal: Money; withdrawTotal: Money; withdrawCount: number;
   currentBalance: Money; pendingCount: number;

@@ -55,7 +55,14 @@ export async function ConsoleShell({
         "double-credits": q.doubleCredits,
         events: q.events,
       },
-      pendingTotal: q.payments + q.outflows + q.withdrawals,
+      pendingTotal: q.payments + q.outflows + q.withdrawals + q.doubleCredits + q.events,
+      bell: [
+        { key: "payments", label: "รายการชำระเงินรอตรวจ", note: "ลูกค้าแนบสลิปแล้ว / รอผู้ดูแลยืนยัน", count: q.payments, href: "/payments?status=pending&range=all" },
+        { key: "outflows", label: "รายการเงินออกรออนุมัติ", note: "โอนเงินออกที่ยังไม่ได้โอน / อนุมัติ", count: q.outflows, href: "/outflows" },
+        { key: "withdrawals", label: "คำขอถอนรออนุมัติ", note: "ร้านค้าขอถอนเงิน", count: q.withdrawals, href: "/withdrawals" },
+        { key: "double-credits", label: "ตรวจเติมเงินซ้ำ — รอตรวจ", note: "สลิปเดียวกันเติมให้หลายออเดอร์", count: q.doubleCredits, href: "/double-credits" },
+        { key: "events", label: "กล่องรับ Event — ใหม่", note: "ข้อความ / สลิปที่ยังจับคู่ไม่ได้", count: q.events, href: "/events" },
+      ],
       lowBalance: a.lowBalanceMerchants.length
         ? { names: a.lowBalanceMerchants.map((m) => m.name), count: a.lowBalanceMerchants.length }
         : null,

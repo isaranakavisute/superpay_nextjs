@@ -319,7 +319,7 @@ export function Dashboard({ sel, rangeLabel, isAll, userName, summary, trend }: 
                             <span className="text-soft">0</span>
                           )}
                         </td>
-                        <td className={`${td} text-muted`}>{num(m.feePercent)}% + {fmtMoney(num(m.feeFlat))}</td>
+                        <td className={`${td} text-muted`}>เข้า {num(m.feePercent)}% + {fmtMoney(num(m.feeFlat))}<div className="text-[11px]">ออก {num(m.outFeePercent ?? 0)}% + {fmtMoney(num(m.outFeeFlat ?? 0))}</div></td>
                         <td className={td}>
                           {m.status === "active" ? (
                             <span className="inline-block rounded-full bg-[#dcfce7] px-2.5 py-[3px] text-[11px] font-semibold text-[#166534]">ใช้งาน</span>
