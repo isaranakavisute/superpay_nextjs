@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Megaphone, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
 import { btn, field, fieldLabel, Modal } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
-import { deleteAnnouncement, saveAnnouncement, sendNow, type AnnouncementInput } from "./actions";
+import { deleteAnnouncement, saveAnnouncement, type AnnouncementInput } from "./actions";
 
 export type Announcement = AnnouncementInput & {
   id: number; updatedAt: string; updatedBy: string | null; nextRuns: string[];
@@ -28,13 +28,18 @@ const bkkParts = (iso: string | null) => {
 const toIso = (date: string, time: string) => `${date}T${time}:00+07:00`;
 const unitOf = (s: number | null) => (!s ? 60 : s % 3600 === 0 ? 3600 : s % 60 === 0 ? 60 : 1);
 const every = (s: number) => { const u = unitOf(s); return `ทุก ${s / u} ${UNITS.find((x) => x.v === u)!.l}`; };
-const schedule = (a: AnnouncementInput) => (a.mode === "times" ? `เวลา ${a.times.join(", ")} น. ทุกวัน` : `${every(a.intervalSeconds ?? 0)} เริ่ม ${fmtDateTime(a.startAt!)}`);
+const todayBkk = () => bkkParts(new Date().toISOString()).date;
+const fmtDay = (d: string) => new Date(`${d}T00:00:00+07:00`).toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "short", year: "numeric" });
+const schedule = (a: AnnouncementInput) =>
+  a.mode === "now" ? "1.3 ส่งครั้งเดียว — ส่งทันทีเมื่อบันทึก"
+    : a.mode === "times" ? `เวลา ${a.times.join(", ")} น. ${a.onDate ? `เฉพาะวันที่ ${fmtDay(a.onDate)}` : "ทุกวัน"}`
+      : `${every(a.intervalSeconds ?? 0)} เริ่ม ${fmtDateTime(a.startAt!)}`;
 
-type Draft = { id: number | null; title: string; message: string; mode: "times" | "interval"; times: string[]; amount: number; unit: number; date: string; time: string; enabled: boolean };
+type Draft = { id: number | null; title: string; message: string; mode: "times" | "interval" | "now"; times: string[]; daily: boolean; amount: number; unit: number; date: string; time: string; enabled: boolean };
 const draftOf = (a?: Announcement): Draft => {
   const p = bkkParts(a?.startAt ?? null);
   const u = unitOf(a?.intervalSeconds ?? null);
-  return { id: a?.id ?? null, title: a?.title ?? "", message: a?.message ?? "", mode: a?.mode ?? "times", times: a?.times ?? ["09:00"],
+  return { id: a?.id ?? null, title: a?.title ?? "", message: a?.message ?? "", mode: a?.mode ?? "times", times: a?.times?.length ? a.times : ["09:00"], daily: !a?.onDate,
     amount: a?.intervalSeconds ? a.intervalSeconds / u : 4, unit: a?.intervalSeconds ? u : 3600, date: p.date, time: p.time, enabled: a?.enabled ?? true };
 };
 
@@ -45,8 +50,8 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
   const run = (fn: () => Promise<ActionResult>, after?: (x: ActionResult) => void) => start(async () => { const x = await fn(); setR(x); after?.(x); });
   const active = chats.filter((c) => ACTIVE.has(c.status));
   const input = (d: Draft): AnnouncementInput => ({
-    title: d.title, message: d.message, mode: d.mode, enabled: d.enabled,
-    times: d.mode === "times" ? d.times : [], intervalSeconds: d.mode === "interval" ? Math.round(d.amount * d.unit) : null,
+    title: d.title, message: d.message, mode: d.mode, enabled: d.mode === "now" || d.enabled,
+    times: d.mode === "times" ? d.times : [], onDate: d.mode === "times" && !d.daily ? todayBkk() : null, intervalSeconds: d.mode === "interval" ? Math.round(d.amount * d.unit) : null,
     startAt: d.mode === "interval" ? toIso(d.date, d.time) : null,
   });
   const err = r && !r.ok ? <div role="alert" className="mb-3 rounded-lg border border-red-500/30 bg-red-500/15 px-3.5 py-2.5 text-[13px] text-red-300">{r.error}</div> : null;
@@ -74,12 +79,11 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
                     <div className="mt-1.5 rounded-md bg-surface-alt px-2.5 py-1.5 text-[12.5px] whitespace-pre-wrap">{a.message}</div>
                     <div className="mt-1 text-[11.5px] text-soft">
                       {a.enabled && a.nextRuns.length > 0 && <>รอบถัดไป: {a.nextRuns.map((t) => fmtDateTime(t)).join(" · ")} · </>}
-                      {a.lastRun ? <>ส่งล่าสุด {fmtDateTime(a.lastRun.createdAt)}{a.lastRun.manual ? " (ส่งทันที)" : ""} — สำเร็จ {a.lastRun.sent}{a.lastRun.failed ? ` · ไม่สำเร็จ ${a.lastRun.failed}` : ""} กลุ่ม</> : "ยังไม่เคยส่ง"}
+                      {a.lastRun ? <>ส่งล่าสุด {fmtDateTime(a.lastRun.createdAt)}{a.lastRun.manual ? " (1.3 ส่งทันที)" : ""} — สำเร็จ {a.lastRun.sent}{a.lastRun.failed ? ` · ไม่สำเร็จ ${a.lastRun.failed}` : ""} กลุ่ม</> : "ยังไม่เคยส่ง"}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    <button type="button" disabled={pending || active.length === 0} className={B("ghost", "sm")} onClick={() => { if (confirm(`ส่ง “${a.title}” ไป ${active.length} กลุ่มตอนนี้เลย?`)) run(() => sendNow(a.id)); }}><Send size={13} /> ส่งทันที</button>
-                    <button type="button" disabled={pending} className={B("ghost", "sm")} onClick={() => run(() => saveAnnouncement(a.id, { ...a, enabled: !a.enabled }))}>{a.enabled ? "ปิด" : "เปิด"}</button>
+                    {a.mode !== "now" && <button type="button" disabled={pending} className={B("ghost", "sm")} onClick={() => run(() => saveAnnouncement(a.id, { ...a, enabled: !a.enabled }))}>{a.enabled ? "ปิด" : "เปิด"}</button>}
                     <button type="button" className={B("ghost", "sm")} onClick={() => { setR(null); setEdit(draftOf(a)); }}><Pencil size={13} /> แก้ไข</button>
                     <button type="button" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => { if (confirm(`ลบ “${a.title}”?`)) run(() => deleteAnnouncement(a.id)); }}><Trash2 size={13} /> ลบ</button>
                   </div>
@@ -110,21 +114,31 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
       {edit && (
         <Modal title={edit.id ? "แก้ไขประชาสัมพันธ์" : "เพิ่มประชาสัมพันธ์"} onClose={() => setEdit(null)} width={680}
           footer={<><button type="button" className={B("ghost")} onClick={() => setEdit(null)}>ยกเลิก</button>
-            <button type="submit" form="ann-form" disabled={pending} className={B("primary")}>{pending ? "กำลังบันทึก..." : "บันทึก"}</button></>}>
-          <form id="ann-form" className="grid gap-3 text-[13px]" onSubmit={(e) => { e.preventDefault(); run(() => saveAnnouncement(edit.id, input(edit)), (x) => x.ok && setEdit(null)); }}>
+            <button type="submit" form="ann-form" disabled={pending || (edit.mode === "now" && active.length === 0)} className={B("primary")}>{pending ? "กำลังบันทึก..." : edit.mode === "now" ? "บันทึกและส่งทันที" : "บันทึก"}</button></>}>
+          <form id="ann-form" className="grid gap-3 text-[13px]" onSubmit={(e) => { e.preventDefault(); if (edit.mode === "now" && !confirm(`ส่ง “${edit.title}” ไป ${active.length} กลุ่มตอนนี้เลย?`)) return; run(() => saveAnnouncement(edit.id, input(edit)), (x) => x.ok && setEdit(null)); }}>
             {err}
             <div><label htmlFor="an-t" className={fieldLabel}>หัวข้อ (เห็นเฉพาะผู้ดูแล) *</label>
               <input id="an-t" required maxLength={120} className={field} value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} placeholder="เช่น แจ้งเวลาทำการ" /></div>
             <div><label htmlFor="an-m" className={fieldLabel}>ข้อความที่จะโพสต์ *</label>
               <textarea id="an-m" required maxLength={4000} rows={6} className={field} value={edit.message} onChange={(e) => setEdit({ ...edit, message: e.target.value })} placeholder="ข้อความที่บอทจะโพสต์ในกลุ่ม" /></div>
 
-            <div className={fieldLabel}>เวลาโพสต์ (เวลาไทย) — เลือกได้อย่างใดอย่างหนึ่ง: 1.1 หรือ 1.2</div>
+            <div className={fieldLabel}>เวลาโพสต์ (เวลาไทย) — เลือกได้อย่างใดอย่างหนึ่ง: 1.1, 1.2 หรือ 1.3</div>
             <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2"><input type="radio" name="mode" checked={edit.mode === "times"} onChange={() => setEdit({ ...edit, mode: "times" })} /> 1.1 ตามเวลาที่เลือก (ทุกวัน)</label>
+              <label className="flex items-center gap-2"><input type="radio" name="mode" checked={edit.mode === "times"} onChange={() => setEdit({ ...edit, mode: "times" })} /> 1.1 ตามเวลาที่เลือก</label>
               <label className="flex items-center gap-2"><input type="radio" name="mode" checked={edit.mode === "interval"} onChange={() => setEdit({ ...edit, mode: "interval" })} /> 1.2 ทุกช่วงเวลา</label>
+              <label className="flex items-center gap-2"><input type="radio" name="mode" checked={edit.mode === "now"} onChange={() => setEdit({ ...edit, mode: "now" })} /> 1.3 ส่งครั้งเดียว ส่งทันที</label>
             </div>
-            {edit.mode === "times" ? (
+            {edit.mode === "now" ? (
+              <div className="rounded-lg border border-line bg-surface-alt px-3.5 py-2.5 text-[12.5px] text-muted">
+                กด <strong className="text-ink">บันทึกและส่งทันที</strong> แล้วบอทจะโพสต์ข้อความนี้ 1 ครั้งไปทุกกลุ่มทันที — ไม่มีรอบถัดไป
+                <br />ต้องการส่งซ้ำ: กด <strong className="text-ink">แก้ไข</strong> แล้วบันทึกอีกครั้ง (ส่งใหม่ทุกครั้งที่บันทึก)
+              </div>
+            ) : edit.mode === "times" ? (
               <div>
+                <div className="mb-2 flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2"><input type="radio" name="daily" checked={edit.daily} onChange={() => setEdit({ ...edit, daily: true })} /> ทุกวัน</label>
+                  <label className="flex items-center gap-2"><input type="radio" name="daily" checked={!edit.daily} onChange={() => setEdit({ ...edit, daily: false })} /> เฉพาะวันนี้ ({fmtDay(todayBkk())})</label>
+                </div>
                 <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
                   {slots.map((t) => {
                     const on = edit.times.includes(t);
@@ -134,7 +148,7 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
                     );
                   })}
                 </div>
-                <div className="mt-1.5 text-[12px] text-muted">เลือกแล้ว: {edit.times.length ? edit.times.join(", ") : "—"} · เลือกได้หลายเวลา</div>
+                <div className="mt-1.5 text-[12px] text-muted">เลือกแล้ว: {edit.times.length ? edit.times.join(", ") : "—"} · เลือกได้หลายเวลา{edit.daily ? "" : " · เวลาที่ผ่านไปแล้ววันนี้จะไม่ถูกส่ง"}</div>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -155,7 +169,7 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
                 </div>
               </div>
             )}
-            <label className="flex items-center gap-2"><input type="checkbox" checked={edit.enabled} onChange={(e) => setEdit({ ...edit, enabled: e.target.checked })} /> เปิดใช้งาน</label>
+            {edit.mode !== "now" && <label className="flex items-center gap-2"><input type="checkbox" checked={edit.enabled} onChange={(e) => setEdit({ ...edit, enabled: e.target.checked })} /> เปิดใช้งาน</label>}
             <div className="text-[12px] text-muted">จะโพสต์ไป {active.length} กลุ่ม: {active.map((c) => c.title ?? c.chatId).join(", ") || "—"}</div>
           </form>
         </Modal>

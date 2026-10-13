@@ -34,7 +34,7 @@ const WDR = `{ "requestRef": "WDR90031", "merchantRef": "W-001", "amount": 1000,
   "note": null, "rejectReason": null, "createdAt": "...", "decidedAt": null }`;
 
 /** How every slip upload is checked (slip/verify, :ref/slip, checkout slip). */
-const SLIP_RULES = "<strong>การตรวจสลิป</strong> — (1) <strong>สลิปตัวอย่าง</strong>จาก Option Pay → <code>400 SAMPLE_SLIP</code> · (2) <strong>สลิปซ้ำ</strong>: สลิปเดียวกัน (ไฟล์เดียวกัน หรือ QR ธนาคารเดียวกัน) ที่อยู่กับรายการอื่นแล้ว → <code>INVALID_SLIP</code> · (3) <strong>เทียบข้อมูลในสลิปกับรายการ</strong>: ยอดเงินตรงทุกสตางค์ · บัญชีผู้รับ + ธนาคารเป็นบัญชีของรายการ · ชื่อผู้โอนตรงกับ <code>metadata.memberName</code> (ถ้าส่ง) · เวลาโอนหลังสร้างรายการและไม่เก่าเกินกำหนด — ทุกข้อที่ไม่ตรงอยู่ใน <code>mismatches</code> · <strong>มีผู้ให้บริการตรวจสลิป</strong> (EasySlip / SlipOK ในตั้งค่าระบบ): ตรวจกับธนาคารจริง ผ่านครบ → <code>PAID</code> อัตโนมัติ (เว้นแต่ตั้ง “ต้องให้ผู้ดูแลยืนยันก่อน”) · <strong>ไม่มีผู้ให้บริการ / ผู้ให้บริการไม่ตอบ</strong>: ระบบอ่านข้อมูลจากภาพสลิป (OCR ไทย+อังกฤษ) — ยอด บัญชีผู้รับ หรือเวลาไม่ตรง → <code>INVALID_SLIP</code> · ตรงครบ หรืออ่านไม่ได้ → <code>PENDING_REVIEW</code> ให้ผู้ดูแลยืนยัน (<strong>ไม่อนุมัติอัตโนมัติ</strong> เพราะภาพแก้ไขได้) · ชื่อผู้โอน/ธนาคารที่ยืนยันจากภาพไม่ได้ จะแจ้งผู้ดูแลแทนการปฏิเสธ · <strong>Errors</strong>: ไฟล์ไม่ใช่รูป/ใหญ่เกิน → <code>400 INVALID_SLIP</code> · ออเดอร์ไม่ PENDING → <code>409 ORDER_NOT_PENDING</code> · ไม่พบ orderId → <code>404 ORDER_NOT_FOUND</code>";
+const SLIP_RULES = "<strong>การตรวจสลิป</strong> — (1) <strong>สลิปตัวอย่าง</strong>จาก Option Pay → <code>400 SAMPLE_SLIP</code> · (2) <strong>สลิปซ้ำ</strong>: สลิปเดียวกัน (ไฟล์เดียวกัน หรือ QR ธนาคารเดียวกัน) ที่อยู่กับรายการอื่นแล้ว → <code>INVALID_SLIP</code> · (3) <strong>เทียบข้อมูลในสลิปกับรายการ</strong>: ยอดเงินตรงทุกสตางค์ · บัญชีผู้รับ + ธนาคารเป็นบัญชีของรายการ · เวลาโอนหลังสร้างรายการและไม่เก่าเกินกำหนด — ทุกข้อที่ไม่ตรงอยู่ใน <code>mismatches</code> · <strong>ชื่อผู้โอน</strong>ไม่ตรงกับ <code>metadata.memberName</code> (เช่น สามีโอนแทนภรรยา) <strong>ไม่ปฏิเสธ</strong> — แจ้งใน <code>warnings</code> และยังอนุมัติได้ · <strong>มีผู้ให้บริการตรวจสลิป</strong> (EasySlip / SlipOK ในตั้งค่าระบบ): ตรวจกับธนาคารจริง ผ่านครบ → <code>PAID</code> อัตโนมัติ (เว้นแต่ตั้ง “ต้องให้ผู้ดูแลยืนยันก่อน”) · <strong>ไม่มีผู้ให้บริการ / ผู้ให้บริการไม่ตอบ</strong>: ระบบอ่านข้อมูลจากภาพสลิป (OCR ไทย+อังกฤษ) — ยอด บัญชีผู้รับ หรือเวลาไม่ตรง → <code>INVALID_SLIP</code> · ตรงครบ หรืออ่านไม่ได้ → <code>PENDING_REVIEW</code> ให้ผู้ดูแลยืนยัน (<strong>ไม่อนุมัติอัตโนมัติ</strong> เพราะภาพแก้ไขได้) · ชื่อผู้โอน/ธนาคารที่ยืนยันจากภาพไม่ได้ จะแจ้งผู้ดูแลแทนการปฏิเสธ · <strong>Errors</strong>: ไฟล์ไม่ใช่รูป/ใหญ่เกิน → <code>400 INVALID_SLIP</code> · ออเดอร์ไม่ PENDING → <code>409 ORDER_NOT_PENDING</code> · ไม่พบ orderId → <code>404 ORDER_NOT_FOUND</code>";
 
 export const SECTIONS: Section[] = [
   {
@@ -50,7 +50,7 @@ export const SECTIONS: Section[] = [
   "metadata": {                                // optional ทั้ง block
     "senderAccountNumber": "1234567890",       // เลขบัญชีผู้โอน (≥8 หลักถ้าส่ง)
     "senderBankCode": "SCB",                   // ธนาคารผู้โอน
-    "memberName": "สมชาย ใจดี",                // ชื่อลูกค้า = ชื่อบัญชีที่จะโอน (ใช้ตรวจชื่อผู้โอนในสลิป)
+    "memberName": "สมชาย ใจดี",                // ชื่อลูกค้า (ชื่อผู้โอนในสลิปไม่ตรง = แจ้งใน warnings ไม่ปฏิเสธ)
     "memberNameEn": "Mr. A",                   // optional
     "customerId": "CUST-9"                     // id ลูกค้าฝั่งร้าน, optional
   },
@@ -115,7 +115,7 @@ export const SECTIONS: Section[] = [
   "merchant": { "name": "ร้าน ABC" },
   "account": { "bankCode": "KBANK", "bankName": "...", "accountName": "...", "accountNumber": "...", "promptPayId": "0812345678" },
   "qrPayload": "00020101021229370016A000000677010111...",   // EMVCo PromptPay (null เมื่อไม่ PENDING)
-  "customerName": "สมชาย ใจดี",   // ชื่อที่สลิปต้องเป็นผู้โอน (null = ไม่ตรวจ)
+  "customerName": "สมชาย ใจดี",   // ชื่อผู้โอนที่คาด (ไม่ตรง = warnings ไม่ปฏิเสธ · null = ไม่ตรวจ)
   "hasSlip": false,               // เคยแนบสลิปแล้วหรือยัง
   "slipLocked": false,            // true = มีสลิปที่รับแล้ว/รอตรวจ — แนบเพิ่มไม่ได้
   "slipProblems": null            // สลิปล่าสุดไม่ผ่าน: รายการเหตุผล (แนบใหม่ได้)

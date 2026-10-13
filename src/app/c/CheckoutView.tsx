@@ -111,12 +111,12 @@ function SlipGuideline({ order }: { order: SampleSlip }) {
   return (
     <div className="mt-4 border-t border-line pt-3.5 text-[12px] leading-relaxed text-muted">
       <div className="mb-2 text-[13px] font-semibold text-ink">แนวทางการแนบสลิป</div>
-      <div className={h}>ต้องตรงกับรายการนี้ทุกข้อ (ระบบตรวจกับธนาคาร — ไม่ตรงข้อใด สลิปไม่ผ่าน)</div>
+      <div className={h}>ระบบตรวจกับธนาคาร — ยอดเงิน บัญชีผู้รับ และวันเวลาที่โอนต้องตรง ไม่ตรงข้อใด สลิปไม่ผ่าน</div>
       <ul className="mb-3 list-disc space-y-0.5 pl-5">
         <li>ยอดเงิน <strong className="text-ink">฿{money(amount)}</strong> — ตรงทุกสตางค์ ห้ามปัดเศษ</li>
         <li>บัญชีผู้รับ <strong className="text-ink">{receiver}</strong> — ธนาคารและเลขบัญชีต้องตรง</li>
         {customerName
-          ? <li>ชื่อผู้โอน <strong className="text-ink">{customerName}</strong> — ต้องโอนจากบัญชีชื่อนี้</li>
+          ? <li>ชื่อผู้โอน <strong className="text-ink">{customerName}</strong> — ผู้อื่นโอนแทนได้ (เช่น ครอบครัว) ระบบจะแจ้งร้านค้าไว้</li>
           : <li>ชื่อผู้โอน — รายการนี้ไม่ได้ระบุ จึงไม่ตรวจ</li>}
         <li>วันเวลาที่โอน — <strong className="text-ink">หลังสร้างรายการนี้</strong> และไม่ใช่สลิปเก่า</li>
       </ul>

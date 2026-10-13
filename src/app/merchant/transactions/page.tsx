@@ -50,7 +50,10 @@ export default async function PortalTransactions({ searchParams }: PageProps<"/m
                 { header: "ลูกค้า", cell: (p) => <PayerCell name={p.customerName} bankCode={p.payerBankCode} masked={p.payerAccountMasked} /> },
                 { header: "ยอด", align: "right", cell: (p) => <strong className="tabular-nums">{fmtMoney(p.amount)}</strong> },
                 { header: "ค่าธรรมเนียม", align: "right", cell: (p) => <span className="text-muted tabular-nums">{fmtMoney(p.fee)}</span> },
-                { header: "สถานะ", cell: (p) => <StatusBadge status={p.status} /> },
+                { header: "สถานะ", cell: (p) => (<>
+                  <StatusBadge status={p.status} />
+                  {p.reviewNote?.includes("⚠️") && <div className="mt-1 max-w-[240px] text-[11px] whitespace-normal text-amber-300">{p.reviewNote.slice(p.reviewNote.indexOf("⚠️"))}</div>}
+                </>) },
                 { header: "เวลา", cell: (p) => <span className="whitespace-nowrap text-muted">{fmtDateTime(p.createdAt)}</span> },
                 { header: "", align: "right", cell: (p) => (p.status === "pending" ? (
                   <div className="flex items-center justify-end gap-3 whitespace-nowrap">

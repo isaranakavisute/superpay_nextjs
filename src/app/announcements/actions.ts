@@ -5,7 +5,7 @@ import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
 
 export type AnnouncementInput = {
-  title: string; message: string; mode: "times" | "interval"; times: string[];
+  title: string; message: string; mode: "times" | "interval" | "now"; times: string[]; onDate: string | null;
   intervalSeconds: number | null; startAt: string | null; enabled: boolean;
 };
 
@@ -22,4 +22,3 @@ export async function saveAnnouncement(id: number | null, b: AnnouncementInput) 
   return as((actor) => consoleWrite("POST", id ? `/api/console/support-bot/announcements/${id}` : "/api/console/support-bot/announcements", actor, b));
 }
 export const deleteAnnouncement = async (id: number) => as((actor) => consoleWrite("POST", `/api/console/support-bot/announcements/${Number(id) || 0}/delete`, actor, {}));
-export const sendNow = async (id: number) => as((actor) => consoleWrite("POST", `/api/console/support-bot/announcements/${Number(id) || 0}/send-now`, actor, {}));

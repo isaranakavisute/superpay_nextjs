@@ -30,7 +30,7 @@ export function SampleSlipButton({ slip }: { slip: SampleSlip }) {
               <ol className="list-decimal space-y-1.5 pl-5 text-muted">
                 <li><strong className="text-ink">ยอดเงิน</strong> {slip.amount.toLocaleString("th-TH", { minimumFractionDigits: 2 })} บาท ตรงทุกสตางค์</li>
                 <li><strong className="text-ink">บัญชีผู้รับ</strong> {slip.bankName} {slip.accountNo} {slip.accountName ? `(${slip.accountName})` : ""}</li>
-                <li><strong className="text-ink">ชื่อผู้โอน</strong> {slip.customerName ? `ต้องเป็น ${slip.customerName}` : "ไม่ตรวจ (รายการนี้ไม่ได้ระบุชื่อลูกค้า)"}</li>
+                <li><strong className="text-ink">ชื่อผู้โอน</strong> {slip.customerName ? `ควรเป็น ${slip.customerName} — ถ้าผู้อื่นโอนแทน สลิปยังผ่าน และรายการมีคำเตือน ⚠️` : "ไม่ตรวจ (รายการนี้ไม่ได้ระบุชื่อลูกค้า)"}</li>
                 <li><strong className="text-ink">เวลาโอน</strong> หลังสร้างรายการ และไม่เก่าเกินที่ระบบกำหนด</li>
                 <li><strong className="text-ink">QR บนสลิป</strong> ครบ ชัด ไม่ครอปหรือแต่งภาพ</li>
               </ol>
