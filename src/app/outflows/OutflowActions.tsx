@@ -7,6 +7,9 @@ import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import { BANKS } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
+
+/** Standard reason when an admin rejects an auto-approved payout (shown to the shop with status FAILED). */
+const ADMIN_CANCEL_REASON = "ยกเลิกโดยผู้ดูแลระบบ";
 import { approveOutflow, deleteOutflow, rejectOutflow, updateOutflow, uploadOutflowSlip } from "./actions";
 import { OUTFLOW_CATEGORIES } from "./categories";
 
@@ -23,6 +26,8 @@ export type OutflowForActions = {
   receiverAccount: string;
   description: string | null;
   hasSlipImage: boolean;
+  /** Auto-approved payouts the team has not transferred yet can still be rejected (refunds the shop). */
+  adminDone?: boolean;
 };
 
 function toBase64(file: File) {
@@ -98,7 +103,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
 
   const open = (d: Dialog) => {
     setError(null);
-    setReason("");
+    setReason(d === "reject" && o.status === "approved" && o.adminDone === false ? ADMIN_CANCEL_REASON : "");
     setForm({ category: o.category, bankAccountId: o.bankAccountId ? String(o.bankAccountId) : "", receiverBankCode: o.receiverBankCode, description: o.description ?? "" });
     setDialog(d);
   };
@@ -119,6 +124,8 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
   const close = () => setDialog(null);
   const cancel = <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={close}>ยกเลิก</button>;
   const isPending = o.status === "pending";
+  // "รอ admin ดำเนินการ": approved automatically, money not sent yet — may still be rejected.
+  const rejectableApproved = o.status === "approved" && o.adminDone === false;
 
   return (
     <div className="flex flex-nowrap items-center justify-end gap-1.5">
@@ -130,6 +137,11 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
       <button className={`${sm} ${btn.ghost}`} onClick={() => open("edit")} disabled={pending} title="จัดหมวดหมู่ / โอนจากบัญชี / ธนาคารปลายทาง" aria-label="จัดหมวดหมู่"><Pencil size={14} /></button>
       {o.status !== "rejected" && (
         <button className={`${sm} ${btn.ghost}`} onClick={() => open("qr")} title="QR โอนออก / คัดลอกเลขบัญชี">QR โอน</button>
+      )}
+      {rejectableApproved && (
+        <button className={`${sm} border-[#fecaca]/40 bg-transparent text-danger hover:bg-danger/10`} onClick={() => open("reject")} disabled={pending} title="ปฏิเสธรายการนี้ — คืนยอด + ค่าธรรมเนียมให้ร้าน">
+          <X size={14} /> ปฏิเสธ
+        </button>
       )}
       {isPending && (
         <>
@@ -240,6 +252,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
           onClose={close}
           footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.danger}`} disabled={pending || !reason.trim()} onClick={() => run(() => rejectOutflow(o.ref, reason))}>ปฏิเสธรายการ</button></>}
         >
+          {rejectableApproved && <p className="mb-3 text-[13px] text-muted">รายการนี้อนุมัติอัตโนมัติแล้ว — เมื่อปฏิเสธ ยอด {fmtMoney(o.amount)} + ค่าธรรมเนียม จะคืนเข้ายอดคงเหลือของร้าน และร้านเห็นสถานะ “ไม่สำเร็จ” พร้อมเหตุผลนี้ · ปฏิเสธได้เฉพาะรายการที่ยังไม่ได้โอนเงินให้ผู้รับ</p>}
           <label className={fieldLabel} htmlFor={`rr-${o.ref}`}>เหตุผล</label>
           <input id={`rr-${o.ref}`} className={field} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
           {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}

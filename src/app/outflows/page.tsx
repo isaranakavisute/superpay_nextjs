@@ -115,6 +115,7 @@ function Row({ o, selectable, accounts, tone }: { o: OutflowRow; selectable?: bo
             receiverAccount: o.receiverAccount,
             description: o.description,
             hasSlipImage: o.hasSlipImage,
+            adminDone: o.adminDone,
           }}
         />
       </td>
