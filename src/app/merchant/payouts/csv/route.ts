@@ -1,7 +1,7 @@
 import { listResource } from "@/lib/api";
 import { portalPerms, requirePortal } from "@/lib/portal";
 import type { OutflowRow } from "@/lib/rows";
-import { PAYOUT_STATUS, SOURCE_LABEL, STATUS_PARAM, toView } from "../data";
+import { PAYOUT_STATUS, SOURCE_LABEL, STATUS_FILTER, toView } from "../data";
 
 const cell = (v: unknown) => {
   const s = v == null ? "" : String(v);
@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const u = new URL(req.url).searchParams;
   const rows: OutflowRow[] = [];
   for (let offset = 0; offset < 5000; offset += 200) {
-    const page = await listResource<OutflowRow>("outflows", { merchantId: String(user.merchantId), status: STATUS_PARAM[u.get("status") ?? ""], q: u.get("q") ?? undefined, limit: 200, offset });
+    const page = await listResource<OutflowRow>("outflows", { merchantId: String(user.merchantId), ...STATUS_FILTER[u.get("status") ?? ""], q: u.get("q") ?? undefined, limit: 200, offset });
     rows.push(...page.data);
     if (page.data.length < 200) break;
   }

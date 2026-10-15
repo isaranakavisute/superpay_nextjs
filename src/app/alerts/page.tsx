@@ -13,14 +13,15 @@ const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 export default async function AlertsPage() {
   let data;
   try {
-    const [cfg, channels] = await Promise.all([
+    const [cfg, channels, shops] = await Promise.all([
       fetch(`${BASE}/api/console/alert-bots`, { headers: consoleHeaders(), cache: "no-store" }).then(async (r) => {
         if (!r.ok) throw new Error(`alert-bots → HTTP ${r.status}`);
         return (await r.json()) as { bots: Bot[]; kinds: string[]; thresholds: { repeatMinutes: number; slipFailCount: number; slipDownMinutes: number } };
       }),
       listResource<ChannelRow>("channels", { type: "telegram", limit: 50 }),
+      listResource<{ id: number; name: string }>("merchants", { limit: 500 }),
     ]);
-    data = { ...cfg, channels: channels.data.map((c) => ({ id: c.id, name: c.name })) };
+    data = { ...cfg, channels: channels.data.map((c) => ({ id: c.id, name: c.name })), shops: shops.data.map((m) => ({ id: m.id, name: m.name })) };
   } catch (err) {
     data = err instanceof Error ? err.message : String(err);
   }
@@ -34,7 +35,7 @@ export default async function AlertsPage() {
           <div className="text-[13px] text-muted">{data}</div>
         </Card>
       ) : (
-        <AlertsEditor bots={data.bots} channels={data.channels} kinds={data.kinds} thresholds={data.thresholds} />
+        <AlertsEditor bots={data.bots} channels={data.channels} shops={data.shops} kinds={data.kinds} thresholds={data.thresholds} />
       )}
     </ConsoleShell>
   );

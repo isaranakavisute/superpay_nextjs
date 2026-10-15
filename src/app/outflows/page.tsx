@@ -8,7 +8,7 @@ import { Pager, pageState } from "@/components/list/Pager";
 import { param, type Params } from "@/components/list/query";
 import { RangeBar } from "@/components/list/RangeBar";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
-import { Card, PageHeader, StatusBadge } from "@/components/ui";
+import { Badge, Card, PageHeader, StatusBadge } from "@/components/ui";
 import { listResource } from "@/lib/api";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
 import { requestTime } from "@/lib/request-time";
@@ -24,6 +24,8 @@ import { CopyButton, OutflowActions } from "./OutflowActions";
 export const metadata: Metadata = { title: "รายการเงินออก — Option Pay Admin" };
 
 const PATH = "/outflows";
+/** Approved payout the team has transferred (admin ดำเนินการ = yes): the shop sees ถอนสำเร็จ too. */
+const DONE_BADGE = "bg-[rgba(16,185,129,0.15)] text-[#6ee7b7]";
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";
 const td = "px-[18px] py-[13px] align-middle";
 const timeOnly = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
@@ -83,7 +85,7 @@ function Row({ o, selectable, accounts, tone }: { o: OutflowRow; selectable?: bo
         {Number(o.fee) > 0 && <div className="mt-0.5 text-[10.5px] text-muted">+ ค่าธรรมเนียม {fmtMoney(o.fee)} (หักร้าน)</div>}
       </td>
       <td className={td}>
-        <StatusBadge status={o.status} kind="outflow" />
+        {o.status === "approved" && o.adminDone ? <Badge className={DONE_BADGE}>ถอนสำเร็จ</Badge> : <StatusBadge status={o.status} kind="outflow" />}
         {o.reviewNote && <div className="mt-1 max-w-[200px] text-[11px] text-muted">{o.reviewNote}</div>}
       </td>
       <td className={`${td} whitespace-nowrap`}>

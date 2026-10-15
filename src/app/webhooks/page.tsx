@@ -23,7 +23,7 @@ const RANGES = [
   { value: "90d", label: "90 วัน", days: 90 },
   { value: "all", label: "ทั้งหมด", days: 0 },
 ];
-const EVENTS = ["payment.approved", "payment.rejected", "withdrawal.approved"];
+const EVENTS = ["payment.approved", "payment.rejected", "payment.expired", "payment.refunded", "payout.completed", "payout.failed", "withdrawal.approved", "withdrawal.completed", "withdrawal.rejected"];
 type Missing = { id: number; name: string; orders: number; firstAt: string; lastAt: string };
 
 function Head({ title, edge, badge, hint, children }: { title: string; edge: string; badge?: { text: string; bg: string; fg: string }; hint?: React.ReactNode; children?: React.ReactNode }) {

@@ -2,7 +2,7 @@ import "server-only";
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 // x-timestamp + x-signature: every merchant API request is signed (backend verifies over the exact body).
-const PASS_REQ = ["content-type", "x-api-key", "x-timestamp", "x-signature", "x-sub-merchant", "idempotency-key", "accept"];
+const PASS_REQ = ["content-type", "x-api-key", "x-timestamp", "x-signature", "x-sub-merchant", "idempotency-key", "accept", "user-agent"];
 
 /**
  * Forward a merchant API call to the backend's /api/v1, keeping the public

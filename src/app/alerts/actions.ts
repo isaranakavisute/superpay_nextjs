@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
 
-export type BotInput = { id?: number; name: string; enabled: boolean; botChannelId: number | null; botToken?: string; chatIds: string; events: string[] };
+export type BotInput = { id?: number; name: string; enabled: boolean; botChannelId: number | null; botToken?: string; chatIds: string; mentions?: string; merchantId?: number | null; events: string[] };
 
 async function as(fn: (actor: string) => Promise<ActionResult>) {
   const me = await getSessionUser();

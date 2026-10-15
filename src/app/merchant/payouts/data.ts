@@ -8,18 +8,27 @@ export const SOURCE_LABEL: Record<string, string> = {
 };
 export const PAYOUT_STATUS: Record<string, [string, string]> = {
   pending: ["รออนุมัติ", "bg-[rgba(245,158,11,0.15)] text-[#fcd34d]"],
-  approved: ["อนุมัติแล้ว", "bg-[rgba(16,185,129,0.15)] text-[#6ee7b7]"],
+  approved: ["อนุมัติแล้ว", "bg-[rgba(56,189,248,0.15)] text-[#7dd3fc]"],
+  completed: ["ถอนสำเร็จ", "bg-[rgba(16,185,129,0.15)] text-[#6ee7b7]"],
   rejected: ["ไม่สำเร็จ", "bg-[rgba(239,68,68,0.15)] text-[#fca5a5]"],
 };
-export const STATUS_PARAM: Record<string, string> = { pending: "pending", completed: "approved", failed: "rejected" };
+/** Page tab → list filters. ถอนสำเร็จ = approved and the Option Pay team has made the bank transfer. */
+export const STATUS_FILTER: Record<string, { status?: string; adminDone?: string }> = {
+  completed: { status: "approved", adminDone: "yes" },
+  approved: { status: "approved", adminDone: "no" },
+  pending: { status: "pending" },
+  failed: { status: "rejected" },
+};
 
 /** What the shop sees of an outflow — never the deducting account or the team's notes on a completed transfer. */
-export type PayoutView = Pick<OutflowRow, "ref" | "merchantRef" | "receiverName" | "receiverBankCode" | "receiverBankName" | "receiverAccount" | "amount" | "fee" | "status" | "source" | "description" | "createdAt" | "completedAt"> & {
+export type PayoutView = Pick<OutflowRow, "ref" | "merchantRef" | "receiverName" | "receiverBankCode" | "receiverBankName" | "receiverAccount" | "amount" | "fee" | "source" | "description" | "createdAt" | "completedAt"> & {
+  /** pending · approved (อนุมัติแล้ว) · completed (ถอนสำเร็จ — transferred) · rejected */
+  status: OutflowRow["status"] | "completed";
   failureReason: string | null;
 };
 export const toView = (o: OutflowRow): PayoutView => ({
   ref: o.ref, merchantRef: o.merchantRef, receiverName: o.receiverName, receiverBankCode: o.receiverBankCode, receiverBankName: o.receiverBankName,
-  receiverAccount: o.receiverAccount, amount: o.amount, fee: o.fee, status: o.status, source: o.source, description: o.description,
+  receiverAccount: o.receiverAccount, amount: o.amount, fee: o.fee, status: o.status === "approved" && o.adminDone ? "completed" : o.status, source: o.source, description: o.description,
   createdAt: o.createdAt, completedAt: o.completedAt, failureReason: o.status === "rejected" ? o.reviewNote : null,
 });
 

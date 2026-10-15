@@ -57,6 +57,13 @@ export type UserRow = {
 
 export type RoleRow = { code: string; name: string; description: string; permissions: string[]; memberCount: number };
 
+export type ApiLogRow = {
+  id: number; createdAt: When; merchantId: number | null; merchantName: string | null; keyMerchantId: number | null; keyMerchantName: string | null;
+  keyPrefix: string | null; keyUser: string | null; method: string; path: string; query: string | null; status: number;
+  errorCode: string | null; durationMs: number; ip: string | null; userAgent: string | null;
+  source: "api" | "console"; actor: string | null;
+};
+
 export type AuditRow = { id: number; actor: string; action: string; entity: string; entityRef: string | null; detail: string | null; ip: string | null; createdAt: When };
 
 export type ChannelRow = {

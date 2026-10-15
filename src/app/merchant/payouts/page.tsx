@@ -10,11 +10,11 @@ import { fmtDateTime, fmtMoney } from "@/lib/format";
 import { portalPerms, requirePortal } from "@/lib/portal";
 import type { OutflowRow } from "@/lib/rows";
 import { PortalShell } from "../PortalShell";
-import { balanceOf, PAYOUT_STATUS, SOURCE_LABEL, STATUS_PARAM, toView, type PayoutView } from "./data";
+import { balanceOf, PAYOUT_STATUS, SOURCE_LABEL, STATUS_FILTER, toView, type PayoutView } from "./data";
 
 export const metadata: Metadata = { title: "รายการโอนออก — Merchant Portal" };
 const PATH = "/merchant/payouts";
-const TABS = [["", "ทั้งหมด"], ["completed", "อนุมัติแล้ว"], ["pending", "รออนุมัติ"], ["failed", "ไม่สำเร็จ"]] as const;
+const TABS = [["", "ทั้งหมด"], ["completed", "ถอนสำเร็จ"], ["approved", "อนุมัติแล้ว"], ["pending", "รออนุมัติ"], ["failed", "ไม่สำเร็จ"]] as const;
 
 /**
  * Every payout of the shop (API /payout/create, approved withdrawal requests, transfers by the Option Pay team) with
@@ -36,7 +36,7 @@ export default async function PortalPayouts({ searchParams }: PageProps<"/mercha
     );
   }
   const [res, bal] = await Promise.all([
-    listResource<OutflowRow>("outflows", { merchantId: String(user.merchantId), status: STATUS_PARAM[tab], q, limit: pg.size, offset: (pg.page - 1) * pg.size }).catch(() => null),
+    listResource<OutflowRow>("outflows", { merchantId: String(user.merchantId), ...STATUS_FILTER[tab], q, limit: pg.size, offset: (pg.page - 1) * pg.size }).catch(() => null),
     balanceOf(user.merchantId),
   ]);
   const rows = res?.data.map(toView) ?? [];
