@@ -6,6 +6,7 @@ import { requirePortal } from "@/lib/portal";
 import { LOGIN, SECTIONS, SLIP_COMPARE, SLIP_SAME_SHAPE, type Ep } from "../../../api-docs/docs";
 import { PortalShell } from "../../PortalShell";
 import { CodeBlock } from "../CodeBlock";
+import { ValidationReportSection } from "./ValidationReportDocs";
 import { DocLayout, Note, Section, Table } from "../DocLayout";
 
 export const metadata: Metadata = { title: "คู่มือ API v1 — Merchant Portal" };
@@ -65,7 +66,7 @@ function Endpoint({ e }: { e: Ep }) {
 
 export default async function ApiGuidePage() {
   const user = await requirePortal("/merchant/docs/api");
-  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "slip-retry", label: "ส่งสลิป: timeout และการส่งซ้ำ" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
+  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "slip-retry", label: "ส่งสลิป: timeout และการส่งซ้ำ" }, { id: "validation-report", label: "รายงานผลการตรวจสลิป" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
   return (
     <PortalShell user={user} path="/merchant/docs">
       <DocLayout title="คู่มือ API v1" subtitle={`ตัวอย่างจริงทุก endpoint: curl + Next.js พร้อมการสร้างลายเซ็น และผลลัพธ์จริง · Base URL: ${API_BASE}`} pdf="api-v1.pdf" toc={toc}>
@@ -165,6 +166,7 @@ ${CURL_EXAMPLES["GET /transactions"].live.toSign}        ← GET ไม่มี
           <div className={H}>Next.js — ส่งสลิปพร้อมจัดการ timeout และส่งซ้ำ</div>
           <CodeBlock code={SLIP_RETRY_HELPER} />
         </Section>
+        <ValidationReportSection />
         <Section id="perms" title="สิทธิ์และข้อผิดพลาด">
           <p>key ของผู้ใช้ร้านค้าใช้ได้เฉพาะสิทธิ์ของระดับผู้ใช้ (รายการสิทธิ์ส่งกลับใน <code>permissions</code> ตอน login) · key ที่ผู้ดูแลออกให้ร้านใช้ได้ทุกเส้น · ค่าเริ่มต้น (ผู้ดูแลระบบปรับได้):</p>
           <Table head={["สิทธิ์", "ความหมาย", "เจ้าของร้าน", "พนักงาน", "ดูอย่างเดียว"]} rows={MERCHANT_PERMISSIONS.filter((p) => p.code !== "manage_api_keys").map((p) => [<code key="c">{p.code}</code>, p.label, "✓", ["view_dashboard", "view_transactions", "create_payment"].includes(p.code) ? "✓" : "—", ["view_dashboard", "view_transactions"].includes(p.code) ? "✓" : "—"])} />

@@ -20,6 +20,8 @@ export type OutflowRow = {
   receiverName: string; receiverBankCode: string; receiverBankName: string; receiverAccount: string;
   amount: Money; fee: Money; currency: string; status: OutflowStatus; createdAt: When;
   source: string; description: string | null; reviewNote: string | null; completedAt: When | null; hasSlipImage: boolean;
+  merchantRef: string | null;
+  adminDone: boolean; adminDoneAt: When | null; adminDoneBy: string | null;
 };
 
 export type WithdrawalRow = {

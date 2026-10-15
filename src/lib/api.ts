@@ -47,8 +47,9 @@ export type DashboardSummary = {
     recent: {
       ref: string;
       merchantId: number | null;
+      merchantName: string | null;
       category: OutflowCategory;
-      fromAccount: string;
+      fromAccount: string | null;
       receiverName: string;
       receiverBankCode: string;
       receiverBankName: string;

@@ -66,7 +66,7 @@ function FeeBar({ title, total, parts }: { title: string; total: number; parts: 
 export function SubMerchantSections() {
   return (
     <>
-      <Section id="sub-merchants" title="9. ร้านย่อย (Sub-merchant) — สร้างและตั้งค่า">
+      <Section id="sub-merchants" title="10. ร้านย่อย (Sub-merchant) — สร้างและตั้งค่า">
         <p>ร้านค้าสร้าง<strong>ร้านย่อย</strong>ภายใต้ร้านของตัวเองได้<strong>ไม่จำกัดจำนวน</strong> และร้านย่อยแต่ละร้านก็สร้างร้านย่อยของตัวเองต่อได้อีก (ลึกได้ 10 ชั้น) — เป็น<strong>ต้นไม้</strong> เหมาะกับธุรกิจที่มีตัวแทน สาขา หรือร้านค้าในเครือ · ร้านที่ไม่สร้างร้านย่อยใช้งานได้ตามปกติทุกอย่าง</p>
         <TreeDiagram />
         <h3 className="mt-5 mb-1 font-semibold">กติกาสำคัญ</h3>
@@ -141,7 +141,7 @@ export function SubMerchantSections() {
         <Note>เชื่อมต่อด้วยระบบของร้านเองก็ได้: <code>GET /sub-merchants</code>, <code>GET /sub-merchants/overview</code>, <code>GET /sub-merchants/:id</code>, <code>POST /sub-merchants</code> และ header <code>X-Sub-Merchant</code> — ดู <Link href="/merchant/docs/api#sub-merchants" className="text-primary underline">คู่มือ API หัวข้อ Sub-merchants</Link></Note>
       </Section>
 
-      <Section id="sub-finance" title="10. ภาพรวมร้านย่อย และการคำนวณเงิน">
+      <Section id="sub-finance" title="11. ภาพรวมร้านย่อย และการคำนวณเงิน">
         <h3 className="mb-1 font-semibold">10.1 แดชบอร์ด ภาพรวมร้านย่อย</h3>
         <p>แท็บ <strong>ภาพรวมร้านย่อย</strong> (แสดงเมื่อร้านมีร้านย่อย) รวมตัวเลขของร้านย่อย<strong>ทุกชั้น</strong>ใต้ร้านคุณ — เลือก 7 / 30 / 90 วัน และเลือก <strong>ร้าน</strong> เพื่อดูเฉพาะร้านเดียว (drill-down)</p>
         <Shot src="network-all.jpg" caption="ภาพที่ 10-1 ภาพรวมร้านย่อยทั้งหมดของ Siam Holding (30 วัน) — การ์ดสรุป กราฟแนวโน้ม กราฟยอดตามร้าน กราฟวงกลมค่าคอม และตารางรายร้าน" />

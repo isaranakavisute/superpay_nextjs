@@ -127,7 +127,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
       )}
       <button className={`${sm} ${btn.ghost}`} onClick={() => fileRef.current?.click()} disabled={pending} title="แนบสลิป" aria-label="แนบสลิป"><Upload size={14} /></button>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
-      <button className={`${sm} ${btn.ghost}`} onClick={() => open("edit")} disabled={pending} title="จัดหมวดหมู่ / บัญชีที่หัก / ธนาคารปลายทาง" aria-label="จัดหมวดหมู่"><Pencil size={14} /></button>
+      <button className={`${sm} ${btn.ghost}`} onClick={() => open("edit")} disabled={pending} title="จัดหมวดหมู่ / โอนจากบัญชี / ธนาคารปลายทาง" aria-label="จัดหมวดหมู่"><Pencil size={14} /></button>
       {o.status !== "rejected" && (
         <button className={`${sm} ${btn.ghost}`} onClick={() => open("qr")} title="QR โอนออก / คัดลอกเลขบัญชี">QR โอน</button>
       )}
@@ -195,7 +195,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
               </select>
             </div>
             <div>
-              <label className={fieldLabel} htmlFor={`ea-${o.ref}`}>บัญชีที่หัก</label>
+              <label className={fieldLabel} htmlFor={`ea-${o.ref}`}>โอนจากบัญชี (ถ้ามี)</label>
               <select id={`ea-${o.ref}`} className={field} value={form.bankAccountId} onChange={(e) => setForm({ ...form, bankAccountId: e.target.value })} disabled={!isPending}>
                 <option value="">— ยังไม่ระบุ —</option>
                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
@@ -225,7 +225,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
           <p className="mb-3 text-[13px] text-muted">ยืนยันว่าโอน {fmtMoney(o.amount)} ให้ {o.receiverName} แล้ว — ยอด {fmtMoney(o.amount)} + ค่าธรรมเนียม จะถูกหักจากยอดคงเหลือของร้าน</p>
           <label className={fieldLabel} htmlFor={`at-${o.ref}`}>เลขอ้างอิงการโอน / หมายเหตุ (ถ้ามี)</label>
           <input id={`at-${o.ref}`} className={field} value={transferRef} maxLength={200} onChange={(e) => setTransferRef(e.target.value)} placeholder="เช่น เลขที่รายการจากแอปธนาคาร" autoFocus />
-          <label className={`${fieldLabel} mt-3`} htmlFor={`aa-${o.ref}`}>บัญชีที่หัก (ถ้ามี)</label>
+          <label className={`${fieldLabel} mt-3`} htmlFor={`aa-${o.ref}`}>โอนจากบัญชี (ถ้ามี)</label>
           <select id={`aa-${o.ref}`} className={field} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             <option value="">ไม่ระบุ — โอนนอกระบบ</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}

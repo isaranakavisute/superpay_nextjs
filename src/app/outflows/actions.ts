@@ -17,6 +17,12 @@ async function as(fn: (actor: string) => Promise<ActionResult>): Promise<ActionR
   return r;
 }
 
+/** "admin ดำเนินการ" yes / no — the team has (not yet) made the bank transfer for this payout. */
+export async function setAdminDone(ref: string, done: boolean) {
+  if (!REF.test(ref)) return bad("เลขที่รายการไม่ถูกต้อง");
+  return as((actor) => consoleWrite("POST", `/api/console/outflows/${ref}/admin-done`, actor, { done }));
+}
+
 /** Approve after paying outside Option Pay — the deducting account and the transfer reference are optional. */
 export async function approveOutflow(ref: string, bankAccountId?: number, note?: string) {
   if (!REF.test(ref)) return bad("เลขที่รายการไม่ถูกต้อง");

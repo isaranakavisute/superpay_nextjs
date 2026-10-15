@@ -12,6 +12,7 @@ const NAV: { href: string; label: string; perm?: string; needsSubs?: boolean }[]
   { href: "/merchant/dashboard", label: "แดชบอร์ด" },
   { href: "/merchant/transactions", label: "รายการชำระเงิน" },
   { href: "/merchant/withdrawals", label: "ถอนเงิน" },
+  { href: "/merchant/payouts", label: "รายการโอนออก" },
   { href: "/merchant/network", label: "ภาพรวมร้านย่อย", perm: "view_dashboard", needsSubs: true },
   { href: "/merchant/sub-merchants", label: "ร้านย่อย", perm: "manage_sub_merchants" },
   { href: "/merchant/settings", label: "ตั้งค่า" },

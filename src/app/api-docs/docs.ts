@@ -29,9 +29,11 @@ const LIST = (item: string) => `{
 const QS = "Query: <code>limit</code> (1–200, ค่าเริ่มต้น 50) · <code>offset</code> · <code>status</code> (คั่นด้วย , ได้) · <code>from</code> / <code>to</code> (ISO 8601 พร้อม timezone)";
 const PAYOUT = `{ "id": "OUT40160", "merchantRef": "PO-001", "amount": 500,
   "fee": 10, "totalDebit": 510,   // ค่าธรรมเนียมเงินออก (บวกเพิ่ม) · หักจากยอดร้าน = amount + fee · ผู้รับได้ amount เต็ม
-  "status": "PENDING",
+  "status": "COMPLETED",          // อนุมัติแล้ว — อนุมัติอัตโนมัติทันที และหักยอดร้านแล้ว
   "bankCode": "SCB", "accountNumber": "1234567890", "accountName": "นาย ก",
-  "description": "...", "createdAt": "...", "completedAt": null, "failureReason": null }`;
+  "description": "...", "createdAt": "2026-10-15T04:29:00.000Z",
+  "completedAt": "2026-10-15T04:29:00.000Z",   // อนุมัติทันทีตอนสร้าง (payout ผ่าน API)
+  "failureReason": null }`;
 const WDR = `{ "requestRef": "WDR90031", "merchantRef": "W-001", "amount": 1000,
   "fee": 20, "totalDebit": 1020,  // ค่าธรรมเนียมเงินออก (บวกเพิ่ม) · หักจากยอดร้าน = amount + fee
   "status": "PENDING",
@@ -228,6 +230,43 @@ export const SECTIONS: Section[] = [
         note: `${SLIP_COMPARE_HTML}<br>${SLIP_PARSE}<br><br>${SLIP_RULES}`,
       },
       { m: "POST", p: "/payment/:ref/slip", d: "แนบสลิปเข้าออเดอร์ตาม ref หรือ transaction id — shape เดิม", auth: KEY, body: `{ "image": "<base64>", "mime": "image/png" }`, res: "เหมือน /payment/slip/verify", note: "ตรวจสลิปตามกฎเดียวกับ /payment/slip/verify · แนบทับสลิปเดิมได้ (หน้าชำระเงินของลูกค้าแนบได้ครั้งเดียว)" },
+      {
+        m: "GET", p: "/payment/validation-report", d: "รายงานผลการตรวจ (อนุมัติ / ไม่อนุมัติ) พร้อมเหตุผลและข้อมูลจากธนาคาร", auth: KEY,
+        body: `// Query — อย่างน้อย 1 ใน refs / batch / date / start_time (ใช้ร่วมกันได้ = ต้องตรงทุกเงื่อนไข) · ไม่เกิน 100 รายการต่อครั้ง
+refs=TXN172828%2CTXN172872%2CORD-001   // เลขที่ TXN… หรือ orderId คั่นด้วย , — ส่ง , เป็น %2C (ลายเซ็นใช้ URL ตามที่ส่ง)
+batch=coffee9-2026-10-14               // ป้ายกลุ่มรายการที่ Option Pay ตั้งให้ (เช่น ชุดที่ตรวจซ้ำพร้อมกัน)
+date=2026-10-14                        // รายการที่สร้างวันนั้น (เวลาไทย)
+source=API                             // ช่องทางที่สร้าง: API (/payment/create) · SLIP (/payment/slip/create) · COLLECT · PORTAL
+start_time=16%3A52%3A49                // สร้างตั้งแต่ (HH:MM[:SS] คู่กับ date หรือ ISO เช่น 2026-10-14T16%3A52%3A00%2B07%3A00) — ส่ง : เป็น %3A
+end_time=17%3A04%3A10                  // สร้างถึง (รวมทั้งวินาที/นาทีนั้น)`,
+        res: `{
+  "success": true,
+  "report": "payment validation — Coffee9", "generatedAt": "2026-10-15T09:10:00+07:00",
+  "summary": { "total": 39, "approved": 34, "notApproved": 5, "notApprovedWithSlip": 1, "noSlipSent": 4 },   // + "notFound": [...] ถ้ามี ref ที่ไม่พบ
+  "howVerified": "...",
+  "orders": [                                   // อนุมัติก่อน แล้วตามด้วยไม่อนุมัติ
+    {
+      "ref": "TXN172828", "orderId": "PD-01a139…", "customer": "คชาภรณ์ หันจันทร์",
+      "decision": "APPROVED",                   // APPROVED | NOT_APPROVED
+      "currentStatus": "PAID",                  // PAID | PENDING | EXPIRED | CANCELLED | REFUNDED
+      "amounts": { "orderAmount": 500, "fee": 8, "netAmount": 492 },
+      "receivingAccount": "SCB 4182186378 (มิดทาวน์ไลท์ จำกัด)",
+      "timeline": { "orderCreated": "…+07:00", "slipUploaded": "…", "approvedAt": "…", "approvedBy": "system" },
+      "bankVerification": {                     // null = ยังไม่มีสลิป · { verified:false|null, message } = ธนาคารยืนยันไม่ได้
+        "source": "EasySlip (bank) — slip image", "verified": true,
+        "bankReference": "016287165305BOR04572", "transferredAt": "2026-10-14T16:53:05+07:00", "amount": 500,
+        "sender":   { "name": "น.ส. คชาภรณ์ ห", "bank": "KBANK", "account": "xxx-x-x5004-x" },
+        "receiver": { "name": "บริษัท มิดทาวน์ไลท์ จ", "bank": "SCB", "account": "xxx-x-x8637-x" }
+      },
+      "checks": [ { "check": "BANK_VERIFICATION", "status": "PASS", "detail": "…" },
+                  { "check": "AMOUNT", "status": "PASS", "detail": "…" }, … ],   // PASS | FAIL | WARN | UNKNOWN | SKIPPED
+      "reason": "The bank confirmed a real transfer of ฿500.00 …",
+      "reason_th": "ธนาคารยืนยันการโอนจริง ฿500.00 … ผ่านทุกข้อ จึงอนุมัติ"
+    }
+  ]
+}`,
+        note: "<strong>คู่มือเต็ม พร้อมวิธีได้มาของทุก parameter และตัวอย่างที่ใช้งานได้จริง:</strong> Merchant Portal → คู่มือ API → <a href=\"/merchant/docs/api#validation-report\">รายงานผลการตรวจสลิป</a> · ข้อมูลธนาคารดึงใหม่จากผู้ให้บริการตรวจสลิปทุกครั้งที่เรียก — <strong>ใช้โควตา 1 ครั้งต่อสลิป</strong> และใช้เวลาประมาณ 10–20 วินาทีต่อ 40 รายการ (ตั้ง timeout 180 วินาที) · เฉพาะรายการของร้านนี้ (ร้านแม่ใช้ <code>X-Sub-Merchant</code> ดูร้านย่อยได้) · สิทธิ์ <code>view_transactions</code> · Errors: ไม่ระบุ refs/date → <code>400 validation_error</code> · เกิน 100 รายการ → <code>400 TOO_MANY_ORDERS</code>",
+      },
       { m: "GET", p: "/payment/order/:orderId", d: "ตรวจสอบ Payment ตาม Order ID", auth: KEY, res: `{ "success": true, "transaction": { ... } }`, note: "404 <code>ORDER_NOT_FOUND</code> ถ้าไม่พบ" },
       {
         m: "GET", p: "/payment/checkout/:transactionId", d: "Checkout Page Data (ไม่ต้องส่ง API Key)", auth: "ไม่ต้องมี key — transaction id เป็นความลับของลูกค้าคนนั้น",
@@ -269,7 +308,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "payout", nav: "Payout", title: "Payout (โอนเงินออก)",
-    sub: "สั่งโอนเงินออกจากยอดของร้าน — <strong>ผู้ดูแลตรวจและอนุมัติเองทุกรายการ (ไม่มีอนุมัติอัตโนมัติ)</strong>: เข้าคิวที่หน้า <strong>รายการเงินออก</strong> ผู้ดูแลโอนให้ผู้รับนอกระบบแล้วกดอนุมัติ · สถานะ: <code>PENDING</code> (กันยอด amount + fee ไว้ — ใช้ไม่ได้) → <code>COMPLETED</code> (หักยอด amount + fee จากร้าน) หรือ <code>FAILED</code> (คืนยอดที่กันไว้ ไม่หักอะไร) · <strong>ไม่มี webhook สำหรับ payout</strong> — ตรวจสถานะด้วย <code>GET /payout/:id</code> หรือ <code>GET /payout/ref/:merchantRef</code>",
+    sub: "สั่งโอนเงินออกจากยอดของร้าน — <strong>อนุมัติอัตโนมัติทันทีที่สร้าง</strong>: ตอบ <code>status: COMPLETED</code> (อนุมัติแล้ว) พร้อม <code>completedAt</code> และ<strong>หักยอด amount + fee จากร้านทันที</strong> · ทีม Option Pay โอนเงินให้ผู้รับต่อจากนั้น (ติดตามที่หน้ารายการเงินออกของผู้ดูแล) · สถานะไม่เปลี่ยนอีก — ไม่มีการคืนยอดอัตโนมัติ · <code>/payout/create</code> และ <code>/payout/bulk</code> ทำงานแบบเดียวกัน · ร้านดูรายการได้ที่ Merchant Portal → <strong>รายการโอนออก</strong> และ <code>GET /payout/:id</code> / <code>GET /payout/ref/:merchantRef</code> · ไม่มี webhook สำหรับ payout",
     eps: [
       {
         m: "POST", p: "/payout/create", d: "สร้าง Payout — รองรับ Idempotency-Key header", auth: `${KEY} + <code>Idempotency-Key</code> (optional)`,
@@ -335,7 +374,7 @@ export const SECTIONS: Section[] = [
     id: "misc", nav: "Balance & Profile", title: "Balance & Profile",
     eps: [
       { m: "GET", p: "/balance", d: "ดูยอดเงินคงเหลือ", auth: KEY, res: `{ "success": true, "balance": 80616.01, "availableBalance": 31871.13,
-  "reserved": 48744.88,          // payout + คำขอถอนที่ยังรอ
+  "reserved": 48744.88,          // ยอดที่กันไว้ของคำขอถอนที่ยังรออนุมัติ (payout ผ่าน API หักยอดทันที จึงไม่อยู่ในนี้)
   "currency": "THB", "minBalance": 50000,
   "minDepositAmount": 100, "minWithdrawAmount": 100 }` },
       { m: "GET", p: "/balance/line-summary", d: "ดูยอดรวม Line (Parent+Children)", auth: KEY, res: `{ "success": true, "parent": { "id": "28", "name": "Siam Holding", "balance": 1234.5 },

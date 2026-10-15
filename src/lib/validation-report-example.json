@@ -1,0 +1,155 @@
+{
+  "success": true,
+  "report": "payment validation — ร้านตัวอย่าง",
+  "generatedAt": "2026-10-15T11:37:29+07:00",
+  "summary": {
+    "total": 2,
+    "approved": 1,
+    "notApproved": 1,
+    "notApprovedWithSlip": 1,
+    "noSlipSent": 0
+  },
+  "howVerified": "Each slip's QR code was sent to EasySlip, which returns the bank's own record of the transfer (sender, receiver, amount, time, reference) — fetched again for this report. The system then checks: the amount matches the order exactly, the receiving account is this order's account, the transfer was made after the order was created, the sender name (warning only), and that the transfer was not used for another order.",
+  "orders": [
+    {
+      "ref": "TXN100001",
+      "orderId": "ORD-1001",
+      "customer": "สมชาย ใจดี",
+      "decision": "APPROVED",
+      "currentStatus": "PAID",
+      "amounts": {
+        "orderAmount": 500,
+        "fee": 8,
+        "netAmount": 492
+      },
+      "receivingAccount": "SCB 1234567890 (บริษัท ร้านตัวอย่าง จำกัด)",
+      "timeline": {
+        "orderCreated": "2026-10-14T16:52:49+07:00",
+        "slipUploaded": "2026-10-14T17:42:59+07:00",
+        "approvedAt": "2026-10-14T17:42:59+07:00",
+        "approvedBy": "system"
+      },
+      "bankVerification": {
+        "source": "EasySlip (bank) — slip image",
+        "verified": true,
+        "bankReference": "016287100001ABC00001",
+        "transferredAt": "2026-10-14T16:53:05+07:00",
+        "amount": 500,
+        "sender": {
+          "name": "นาย สมชาย ใ",
+          "bank": "KBANK",
+          "account": "xxx-x-x1234-x"
+        },
+        "receiver": {
+          "name": "บริษัท ร้านตัวอย่าง จ",
+          "bank": "SCB",
+          "account": "xxx-x-x4567-x"
+        }
+      },
+      "checks": [
+        {
+          "check": "BANK_VERIFICATION",
+          "status": "PASS",
+          "detail": "ธนาคารยืนยันว่ามีการโอนจริง · เลขอ้างอิง 016287100001ABC00001"
+        },
+        {
+          "check": "AMOUNT",
+          "status": "PASS",
+          "detail": "ยอดในสลิป ฿500.00 ตรงกับยอดออเดอร์"
+        },
+        {
+          "check": "TRANSFER_TIME",
+          "status": "PASS",
+          "detail": "โอนเมื่อ 14 ต.ค. 2569 16:53 — หลังสร้างออเดอร์ (14 ต.ค. 2569 16:52)"
+        },
+        {
+          "check": "RECEIVER_ACCOUNT",
+          "status": "PASS",
+          "detail": "โอนเข้า SCB xxx-x-x4567-x — ตรงกับบัญชีของออเดอร์ (SCB 1234567890 (บริษัท ร้านตัวอย่าง จำกัด))"
+        },
+        {
+          "check": "SENDER_NAME",
+          "status": "PASS",
+          "detail": "ผู้โอน นาย สมชาย ใ ตรงกับชื่อลูกค้า"
+        },
+        {
+          "check": "DUPLICATE",
+          "status": "PASS",
+          "detail": "เงินโอนนี้ไม่ได้ใช้ชำระรายการอื่น"
+        }
+      ],
+      "reason": "The bank confirmed a real transfer of ฿500.00 (ref 016287100001ABC00001) from นาย สมชาย ใ (KBANK xxx-x-x1234-x) to บริษัท ร้านตัวอย่าง จ (SCB xxx-x-x4567-x) — this order's account — at 2026-10-14T16:53:05+07:00, after the order was created. The amount matches the order exactly and the transfer was not used for any other order. All checks passed, so it was approved.",
+      "reason_th": "ธนาคารยืนยันการโอนจริง ฿500.00 (เลขอ้างอิง 016287100001ABC00001) จาก นาย สมชาย ใ (KBANK xxx-x-x1234-x) ไปยัง บริษัท ร้านตัวอย่าง จ (SCB xxx-x-x4567-x) ซึ่งเป็นบัญชีของรายการนี้ · โอนหลังสร้างรายการ · ยอดตรงกับรายการพอดี · ไม่เคยใช้กับรายการอื่น · ผ่านทุกข้อ จึงอนุมัติ"
+    },
+    {
+      "ref": "TXN100002",
+      "orderId": "ORD-1002",
+      "customer": "สมหญิง รักดี",
+      "decision": "NOT_APPROVED",
+      "currentStatus": "EXPIRED",
+      "amounts": {
+        "orderAmount": 1500,
+        "fee": 24,
+        "netAmount": 1476
+      },
+      "receivingAccount": "SCB 1234567890 (บริษัท ร้านตัวอย่าง จำกัด)",
+      "timeline": {
+        "orderCreated": "2026-10-14T17:00:37+07:00",
+        "slipUploaded": "2026-10-14T18:17:01+07:00",
+        "approvedAt": null,
+        "approvedBy": null
+      },
+      "bankVerification": {
+        "source": "EasySlip (bank) — slip image",
+        "verified": true,
+        "bankReference": "016287100002ABC00002",
+        "transferredAt": "2026-10-14T17:00:56+07:00",
+        "amount": 500,
+        "sender": {
+          "name": "น.ส. สมหญิง ร",
+          "bank": "KBANK",
+          "account": "xxx-x-x5678-x"
+        },
+        "receiver": {
+          "name": "บริษัท ร้านตัวอย่าง จ",
+          "bank": "SCB",
+          "account": "xxx-x-x4567-x"
+        }
+      },
+      "checks": [
+        {
+          "check": "BANK_VERIFICATION",
+          "status": "PASS",
+          "detail": "ธนาคารยืนยันว่ามีการโอนจริง · เลขอ้างอิง 016287100002ABC00002"
+        },
+        {
+          "check": "AMOUNT",
+          "status": "FAIL",
+          "detail": "ยอดในสลิป ฿500.00 แต่ออเดอร์ต้องชำระ ฿1,500.00 (โอนขาด ฿1,000.00)"
+        },
+        {
+          "check": "TRANSFER_TIME",
+          "status": "PASS",
+          "detail": "โอนเมื่อ 14 ต.ค. 2569 17:00 — หลังสร้างออเดอร์ (14 ต.ค. 2569 17:00)"
+        },
+        {
+          "check": "RECEIVER_ACCOUNT",
+          "status": "PASS",
+          "detail": "โอนเข้า SCB xxx-x-x4567-x — ตรงกับบัญชีของออเดอร์ (SCB 1234567890 (บริษัท ร้านตัวอย่าง จำกัด))"
+        },
+        {
+          "check": "SENDER_NAME",
+          "status": "PASS",
+          "detail": "ผู้โอน น.ส. สมหญิง ร ตรงกับชื่อลูกค้า"
+        },
+        {
+          "check": "DUPLICATE",
+          "status": "PASS",
+          "detail": "เงินโอนนี้ไม่ได้ใช้ชำระรายการอื่น"
+        }
+      ],
+      "reason": "The bank confirmed a real transfer of ฿500.00 (ref 016287100002ABC00002) to บริษัท ร้านตัวอย่าง จ (SCB xxx-x-x4567-x), but: AMOUNT — ยอดในสลิป ฿500.00 แต่ออเดอร์ต้องชำระ ฿1,500.00 (โอนขาด ฿1,000.00). The money is in the correct account but ฿1000.00 short: create a ฿500.00 order and send the same slip (within 24 h of the transfer), edit this order to ฿500.00, or collect the remaining ฿1000.00.",
+      "reason_th": "ธนาคารยืนยันการโอนจริง ฿500.00 (เลขอ้างอิง 016287100002ABC00002) ไปยัง บริษัท ร้านตัวอย่าง จ (SCB xxx-x-x4567-x) แต่ไม่ผ่าน: AMOUNT — ยอดในสลิป ฿500.00 แต่ออเดอร์ต้องชำระ ฿1,500.00 (โอนขาด ฿1,000.00) · เงินเข้าบัญชีถูกต้องแต่ขาด ฿1000.00 — สร้างรายการ ฿500.00 แล้วส่งสลิปเดิม (ภายใน 24 ชม. หลังโอน) หรือแก้ยอดรายการเป็น ฿500.00 หรือให้ลูกค้าโอนส่วนที่ขาด"
+    }
+  ]
+}

@@ -189,7 +189,7 @@ export function Dashboard({ sel, rangeLabel, isAll, userName, summary, trend }: 
             <table className="w-full text-[12.5px]">
               <thead className="bg-surface-alt">
                 <tr>
-                  {["เลขที่", "หมวดหมู่", "บัญชีที่หัก", "โอนไปยัง", "ยอด", "สถานะ", "วันที่"].map((h) => (
+                  {["เลขที่", "หมวดหมู่", "หักจาก", "โอนไปยัง", "ยอด", "สถานะ", "วันที่"].map((h) => (
                     <th key={h} className={th}>{h}</th>
                   ))}
                 </tr>
@@ -207,7 +207,9 @@ export function Dashboard({ sel, rangeLabel, isAll, userName, summary, trend }: 
                         <td className={td}>
                           <CategoryBadge category={o.category} />
                         </td>
-                        <td className={`${td} text-muted`}>{o.fromAccount}</td>
+                        <td className={`${td} text-muted`}>
+                          {o.merchantId != null ? (<><div className="text-ink">ยอดร้าน {o.merchantName}</div>{o.fromAccount && <div className="text-[10.5px]">โอนจาก: {o.fromAccount}</div>}</>) : (o.fromAccount ?? "—")}
+                        </td>
                         <td className={td}>
                           <div className="flex items-center gap-2">
                             <BankChip code={o.receiverBankCode} />

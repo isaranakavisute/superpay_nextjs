@@ -173,7 +173,7 @@
    },
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"PENDING\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": null,\n    \"failureReason\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
   },
   "GET /payout/:id": {
    "method": "GET",
@@ -186,7 +186,7 @@
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"PENDING\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": null,\n    \"failureReason\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
   },
   "GET /payout/ref/:merchantRef": {
    "method": "GET",
@@ -199,7 +199,7 @@
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"PENDING\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": null,\n    \"failureReason\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
   },
   "GET /payouts": {
    "method": "GET",
@@ -212,7 +212,7 @@
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"OUT40197\",\n      \"merchantRef\": \"PO-DOC-001\",\n      \"amount\": 10,\n      \"status\": \"PENDING\",\n      \"bankCode\": \"SCB\",\n      \"accountNumber\": \"1234567890\",\n      \"accountName\": \"สมชาย ใจดี\",\n      \"description\": \"ค่าสินค้า\",\n      \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n      \"completedAt\": null,\n      \"failureReason\": null\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"limit\": 5,\n    \"offset\": 0\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"OUT40197\",\n      \"merchantRef\": \"PO-DOC-001\",\n      \"amount\": 10,\n      \"status\": \"COMPLETED\",\n      \"bankCode\": \"SCB\",\n      \"accountNumber\": \"1234567890\",\n      \"accountName\": \"สมชาย ใจดี\",\n      \"description\": \"ค่าสินค้า\",\n      \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n      \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n      \"failureReason\": null\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"limit\": 5,\n    \"offset\": 0\n  }\n}"
   },
   "POST /payout/bulk": {
    "method": "POST",
@@ -225,7 +225,7 @@
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"created\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"index\": 0,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT40198\",\n        \"merchantRef\": \"PO-DOC-101\",\n        \"amount\": 11,\n        \"status\": \"PENDING\",\n        \"bankCode\": \"SCB\",\n        \"accountNumber\": \"1234567890\",\n        \"accountName\": \"สมชาย ใจดี\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-101)\",\n        \"createdAt\": \"2026-10-12T08:08:49.762Z\",\n        \"completedAt\": null,\n        \"failureReason\": null\n      }\n    },\n    {\n      \"index\": 1,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT40199\",\n        \"merchantRef\": \"PO-DOC-102\",\n        \"amount\": 12,\n        \"status\": \"PENDING\",\n        \"bankCode\": \"KBANK\",\n        \"accountNumber\": \"9876543210\",\n        \"accountName\": \"มาลี สวยงาม\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-102)\",\n        \"createdAt\": \"2026-10-12T08:08:49.778Z\",\n        \"completedAt\": null,\n        \"failureReason\": null\n      }\n    }\n  ]\n}"
+   "response": "{\n  \"success\": true,\n  \"created\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"index\": 0,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT40198\",\n        \"merchantRef\": \"PO-DOC-101\",\n        \"amount\": 11,\n        \"status\": \"COMPLETED\",\n        \"bankCode\": \"SCB\",\n        \"accountNumber\": \"1234567890\",\n        \"accountName\": \"สมชาย ใจดี\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-101)\",\n        \"createdAt\": \"2026-10-12T08:08:49.762Z\",\n        \"completedAt\": \"2026-10-12T08:08:49.762Z\",\n        \"failureReason\": null\n      }\n    },\n    {\n      \"index\": 1,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT40199\",\n        \"merchantRef\": \"PO-DOC-102\",\n        \"amount\": 12,\n        \"status\": \"COMPLETED\",\n        \"bankCode\": \"KBANK\",\n        \"accountNumber\": \"9876543210\",\n        \"accountName\": \"มาลี สวยงาม\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-102)\",\n        \"createdAt\": \"2026-10-12T08:08:49.778Z\",\n        \"completedAt\": \"2026-10-12T08:08:49.778Z\",\n        \"failureReason\": null\n      }\n    }\n  ]\n}"
   },
   "POST /withdrawal/request/create": {
    "method": "POST",

@@ -74,7 +74,7 @@ export function CreateOutflow({ merchants, accounts }: { merchants: Opt[]; accou
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className={fieldLabel} htmlFor="co-a">บัญชีที่หัก</label>
+              <label className={fieldLabel} htmlFor="co-a">โอนจากบัญชี (ถ้ามี)</label>
               <select id="co-a" className={field} value={form.bankAccountId} onChange={set("bankAccountId")}>
                 <option value="">— เลือกตอนอนุมัติ —</option>
                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}

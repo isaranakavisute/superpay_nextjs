@@ -16,6 +16,7 @@ import { bkkDayStart } from "@/lib/domain";
 import type { AccountRow, MerchantRow, OutflowRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { bulkOutflows } from "./actions";
+import { AdminDoneSelect } from "./AdminDoneSelect";
 import { CreateOutflow } from "./CreateOutflow";
 import { OUTFLOW_CATEGORIES } from "./categories";
 import { CopyButton, OutflowActions } from "./OutflowActions";
@@ -26,13 +27,22 @@ const PATH = "/outflows";
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";
 const td = "px-[18px] py-[13px] align-middle";
 const timeOnly = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
-const HEADERS = ["เลขที่", "ร้านค้า", "บัญชีที่หัก", "โอนไปยัง", "ยอด", "สถานะ", "ที่มา", "วันที่", "รายละเอียด", "จัดการ"];
+const HEADERS = ["เลขที่", "ร้านค้า", "หักจาก", "โอนไปยัง", "ยอด", "สถานะ", "ที่มา", "วันที่", "รายละเอียด", "admin ดำเนินการ", "จัดการ"];
+// Same minimum widths in every table on the page, so the columns line up even when a table is empty.
+const MIN_W: Record<string, number> = { "เลขที่": 120, "ร้านค้า": 120, "หักจาก": 170, "โอนไปยัง": 230, "ยอด": 160, "สถานะ": 120, "ที่มา": 90, "วันที่": 140, "รายละเอียด": 220, "admin ดำเนินการ": 130 };
 const SOURCE: Record<string, string> = { withdrawal: "คำขอถอน", email: "แจ้งเตือนอีเมล", payout_api: "payout API" };
 type Accounts = { id: number; label: string }[];
 
-function Row({ o, selectable, accounts }: { o: OutflowRow; selectable?: boolean; accounts: Accounts }) {
+// Row colour by section: "รอ admin ดำเนินการ" = bright red (needs the admin) · "admin ดำเนินการเรียบร้อยแล้ว" = light green (done).
+type Tone = "todo" | "done";
+const TONE: Record<Tone, string> = {
+  todo: "bg-[rgba(239,68,68,0.30)] hover:bg-[rgba(239,68,68,0.38)] [&>td:first-child]:shadow-[inset_4px_0_0_#ef4444]",
+  done: "bg-[rgba(16,185,129,0.13)] hover:bg-[rgba(16,185,129,0.19)] [&>td:first-child]:shadow-[inset_4px_0_0_#10b981]",
+};
+
+function Row({ o, selectable, accounts, tone }: { o: OutflowRow; selectable?: boolean; accounts: Accounts; tone?: Tone }) {
   return (
-    <tr className="hover:bg-surface-alt">
+    <tr className={tone ? TONE[tone] : "hover:bg-surface-alt"}>
       {selectable && <td className={`${td} w-8 pr-0`}><RowCheckbox refId={o.ref} /></td>}
       <td className={`${td} whitespace-nowrap`}>
         <strong>{o.ref}</strong>
@@ -42,7 +52,13 @@ function Row({ o, selectable, accounts }: { o: OutflowRow; selectable?: boolean;
       </td>
       <td className={`${td} whitespace-nowrap`}>{o.merchantName ?? <span className="text-soft">house</span>}</td>
       <td className={`${td} whitespace-nowrap`}>
-        {o.fromAccount ? (
+        {/* A shop's outflow is deducted from the shop's balance; the bank account it was paid from is only a record. */}
+        {o.merchantId != null ? (
+          <div>
+            <div>ยอดร้าน {o.merchantName}</div>
+            {o.fromAccount && <div className="text-[10.5px] text-muted">โอนจาก: {o.fromAccount}</div>}
+          </div>
+        ) : o.fromAccount ? (
           <div>
             <div>{o.fromAccount}</div>
             {o.fromAccountName && <div className="text-[10.5px] text-muted">{o.fromAccountName}</div>}
@@ -84,6 +100,7 @@ function Row({ o, selectable, accounts }: { o: OutflowRow; selectable?: boolean;
         )}
       </td>
       <td className={`${td} max-w-[240px] text-muted`}>{o.description ?? <span className="text-soft">—</span>}</td>
+      <td className={td}><AdminDoneSelect refId={o.ref} done={o.adminDone} /></td>
       <td className={td}>
         <OutflowActions
           accounts={accounts}
@@ -105,14 +122,14 @@ function Row({ o, selectable, accounts }: { o: OutflowRow; selectable?: boolean;
   );
 }
 
-function Table({ rows, selectable, empty, accounts }: { rows: OutflowRow[]; selectable?: boolean; empty: string; accounts: Accounts }) {
+function Table({ rows, selectable, empty, accounts, tone }: { rows: OutflowRow[]; selectable?: boolean; empty: string; accounts: Accounts; tone?: Tone }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-[12.5px]">
         <thead>
           <tr>
             {selectable && <th className={`${th} w-8 pr-0`} title="เลือกทั้งหมด"><AllCheckbox refs={rows.map((r) => r.ref)} /></th>}
-            {HEADERS.map((h) => <th key={h} className={`${th} ${h === "จัดการ" ? "text-right" : ""}`}>{h}</th>)}
+            {HEADERS.map((h) => <th key={h} className={`${th} ${h === "จัดการ" ? "text-right" : ""}`} style={MIN_W[h] ? { minWidth: MIN_W[h] } : undefined}>{h}</th>)}
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
@@ -124,7 +141,7 @@ function Table({ rows, selectable, empty, accounts }: { rows: OutflowRow[]; sele
               </td>
             </tr>
           ) : (
-            rows.map((o) => <Row key={o.ref} o={o} selectable={selectable} accounts={accounts} />)
+            rows.map((o) => <Row key={o.ref} o={o} selectable={selectable} accounts={accounts} tone={tone} />)
           )}
         </tbody>
       </table>
@@ -147,15 +164,18 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
 
   let data;
   try {
-    const [pending, approved, rejected, merchants, accounts] = await Promise.all([
+    const [todo, pending, approved, rejected, merchants, accounts] = await Promise.all([
+      // Auto-approved payouts the team has not transferred yet ("admin ดำเนินการ" = no) — live, every date.
+      listResource<OutflowRow>("outflows", { ...common, status: "approved", adminDone: "no", limit: 200 }),
       // The work queue is live (not limited to the range).
       listResource<OutflowRow>("outflows", { ...common, status: "pending", limit: 200 }),
-      listResource<OutflowRow>("outflows", { ...common, ...win, status: "approved", limit: sp.size, offset: (sp.page - 1) * sp.size }),
+      // Approved and transferred by the team ("admin ดำเนินการ" = yes); not-yet-transferred ones are in "รอ admin ดำเนินการ".
+      listResource<OutflowRow>("outflows", { ...common, ...win, status: "approved", adminDone: "yes", limit: sp.size, offset: (sp.page - 1) * sp.size }),
       listResource<OutflowRow>("outflows", { ...common, ...win, status: "rejected", limit: rp.size, offset: (rp.page - 1) * rp.size }),
       listResource<MerchantRow>("merchants"),
       listResource<AccountRow>("accounts", { limit: 200 }),
     ]);
-    data = { pending, approved, rejected, merchants: merchants.data, accounts: accounts.data };
+    data = { todo, pending, approved, rejected, merchants: merchants.data, accounts: accounts.data };
   } catch (err) {
     data = err instanceof Error ? err.message : String(err);
   }
@@ -194,25 +214,43 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
 
       <section className="mb-4 overflow-hidden rounded-xl border border-l-4 border-line border-l-danger bg-surface">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-[22px] py-[18px]">
-          <h2 className="text-lg font-semibold whitespace-nowrap">รอดำเนินการ</h2>
+          <h2 className="text-lg font-semibold whitespace-nowrap">รอ admin ดำเนินการ</h2>
           <span className="text-[12.5px] text-muted">
             <span className="mr-1.5 inline-flex rounded-full bg-[#fee2e2] px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-[#b91c1c] uppercase">
-              {data.pending.pagination.total} รายการ
+              {data.todo.pagination.total} รายการ
             </span>
-            รอโอน/รออนุมัติ — คำขอถอน, payout API, รายการที่ระบบสร้างจากแจ้งเตือนหักเงิน
+            payout API อนุมัติอัตโนมัติแล้ว (หักยอดร้านแล้ว) — โอนให้ผู้รับ แล้วเปลี่ยน <strong>admin ดำเนินการ</strong> เป็น yes · ทุกวันที่
           </span>
         </div>
-        <BulkSelect items={data.pending.data.map((o) => ({ ref: o.ref, amount: o.amount }))} bulk={bulkOutflows} show="selected" accounts={accountOpts}>
-          <Table rows={data.pending.data} selectable empty="ไม่มีรายการรอดำเนินการ" accounts={accountOpts} />
-        </BulkSelect>
+        <Table rows={data.todo.data} empty="ไม่มีรายการที่รอ admin ดำเนินการ" accounts={accountOpts} tone="todo" />
       </section>
+
+      {/* Only when something waits for approval (withdrawal requests, items created by an admin, bank notifications). */}
+      {data.pending.pagination.total > 0 && (
+        <>
+        <section className="mb-4 overflow-hidden rounded-xl border border-l-4 border-line border-l-danger bg-surface">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-[22px] py-[18px]">
+            <h2 className="text-lg font-semibold whitespace-nowrap">รอดำเนินการ</h2>
+            <span className="text-[12.5px] text-muted">
+              <span className="mr-1.5 inline-flex rounded-full bg-[#fee2e2] px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-[#b91c1c] uppercase">
+                {data.pending.pagination.total} รายการ
+              </span>
+              รอโอน/รออนุมัติ — คำขอถอน, payout API, รายการที่ระบบสร้างจากแจ้งเตือนหักเงิน
+            </span>
+          </div>
+          <BulkSelect items={data.pending.data.map((o) => ({ ref: o.ref, amount: o.amount }))} bulk={bulkOutflows} show="selected" accounts={accountOpts}>
+            <Table rows={data.pending.data} selectable empty="ไม่มีรายการรอดำเนินการ" accounts={accountOpts} />
+          </BulkSelect>
+        </section>
+        </>
+      )}
 
       <section className="mb-4 overflow-hidden rounded-xl border border-l-4 border-line border-l-success bg-surface">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-[22px] py-[18px]">
-          <h2 className="text-lg font-semibold whitespace-nowrap">สำเร็จ</h2>
+          <h2 className="text-lg font-semibold whitespace-nowrap">admin ดำเนินการเรียบร้อยแล้ว</h2>
           <span className="text-[12.5px] text-muted">{shown(sp.page, sp.size, data.approved.pagination.total)}</span>
         </div>
-        <Table rows={data.approved.data} empty="ไม่พบรายการในระบบ" accounts={accountOpts} />
+        <Table rows={data.approved.data} empty="ไม่พบรายการในระบบ" accounts={accountOpts} tone="done" />
         <Pager path={PATH} params={params} bucket="s" page={sp.page} size={sp.size} total={data.approved.pagination.total} />
       </section>
 

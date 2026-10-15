@@ -115,7 +115,7 @@ function BulkBar({ items, bulk, show = "always", accounts }: { items: { ref: str
           }
         >
           <p className="mb-3 text-[13px] text-muted">ยืนยันว่าโอนให้ผู้รับทั้ง {refs.length} รายการแล้ว — ยอด + ค่าธรรมเนียม จะถูกหักจากยอดคงเหลือของแต่ละร้าน</p>
-          <label className={fieldLabel} htmlFor="bulk-account">บัญชีที่หัก (ถ้ามี — ใช้กับรายการที่ยังไม่ได้ระบุบัญชี)</label>
+          <label className={fieldLabel} htmlFor="bulk-account">โอนจากบัญชี (ถ้ามี — ใช้กับรายการที่ยังไม่ได้ระบุบัญชี)</label>
           <select id="bulk-account" className={field} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             <option value="">ไม่ระบุ — โอนนอกระบบ</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
