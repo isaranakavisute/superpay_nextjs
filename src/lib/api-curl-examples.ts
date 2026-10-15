@@ -154,7 +154,8 @@ import { createHmac } from "node:crypto";
 const API_KEY = process.env.OPTIONPAY_API_KEY!;    // ak_live_…
 const SECRET = process.env.OPTIONPAY_SECRET_KEY!;  // sk_live_… (key ระดับร้านใช้ ss_live_…) — ห้ามส่ง
 
-export async function optionpay(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, payload?: unknown) {
+// เซ็นใหม่ทุกครั้งที่เรียก (timestamp ใหม่) — ส่งซ้ำได้โดยไม่ติด SIGNATURE_REUSED · timeoutMs: รอได้นานสุด (ค่าเริ่มต้น 60 วินาที)
+export async function optionpay(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, payload?: unknown, timeoutMs = 60_000) {
   const body = payload === undefined ? "" : JSON.stringify(payload);
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = createHmac("sha256", SECRET).update(\`\${timestamp}.\${method}.\${path}.\${body}\`).digest("hex");
@@ -162,8 +163,36 @@ export async function optionpay(method: "GET" | "POST" | "PATCH" | "DELETE", pat
     method,
     headers: { "X-API-Key": API_KEY, "X-Timestamp": timestamp, "X-Signature": signature, ...(body ? { "Content-Type": "application/json" } : {}) },
     body: body || undefined,
+    signal: AbortSignal.timeout(timeoutMs),   // หมดเวลา → throw (ดูหัวข้อ “ส่งสลิป: timeout และการส่งซ้ำ”)
   });
   return { status: res.status, data: await res.json() };
 }
 
 // ตัวอย่าง: const { data } = await optionpay("POST", "/api/v1/payment/create", { amount: 100, orderId: "ORD-001" });`;
+
+/** Sending a slip with timeouts / network errors handled — safe to resend (see the merchant API guide, section slip-retry). */
+export const SLIP_RETRY_HELPER = `// lib/send-slip.ts — ส่งสลิปพร้อมจัดการ timeout / เครือข่ายขัดข้อง (ใช้ optionpay() จาก lib/optionpay.ts)
+import { optionpay } from "./optionpay";
+
+const WAIT_MS = [2_000, 5_000, 15_000];   // รอก่อนส่งซ้ำครั้งที่ 1, 2, 3
+
+const orderStatus = async (orderId: string) =>
+  (await optionpay("GET", \`/api/v1/payment/order/\${encodeURIComponent(orderId)}\`, undefined, 15_000)).data;
+
+export async function sendSlip(orderId: string, imageBase64: string, mime = "image/jpeg") {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const r = await optionpay("POST", "/api/v1/payment/slip/verify", { orderId, image: imageBase64, mime });
+      if (r.status === 200) return r.data;                 // ตรวจแล้ว: ดู r.data.result (PAID | PENDING_REVIEW | INVALID_SLIP)
+      if (r.status === 409 && r.data.error?.code === "ORDER_NOT_PENDING") return orderStatus(orderId); // ปิดไปแล้ว — ครั้งก่อนอาจสำเร็จ
+      if (![502, 503, 504].includes(r.status)) return r.data; // 4xx อื่น: คำขอผิด — แก้ อย่าส่งซ้ำ
+      // 502 / 503 / 504: เซิร์ฟเวอร์ไม่พร้อมชั่วคราว → ส่งซ้ำด้านล่าง
+    } catch {
+      // timeout / เครือข่ายขัดข้อง: ไม่รู้ว่าเซิร์ฟเวอร์ตรวจเสร็จหรือยัง → ถามสถานะก่อน อย่าเดา
+      const s = await orderStatus(orderId).catch(() => null);
+      if (s?.transaction?.status === "PAID") return s;       // ครั้งก่อนสำเร็จแล้ว — ไม่ต้องส่งซ้ำ
+    }
+    if (attempt >= WAIT_MS.length) throw new Error("ส่งสลิปไม่สำเร็จ — รอ webhook payment.approved / payment.rejected หรือแจ้งผู้ดูแล");
+    await new Promise((ok) => setTimeout(ok, WAIT_MS[attempt]));   // แล้วส่งสลิปเดิมเข้าออเดอร์เดิมอีกครั้ง (ปลอดภัย)
+  }
+}`;

@@ -17,9 +17,10 @@ async function as(fn: (actor: string) => Promise<ActionResult>): Promise<ActionR
   return r;
 }
 
-export async function approveOutflow(ref: string, bankAccountId?: number) {
+/** Approve after paying outside Option Pay — the deducting account and the transfer reference are optional. */
+export async function approveOutflow(ref: string, bankAccountId?: number, note?: string) {
   if (!REF.test(ref)) return bad("เลขที่รายการไม่ถูกต้อง");
-  return as((actor) => consoleWrite("POST", `/api/console/outflows/${ref}/approve`, actor, bankAccountId ? { bankAccountId } : {}));
+  return as((actor) => consoleWrite("POST", `/api/console/outflows/${ref}/approve`, actor, { ...(bankAccountId ? { bankAccountId } : {}), ...(note?.trim() ? { note: note.trim() } : {}) }));
 }
 
 export async function rejectOutflow(ref: string, reason: string) {
@@ -39,10 +40,10 @@ export async function deleteOutflow(ref: string) {
   return as((actor) => consoleWrite("DELETE", `/api/console/outflows/${ref}`, actor));
 }
 
-export async function bulkOutflows(action: "approve" | "reject", refs: string[], reason?: string, bankAccountId?: number) {
+export async function bulkOutflows(action: "approve" | "reject", refs: string[], reason?: string, bankAccountId?: number, note?: string) {
   if (refs.length === 0 || !refs.every((r) => REF.test(r))) return bad("เลือกรายการไม่ถูกต้อง");
   if (action === "reject" && !reason?.trim()) return bad("กรุณาระบุเหตุผล");
-  return as((actor) => consoleWrite("POST", "/api/console/outflows/bulk", actor, { action, refs, reason, bankAccountId }));
+  return as((actor) => consoleWrite("POST", "/api/console/outflows/bulk", actor, action === "approve" ? { action, refs, bankAccountId, ...(note?.trim() ? { note: note.trim() } : {}) } : { action, refs, reason }));
 }
 
 export async function createOutflow(input: {

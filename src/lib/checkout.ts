@@ -1,4 +1,5 @@
 import "server-only";
+import { errorText } from "./api-error";
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 
@@ -29,6 +30,6 @@ export async function getCheckout(token: string): Promise<Checkout | null> {
 export async function postCheckoutSlip(token: string, body: { image: string; mime: string }) {
   const r = await fetch(`${BASE}/api/v1/payment/checkout/${token}/slip`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), cache: "no-store" });
   const j = await r.json().catch(() => null);
-  if (!r.ok) return { ok: false as const, error: (j?.error?.message as string) ?? `HTTP ${r.status}`, code: j?.error?.code as string | undefined };
+  if (!r.ok) return { ok: false as const, error: errorText(j, `HTTP ${r.status}`), code: j?.error?.code as string | undefined };
   return { ok: true as const, result: j.result as string, message: j.message as string | null, mismatches: (j.mismatches as string[] | undefined) ?? [], status: j.status as string };
 }

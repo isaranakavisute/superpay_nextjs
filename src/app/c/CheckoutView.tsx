@@ -118,7 +118,7 @@ function SlipGuideline({ order }: { order: SampleSlip }) {
         {customerName
           ? <li>ชื่อผู้โอน <strong className="text-ink">{customerName}</strong> — ผู้อื่นโอนแทนได้ (เช่น ครอบครัว) ระบบจะแจ้งร้านค้าไว้</li>
           : <li>ชื่อผู้โอน — รายการนี้ไม่ได้ระบุ จึงไม่ตรวจ</li>}
-        <li>วันเวลาที่โอน — <strong className="text-ink">หลังสร้างรายการนี้</strong> และไม่ใช่สลิปเก่า</li>
+        <li>วันเวลาที่โอน — <strong className="text-ink">หลังสร้างรายการนี้</strong> และไม่ใช่สลิปเก่า (ยกเว้นเงินที่คุณโอนให้รายการก่อนหน้าของร้านนี้ที่ยังไม่ได้ชำระ ภายใน 24 ชั่วโมง)</li>
       </ul>
       <div className={h}>สลิปต้องแสดงข้อมูลเหล่านี้ให้ครบและชัด</div>
       <ul className="mb-3 list-disc space-y-0.5 pl-5">

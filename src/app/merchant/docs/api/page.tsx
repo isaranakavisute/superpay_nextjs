@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { API_BASE, CURL_EXAMPLES, LIVE_RUN, NEXT_HELPER, SIGNATURE_ERRORS } from "@/lib/api-curl-examples";
+import { API_BASE, CURL_EXAMPLES, LIVE_RUN, NEXT_HELPER, SIGNATURE_ERRORS, SLIP_RETRY_HELPER } from "@/lib/api-curl-examples";
 import { MERCHANT_PERMISSIONS } from "@/lib/merchant-perms";
 import { requirePortal } from "@/lib/portal";
-import { LOGIN, SECTIONS, type Ep } from "../../../api-docs/docs";
+import { LOGIN, SECTIONS, SLIP_COMPARE, SLIP_SAME_SHAPE, type Ep } from "../../../api-docs/docs";
 import { PortalShell } from "../../PortalShell";
 import { CodeBlock } from "../CodeBlock";
 import { DocLayout, Note, Section, Table } from "../DocLayout";
@@ -30,6 +30,8 @@ function Steps3() {
   );
 }
 
+// Slip results: show the documented full shape (normal / carry-over / invalid / review) instead of one captured case.
+const FULL_RES = new Set(["POST /payment/create", "POST /payment/slip/verify", "POST /payment/:ref/slip"]);
 const H = "mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase";
 
 function Endpoint({ e }: { e: Ep }) {
@@ -53,8 +55,9 @@ function Endpoint({ e }: { e: Ep }) {
           <div className={H}>ค่าจริงตอนรัน</div>
           <CodeBlock light code={`X-Timestamp : ${c.live.timestamp}\nสตริงที่เซ็น : ${c.live.toSign}\nX-Signature : ${c.live.signature}`} />
         </>}
-        <div className={H}>ผลลัพธ์จริง — HTTP {c.live.status}</div><CodeBlock light code={c.live.response} />
+        {!FULL_RES.has(`${e.m} ${e.p}`) && <><div className={H}>ผลลัพธ์จริง — HTTP {c.live.status}</div><CodeBlock light code={c.live.response} /></>}
       </>}
+      {FULL_RES.has(`${e.m} ${e.p}`) && e.res && <><div className={H}>{e.p === "/payment/create" ? "ผลลัพธ์ (HTTP 200) — ตัวอย่างจริง" : "ผลลัพธ์ — ฟิลด์ชุดเดียวกันทุกกรณี (HTTP 200)"}</div><CodeBlock light code={fill(e.res)} /></>}
       {e.note && <div className="mt-3 rounded-lg border-l-[3px] border-primary bg-primary-50 px-3.5 py-2.5 text-[13px] leading-relaxed" dangerouslySetInnerHTML={{ __html: fill(e.note) }} />}
     </div>
   );
@@ -62,7 +65,7 @@ function Endpoint({ e }: { e: Ep }) {
 
 export default async function ApiGuidePage() {
   const user = await requirePortal("/merchant/docs/api");
-  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
+  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "slip-retry", label: "ส่งสลิป: timeout และการส่งซ้ำ" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
   return (
     <PortalShell user={user} path="/merchant/docs">
       <DocLayout title="คู่มือ API v1" subtitle={`ตัวอย่างจริงทุก endpoint: curl + Next.js พร้อมการสร้างลายเซ็น และผลลัพธ์จริง · Base URL: ${API_BASE}`} pdf="api-v1.pdf" toc={toc}>
@@ -113,7 +116,7 @@ ${CURL_EXAMPLES["GET /transactions"].live.toSign}        ← GET ไม่มี
           <Table head={["ข้อมูลบนสลิป", "ต้องตรงกับ", "ถ้าไม่ตรง"]} rows={[
             ["ยอดเงิน", "ยอดของรายการ ทุกสตางค์", "INVALID_SLIP"],
             ["บัญชีผู้รับ + ธนาคาร", "บัญชีรับเงินของรายการ", "INVALID_SLIP"],
-            ["วันเวลาที่โอน", "หลังสร้างรายการ และไม่เก่าเกินกำหนด", "INVALID_SLIP"],
+            ["วันเวลาที่โอน", "หลังสร้างรายการ และไม่เก่าเกินกำหนด — ยกเว้นเงินโอนจากรายการก่อนหน้าของลูกค้าคนเดียวกันที่ยังไม่ได้ชำระ (สร้างก่อนเวลาโอน ≤ 24 ชม. บัญชีผู้รับเดียวกัน — ถ้ายังเปิดอยู่ ยกเลิกอัตโนมัติ) → ผ่าน พร้อม carriedFrom", "INVALID_SLIP"],
             ["ชื่อผู้โอน", <><code key="c">metadata.memberName</code> ตอนสร้างรายการ (ถ้าส่ง)</>, "ไม่ปฏิเสธ — ผู้อื่นโอนแทนได้ · แจ้งใน warnings (และหมายเหตุของรายการ)"],
             ["สลิปเดียวกัน", "ใช้ได้กับรายการเดียว (ตรวจจากไฟล์ และ QR ธนาคาร)", "INVALID_SLIP"],
             ["สลิปตัวอย่างจาก Option Pay", "ใช้แนบไม่ได้", <code key="c">400 SAMPLE_SLIP</code>],
@@ -123,7 +126,44 @@ ${CURL_EXAMPLES["GET /transactions"].live.toSign}        ← GET ไม่มี
             <li><strong>ไม่มีผู้ให้บริการ</strong>: ระบบอ่านข้อมูลจากภาพสลิป — ไม่ตรงได้ <code>INVALID_SLIP</code> · ตรงครบได้ <code>PENDING_REVIEW</code> รอผู้ดูแลยืนยัน (ไม่อนุมัติอัตโนมัติ)</li>
             <li>ทุกข้อที่ไม่ตรงอยู่ใน <code>mismatches</code> (array) พร้อมข้อความบอกสิ่งที่ต้องแก้ · หน้าชำระเงินแนบได้ครั้งเดียว (<code>409 SLIP_ALREADY_UPLOADED</code>) เว้นแต่สลิปก่อนหน้าไม่ผ่าน</li>
           </ul>
+          <h3 className="mt-5 mb-1 text-[15px] font-semibold">โครงสร้าง JSON ของผลตรวจสลิป — กรณีปกติ vs เงินโอนจากออเดอร์ก่อนหน้า</h3>
+          <p dangerouslySetInnerHTML={{ __html: SLIP_SAME_SHAPE }} />
+          <Table head={["ชื่อฟิลด์ (key)", "ชนิดข้อมูล", "กรณีปกติ ①", "เงินโอนจากออเดอร์ก่อนหน้า ②", "มีทั้งสองกรณี"]} rows={SLIP_COMPARE.map(([k, t, a, b]) => [<code key="k">{k}</code>, <code key="t">{t}</code>, a, b, "✓"])} />
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li><strong>ตัดสินใจด้วย <code>result</code></strong>: <code>PAID</code> ส่งสินค้าได้ · <code>PENDING_REVIEW</code> รอ webhook · <code>INVALID_SLIP</code> แจ้งลูกค้าตาม <code>mismatches</code> — ทุกกรณีตอบ HTTP 200</li>
+            <li><strong>อาจเป็น null</strong>: <code>carriedFrom</code> <code>carryOver</code> <code>slip</code> · <strong>อาจเป็น []</strong>: <code>mismatches</code> <code>warnings</code> <code>autoCancelled</code> · <code>checks</code> ไม่ว่างเสมอ</li>
+            <li>เช็กกรณีพิเศษด้วย <code>carriedFrom !== null</code> และ <code>autoCancelled.length &gt; 0</code> — ไม่ต้องเช็กว่ามีฟิลด์หรือไม่</li>
+            <li><code>message</code> / <code>detail</code> / <code>nextStep</code> เป็นข้อความภาษาไทยสำหรับแสดงผล อย่า parse</li>
+            <li><strong>ข้อยกเว้น</strong>: HTTP ไม่ใช่ 2xx = ปฏิเสธก่อนตรวจ → <code>{"{ error: { code, message, details? } }"}</code> · หน้าชำระเงินของลูกค้า (<code>/payment/checkout/:transactionId/slip</code>) ตอบแบบย่อ <code>success verified result message mismatches status</code></li>
+          </ul>
+          <div className={H}>ตัวอย่างเต็มทั้งสองกรณี — ดู <code>POST /payment/slip/verify</code> ในหัวข้อ Payment</div>
           <Note tone="warn">ส่ง <code>metadata.memberName</code> ให้ตรงกับชื่อบัญชีธนาคารที่ลูกค้าจะใช้โอน (ไม่ต้องมีคำนำหน้า) หรือไม่ต้องส่งถ้าไม่ทราบ</Note>
+        </Section>
+        <Section id="slip-retry" title="ส่งสลิป: timeout และการส่งซ้ำ">
+          <p>การส่งสลิปใช้เวลาประมาณ <strong>3–5 วินาที</strong> (ส่วนใหญ่คือการตรวจกับธนาคารผ่าน EasySlip) — บางครั้งธนาคารตอบช้าจนนานถึง 20 วินาทีขึ้นไป ระบบของร้านจึงควรรับมือกับ “ไม่ได้รับคำตอบ” ได้ถูกต้อง</p>
+          <Note tone="warn"><strong>หมดเวลา (timeout) ไม่ได้แปลว่าส่งไม่สำเร็จ</strong> — เซิร์ฟเวอร์อาจตรวจเสร็จและอนุมัติแล้ว แต่คำตอบมาไม่ถึง · ห้ามเดา: ถามสถานะออเดอร์ก่อนทุกครั้ง · ห้ามสร้างออเดอร์ใหม่เพราะ timeout (จะได้ออเดอร์ซ้ำ)</Note>
+          <Table head={["สิ่งที่เกิดขึ้น", "ความหมาย", "ระบบของร้านควรทำ"]} rows={[
+            [<>HTTP 200 · <code key="c">result: PAID</code></>, "ตรวจผ่าน ออเดอร์ชำระแล้ว", "จบ — ส่งสินค้า/บริการได้"],
+            [<>HTTP 200 · <code key="c">result: PENDING_REVIEW</code></>, "รอเจ้าหน้าที่ตรวจ (เช่น ธนาคารไม่ตอบ)", <>รอ webhook <code key="w">payment.approved</code> / <code key="r">payment.rejected</code> — ไม่ต้องส่งซ้ำ</>],
+            [<>HTTP 200 · <code key="c">result: INVALID_SLIP</code></>, "สลิปไม่ผ่าน (ยอด / บัญชี / เวลา / ซ้ำ)", <>แจ้งลูกค้าตาม <code key="m">mismatches</code> — <strong key="s">ส่งสลิปเดิมซ้ำไม่ช่วย</strong> ต้องเป็นสลิปที่ถูกต้อง</>],
+            ["หมดเวลา / เครือข่ายขัดข้อง / ไม่มีคำตอบ", "ไม่รู้ผล — อาจสำเร็จแล้ว", <>เรียก <code key="g">GET /payment/order/:orderId</code> → <code key="p">PAID</code> = จบ · <code key="q">PENDING</code> = ส่งสลิปเดิมเข้าออเดอร์เดิมอีกครั้ง</>],
+            [<>HTTP <code key="c">502 / 503 / 504</code></>, "เซิร์ฟเวอร์ไม่พร้อมชั่วคราว (เช่น ระหว่างอัปเดตระบบ)", "รอแล้วส่งซ้ำ (ดูจังหวะด้านล่าง)"],
+            [<>HTTP <code key="c">409 ORDER_NOT_PENDING</code></>, "ออเดอร์ไม่รอชำระแล้ว — มักเพราะครั้งก่อนสำเร็จ", <>เรียก <code key="g">GET /payment/order/:orderId</code> ยืนยัน — <code key="p">PAID</code> = จบ</>],
+            [<>HTTP <code key="c">401 SIGNATURE_REUSED · TIMESTAMP_EXPIRED</code></>, "ส่งซ้ำด้วยลายเซ็น/เวลาเดิม", "เซ็นใหม่ทุกครั้งที่ส่ง (timestamp ใหม่) — helper ด้านล่างทำให้อัตโนมัติ"],
+            [<>HTTP <code key="c">400</code> อื่น ๆ (<code key="v">validation_error</code>, <code key="i">INVALID_SLIP</code> ไฟล์ไม่ใช่รูป/ใหญ่เกิน 8 MB, <code key="s">SAMPLE_SLIP</code>) · <code key="n">404 ORDER_NOT_FOUND</code></>, "คำขอผิด", <><strong key="x">อย่าส่งซ้ำ</strong> — แก้คำขอ (orderId / ไฟล์ / field)</>],
+          ]} />
+          <div className={H}>กติกาการส่งซ้ำ</div>
+          <ul className="mt-1 list-disc space-y-1 pl-5">
+            <li><strong>ตั้ง timeout 60 วินาที</strong> สำหรับการส่งสลิป (สั้นกว่านี้จะตัดรายการที่ธนาคารตอบช้าทิ้งโดยไม่จำเป็น)</li>
+            <li><strong>ส่งซ้ำได้อย่างปลอดภัย</strong> — สลิปเดิมเข้าออเดอร์เดิมไม่ทำให้ชำระซ้ำ: เงินโอนหนึ่งรายการชำระได้ออเดอร์เดียวเสมอ และออเดอร์ที่ชำระแล้วตอบ <code>409 ORDER_NOT_PENDING</code></li>
+            <li>ส่งซ้ำเฉพาะ <strong>timeout / เครือข่ายขัดข้อง / 502 / 503 / 504</strong> — รอ 2, 5, 15 วินาที ไม่เกิน 3 ครั้ง · ถามสถานะออเดอร์ก่อนส่งซ้ำทุกครั้งหลัง timeout</li>
+            <li><strong>เซ็นคำขอใหม่ทุกครั้ง</strong> — ลายเซ็นใช้ได้ครั้งเดียว และ timestamp คลาดได้ไม่เกิน 5 นาที</li>
+            <li><strong>ผลสุดท้ายยึด webhook</strong> <code>payment.approved</code> / <code>payment.rejected</code> — แม้คำตอบของการส่งสลิปจะหายไป ร้านยังได้รับผลทาง webhook</li>
+            <li>ย่อรูปก่อนส่ง (กว้างประมาณ 1000 px, JPEG คุณภาพ 80%) — ส่งเร็วขึ้น และต้องไม่ครอปจน QR หาย</li>
+            <li>หน้าชำระเงินของลูกค้า (<code>/payment/checkout/:transactionId/slip</code>) แนบได้ครั้งเดียว — ส่งซ้ำหลังสำเร็จได้ <code>409 SLIP_ALREADY_UPLOADED</code> ซึ่งแปลว่าได้รับสลิปแล้ว</li>
+          </ul>
+          <div className={H}>Next.js — ส่งสลิปพร้อมจัดการ timeout และส่งซ้ำ</div>
+          <CodeBlock code={SLIP_RETRY_HELPER} />
         </Section>
         <Section id="perms" title="สิทธิ์และข้อผิดพลาด">
           <p>key ของผู้ใช้ร้านค้าใช้ได้เฉพาะสิทธิ์ของระดับผู้ใช้ (รายการสิทธิ์ส่งกลับใน <code>permissions</code> ตอน login) · key ที่ผู้ดูแลออกให้ร้านใช้ได้ทุกเส้น · ค่าเริ่มต้น (ผู้ดูแลระบบปรับได้):</p>

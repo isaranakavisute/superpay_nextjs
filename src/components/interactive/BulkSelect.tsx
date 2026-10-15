@@ -15,7 +15,7 @@ type BarOptions = {
   bulk: BulkAction;
   /** "always": bar is always shown (payments). "selected": appears once something is ticked (outflows). */
   show?: "always" | "selected";
-  /** When set, bulk approve first asks which account to deduct from. */
+  /** When set, bulk approve first asks which account to deduct from (optional — "" = not specified). */
   accounts?: { id: number; label: string }[];
 };
 
@@ -70,7 +70,7 @@ function BulkBar({ items, bulk, show = "always", accounts }: { items: { ref: str
   const [rejecting, setRejecting] = useState(false);
   const [approving, setApproving] = useState(false);
   const [reason, setReason] = useState("");
-  const [accountId, setAccountId] = useState(accounts?.[0] ? String(accounts[0].id) : "");
+  const [accountId, setAccountId] = useState("");
   const refs = [...selected];
   const total = items.filter((i) => selected.has(i.ref)).reduce((n, i) => n + Number(i.amount), 0);
 
@@ -110,12 +110,14 @@ function BulkBar({ items, bulk, show = "always", accounts }: { items: { ref: str
           footer={
             <>
               <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={() => setApproving(false)}>ยกเลิก</button>
-              <button className={`${btn.base} ${btn.md} ${btn.success}`} disabled={pending || !accountId} onClick={() => run("approve")}>อนุมัติทั้งหมด</button>
+              <button className={`${btn.base} ${btn.md} ${btn.success}`} disabled={pending} onClick={() => run("approve")}>ยืนยันอนุมัติทั้งหมด</button>
             </>
           }
         >
-          <label className={fieldLabel} htmlFor="bulk-account">บัญชีที่หัก (ใช้กับรายการที่ยังไม่ได้ระบุบัญชี)</label>
+          <p className="mb-3 text-[13px] text-muted">ยืนยันว่าโอนให้ผู้รับทั้ง {refs.length} รายการแล้ว — ยอด + ค่าธรรมเนียม จะถูกหักจากยอดคงเหลือของแต่ละร้าน</p>
+          <label className={fieldLabel} htmlFor="bulk-account">บัญชีที่หัก (ถ้ามี — ใช้กับรายการที่ยังไม่ได้ระบุบัญชี)</label>
           <select id="bulk-account" className={field} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+            <option value="">ไม่ระบุ — โอนนอกระบบ</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
           </select>
           {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}

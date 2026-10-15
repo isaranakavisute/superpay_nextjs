@@ -51,7 +51,7 @@ function AccountForm({ account, shops, onClose }: { account?: EditableAccount; s
         </div>
         {chosen.length > 1 && (
           <p className="mt-2 rounded-lg border border-line bg-surface-alt px-3 py-2 text-[12px] text-muted">
-            <strong className="text-ink">ใช้ร่วม {chosen.length} ร้าน</strong> — ทุกออเดอร์บนบัญชีนี้จะได้ยอดไม่ซ้ำกัน (บวกสตางค์ให้อัตโนมัติ) และยอดเดิมจะไม่ถูกใช้ซ้ำภายในเวลาพัก
+            <strong className="text-ink">ใช้ร่วม {chosen.length} ร้าน</strong> — ยอดออเดอร์เป็นไปตามที่ร้านส่งมา (ไม่บวกสตางค์) · สลิปผูกกับออเดอร์เสมอ จึงแยกได้ว่าเงินเป็นของร้านไหน · ถ้าเปิด “ยอดไม่ซ้ำ” ในตั้งค่าระบบ ยอดเดิมจะไม่ถูกใช้ซ้ำภายในเวลาพัก
             เพื่อให้ระบบรู้เสมอว่าเงินที่เข้าเป็นของร้านไหน · เงินเข้าบัญชีเดียวกัน แต่ยอดของแต่ละออเดอร์เป็นของร้านเจ้าของออเดอร์
           </p>
         )}

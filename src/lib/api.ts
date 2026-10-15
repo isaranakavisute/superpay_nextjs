@@ -1,5 +1,6 @@
 import "server-only";
 import type { OutflowCategory, OutflowStatus, PaymentStatus } from "./domain";
+import { errorText } from "./api-error";
 
 // Server-side client for the superpayment backend. URL and key never reach the browser.
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
@@ -85,7 +86,7 @@ async function get<T>(path: string): Promise<T> {
   const res = await fetch(BASE + path, { cache: "no-store", headers: consoleHeaders() });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new Error(body?.error?.message ?? `${path} → HTTP ${res.status}`);
+    throw new Error(errorText(body, `${path} → HTTP ${res.status}`));
   }
   return res.json();
 }
@@ -162,7 +163,7 @@ export async function consoleWrite(method: "POST" | "DELETE", path: string, acto
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const json = await res.json().catch(() => null);
-    if (!res.ok) return { ok: false, error: json?.error?.message ?? `HTTP ${res.status}` };
+    if (!res.ok) return { ok: false, error: errorText(json, `HTTP ${res.status}`) };
     return { ok: true, ...(json ?? {}) };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };

@@ -4,21 +4,22 @@ export type Section = { id: string; nav: string; title: string; sub?: string; ep
 
 const KEY = "<code>X-API-Key</code> + <code>X-Timestamp</code> + <code>X-Signature</code>";
 const TXN = `{
-  "id": "a1b2c3d4e5f6...",          // transaction id (ใช้กับ checkout/cancel)
-  "ref": "TXN173530",
-  "merchantId": "1",
-  "orderId": "ORD-001",
-  "amount": 100.07,                 // ยอดที่ลูกค้าต้องจ่ายจริง (อาจบวกสตางค์ — ดู note)
-  "fee": 1.50, "netAmount": 98.57,
+  "id": "d4dab18fc0540c9a11654ce9af78a434",   // transaction id — ใช้กับ checkout / QR / cancel (ความลับของลูกค้า)
+  "ref": "TXN172886",               // เลขที่รายการของ Option Pay
+  "merchantId": "6",
+  "orderId": "ORD-001",             // เลขออเดอร์ของร้าน (ไม่ส่ง = Option Pay สร้างให้ "OP-…")
+  "amount": 350,                    // ยอดที่ลูกค้าต้องโอน — แสดงยอดนี้ให้ลูกค้าเสมอ
+  "fee": 5.25, "netAmount": 344.75, // ค่าธรรมเนียม และยอดสุทธิที่ร้านได้เมื่อชำระแล้ว
   "status": "PENDING",              // PENDING | PAID | EXPIRED | CANCELLED | REFUNDED
-  "source": "API", "paymentMethod": "PROMPTPAY",   // หรือ BANK_TRANSFER ถ้าบัญชีไม่มี PromptPay
-  "qrCode":    "{BASE}/payment/qr/{id}.png",
-  "qrCodeUrl": "{BASE}/payment/qr/{id}.png",
-  "qrExpiry": "2026-01-01T00:15:00.000Z",
+  "source": "API",
+  "paymentMethod": "BANK_TRANSFER", // หรือ PROMPTPAY ถ้าบัญชีรับเงินมี PromptPay
+  "description": "ข้าวมันไก่ 2 จาน", // null ถ้าไม่ส่ง
+  "qrCode": null, "qrCodeUrl": null, // URL รูป QR PromptPay — null ถ้าบัญชีไม่มี PromptPay
+  "qrExpiry": "2026-10-15T01:37:41.237Z",
   "checkoutUrl": "{SITE}/c?t={id}",
-  "createdAt": "2026-01-01T00:00:00.000Z",
+  "createdAt": "2026-10-15T01:22:41.237Z",
   "paidAt": null,
-  "copy": { "amount": "100.07" }
+  "copy": { "amount": "350.00" }
 }`;
 const LIST = (item: string) => `{
   "success": true,
@@ -37,8 +38,57 @@ const WDR = `{ "requestRef": "WDR90031", "merchantRef": "W-001", "amount": 1000,
   "bankCode": "KBANK", "accountNumber": "9876543210", "accountName": "นาย ก",
   "note": null, "rejectReason": null, "createdAt": "...", "decidedAt": null }`;
 
+/** Normal vs carry-over slip result: the same keys, only the values differ (shown in both API docs). */
+export const SLIP_SAME_SHAPE = "ใช่ — โครงสร้างเหมือนกัน · ทุก response ของการตรวจสลิปจาก API (<code>POST /payment/:ref/slip</code>, <code>POST /payment/slip/verify</code>, <code>POST /payment/slip/create</code> ที่ส่ง image) ตอบฟิลด์ (key) ชุดเดียวกันเสมอ ไม่ว่าจะเกิดอะไรขึ้น · ในกรณีปกติ ฟิลด์ที่มีความหมายเฉพาะกรณีพิเศษ <strong>ยังอยู่ครบ แต่เป็นค่าว่าง: <code>null</code> หรือ <code>[]</code></strong> — parse ด้วยโค้ดชุดเดียวได้ทุกกรณี";
+export const SLIP_COMPARE: [string, string, string, string][] = [
+  ["success", "boolean", "true", "true"],
+  ["verified", "boolean", "true", "true"],
+  ["result", "string", "\"PAID\"", "\"PAID\""],
+  ["message", "string", "\"ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว (อนุมัติอัตโนมัติ)\"", "ข้อความเดียวกัน + อธิบายเงินโอนจาก TXN172829 และการยกเลิกอัตโนมัติ"],
+  ["mismatches", "string[]", "[]", "[]"],
+  ["warnings", "string[]", "[]", "[]"],
+  ["carriedFrom", "string | null", "null", "\"TXN172829\""],
+  ["carryOver", "object | null", "null", "{ fromRef, fromOrderId, fromAmount, fromStatus, transferAmount, transferredAt, reason }"],
+  ["autoCancelled", "object[]", "[]", "[ { ref, orderId, amount, reason } ]"],
+  ["checks", "object[]", "7 ข้อ ทุกข้อ PASS", "7 ข้อ ทุกข้อ PASS (TRANSFER_TIME อธิบายว่าใช้เงินโอนของออเดอร์ก่อนหน้า)"],
+  ["slip", "object | null", "{ provider, transRef, amount, transferredAt, sender, receiver }", "เหมือนกัน"],
+  ["nextStep", "string", "\"ไม่ต้องทำอะไรเพิ่ม — …\"", "ข้อความเดียวกัน + บันทึกความเชื่อมโยง / ปิด TXN172829 ในระบบร้าน"],
+  ["transaction", "object", "{ … status: \"PAID\" }", "{ … status: \"PAID\" }"],
+];
+const SLIP_COMPARE_HTML = `<strong>โครงสร้าง JSON: กรณีปกติ vs เงินโอนจากออเดอร์ก่อนหน้า</strong><br>${SLIP_SAME_SHAPE}<table style="margin-top:8px;width:100%;border-collapse:collapse;font-size:12px"><tr><th align=left>ชื่อฟิลด์ (key)</th><th align=left>ชนิดข้อมูล</th><th align=left>กรณีปกติ ①</th><th align=left>เงินโอนจากออเดอร์ก่อนหน้า ②</th><th>มีทั้งสองกรณี</th></tr>${SLIP_COMPARE.map(([k, t, a, b]) => `<tr style="border-top:1px solid rgba(127,127,127,.25)"><td><code>${k}</code></td><td>${t}</td><td>${a}</td><td>${b}</td><td align=center>✓</td></tr>`).join("")}</table>`;
+/** /payment/create response, field by field (shown in both API docs). */
+const PAYMENT_CREATE_FIELDS: [string, string, string][] = [
+  ["success", "boolean", "true เมื่อสร้างสำเร็จ (ไม่สำเร็จ = HTTP 4xx พร้อม <code>{error:{code,message,details}}</code>)"],
+  ["orderIdGenerated", "boolean", "true = ร้านไม่ได้ส่ง <code>orderId</code> มา Option Pay สร้างให้ (<code>OP-…</code>) — เก็บ <code>transaction.orderId</code> ไว้ใช้อ้างอิง"],
+  ["transaction.id", "string (32)", "transaction id — ใช้กับ <code>/payment/checkout/:id</code>, <code>/payment/qr/:id.png</code>, <code>/transactions/:id</code>, ยกเลิก · ถือเป็นความลับของลูกค้า (อยู่ใน checkoutUrl)"],
+  ["transaction.ref", "string", "เลขที่รายการของ Option Pay (<code>TXN…</code>) — ใช้กับ <code>/payment/:ref/slip</code> และ <code>/transactions/:ref</code>"],
+  ["transaction.merchantId", "string", "รหัสร้านเจ้าของรายการ"],
+  ["transaction.orderId", "string", "เลขออเดอร์ของร้าน (ที่ส่งมา หรือที่ระบบสร้างให้) — ไม่ซ้ำภายในร้าน · ใช้กับ <code>/payment/order/:orderId</code> และ <code>/payment/slip/verify</code>"],
+  ["transaction.amount", "number", "<strong>ยอดที่ลูกค้าต้องโอน</strong> — เท่ากับที่ร้านส่งมา (เว้นแต่ผู้ดูแลเปิด “ยอดไม่ซ้ำ” ซึ่งอาจเติมสตางค์) · แสดงยอดนี้ให้ลูกค้าเสมอ"],
+  ["transaction.fee", "number", "ค่าธรรมเนียมขาเข้า = amount × % + ค่าคงที่ (ตามที่ตั้งให้ร้าน) ปัดเป็น 2 ตำแหน่ง — คิดเมื่อรายการชำระแล้วเท่านั้น"],
+  ["transaction.netAmount", "number", "amount − fee = ยอดที่เข้ายอดคงเหลือของร้านเมื่อ PAID"],
+  ["transaction.status", "string", "<code>PENDING</code> รอชำระ · <code>PAID</code> ชำระแล้ว · <code>EXPIRED</code> หมดอายุ (ยังแนบสลิปได้) · <code>CANCELLED</code> ยกเลิก · <code>REFUNDED</code> คืนเงิน"],
+  ["transaction.source", "string", "ช่องทางที่สร้าง: <code>API</code> · <code>PORTAL</code> · <code>SLIP</code> · <code>COLLECT</code>"],
+  ["transaction.paymentMethod", "string", "<code>PROMPTPAY</code> (บัญชีรับเงินมี PromptPay → มี QR) หรือ <code>BANK_TRANSFER</code> (โอนเข้าเลขบัญชี)"],
+  ["transaction.description", "string | null", "รายละเอียดที่ร้านส่งมา"],
+  ["transaction.qrCode / qrCodeUrl", "string | null", "URL รูป QR PromptPay (PNG) พร้อมยอด — <code>null</code> เมื่อ paymentMethod = BANK_TRANSFER"],
+  ["transaction.qrExpiry", "ISO datetime | null", "เวลาหมดอายุของรายการ (สร้าง + อายุออเดอร์ที่ตั้งไว้ ปกติ 15 นาที) · null = ไม่หมดอายุ"],
+  ["transaction.checkoutUrl", "string", "หน้าชำระเงินสำเร็จรูปของ Option Pay — ส่งให้ลูกค้าเปิดได้เลย (แสดงยอด บัญชี/QR นับถอยหลัง แนบสลิป)"],
+  ["transaction.createdAt", "ISO datetime", "เวลาสร้างรายการ (UTC)"],
+  ["transaction.paidAt", "ISO datetime | null", "เวลาที่ชำระ/อนุมัติ — null จนกว่าจะ PAID"],
+  ["transaction.copy.amount", "string", "ยอดเป็นข้อความ 2 ตำแหน่ง (เช่น \"350.00\") สำหรับปุ่มคัดลอกยอดในแอป"],
+  ["selectedAccount.id", "string", "รหัสบัญชีรับเงินที่ระบบเลือกให้รายการนี้"],
+  ["selectedAccount.type", "string", "<code>PROMPTPAY</code> หรือ <code>BANK</code>"],
+  ["selectedAccount.accountNumber", "string", "เบอร์/เลข PromptPay (type = PROMPTPAY) หรือเลขบัญชีธนาคาร (type = BANK) — ลูกค้าโอนเข้าเลขนี้"],
+  ["selectedAccount.accountName", "string", "ชื่อบัญชีรับเงิน — แสดงให้ลูกค้าตรวจก่อนโอน"],
+  ["selectedAccount.bankCode / bankName", "string", "รหัสและชื่อธนาคารของบัญชีรับเงิน (เช่น SCB · ธนาคารไทยพาณิชย์)"],
+];
+const PAYMENT_CREATE_FIELDS_HTML = `<strong>คำอธิบายผลลัพธ์ทีละฟิลด์</strong><table style="margin-top:6px;width:100%;border-collapse:collapse;font-size:12px"><tr><th align=left>ฟิลด์</th><th align=left>ชนิด</th><th align=left>ความหมาย</th></tr>${PAYMENT_CREATE_FIELDS.map(([k, t, d]) => `<tr style="border-top:1px solid rgba(127,127,127,.25)"><td><code>${k}</code></td><td>${t}</td><td>${d}</td></tr>`).join("")}</table><br>`;
+
+/** For developers: the slip-result shape is fixed — every key, every case. */
+const SLIP_PARSE = "<strong>สำหรับนักพัฒนา — อ่านผลอย่างไร</strong> · <strong>HTTP 200 = ตรวจแล้ว</strong> (ทั้งผ่าน ไม่ผ่าน และรอตรวจ) มีฟิลด์ครบชุดเดียวกันทุกกรณี: <code>success</code> <code>verified</code> <code>result</code> <code>message</code> <code>mismatches</code> <code>warnings</code> <code>carriedFrom</code> <code>carryOver</code> <code>autoCancelled</code> <code>checks</code> <code>slip</code> <code>nextStep</code> <code>transaction</code> — ไม่มีฟิลด์ที่หายไปหรือเพิ่มขึ้นตามกรณี · <strong>อาจเป็น null</strong>: <code>carriedFrom</code> <code>carryOver</code> <code>slip</code> · <strong>อาจเป็น array ว่าง</strong>: <code>mismatches</code> <code>warnings</code> <code>autoCancelled</code> · <code>checks</code> ไม่ว่างเสมอ — แต่ละตัวคือ <code>{check, status, detail}</code>, check: BANK_VERIFICATION · AMOUNT · TRANSFER_TIME · RECEIVER_ACCOUNT · SENDER_NAME · IMAGE_READ · SLIP_AGE · DUPLICATE · APPROVAL (อาจเพิ่มในอนาคต — ข้ามตัวที่ไม่รู้จัก) · status: PASS · FAIL · WARN · UNKNOWN · SKIPPED · <strong>ตัดสินใจด้วย <code>result</code> ตัวเดียว</strong>: <code>PAID</code> → ส่งสินค้าได้ · <code>PENDING_REVIEW</code> → รอ webhook · <code>INVALID_SLIP</code> → แจ้งลูกค้าตาม <code>mismatches</code> · ถ้า <code>carriedFrom</code> ไม่ใช่ null ให้บันทึกความเชื่อมโยง และปิดออเดอร์ใน <code>autoCancelled</code> ในระบบของร้าน (จะได้ webhook <code>payment.rejected</code> ด้วย) · <code>message</code> / <code>detail</code> / <code>nextStep</code> เป็นข้อความภาษาไทยสำหรับแสดงผล อย่า parse · <strong>HTTP ไม่ใช่ 2xx</strong> = ปฏิเสธก่อนตรวจ ใช้รูปแบบ error ปกติ <code>{error:{code,message,details?}}</code> · หน้าชำระเงินของลูกค้า (<code>/payment/checkout/:transactionId/slip</code>) ตอบแบบย่อ: <code>success verified result message mismatches status</code> · <strong>Timeout / เครือข่ายขัดข้อง</strong>: ไม่ได้แปลว่าส่งไม่สำเร็จ — เรียก <code>GET /payment/order/:orderId</code> ก่อน (PAID = จบ · PENDING = ส่งสลิปเดิมเข้าออเดอร์เดิมซ้ำได้อย่างปลอดภัย) · ตั้ง timeout 60 วินาที · ส่งซ้ำเฉพาะ timeout / 502 / 503 / 504 (รอ 2, 5, 15 วินาที) และเซ็นใหม่ทุกครั้ง · <code>409 ORDER_NOT_PENDING</code> หลังส่งซ้ำ = ครั้งก่อนสำเร็จแล้ว · ผลสุดท้ายยึด webhook";
 /** How every slip upload is checked (slip/verify, :ref/slip, checkout slip). */
-const SLIP_RULES = "<strong>การตรวจสลิป</strong> — (1) <strong>สลิปตัวอย่าง</strong>จาก Option Pay → <code>400 SAMPLE_SLIP</code> · (2) <strong>สลิปซ้ำ</strong>: สลิปเดียวกัน (ไฟล์เดียวกัน หรือ QR ธนาคารเดียวกัน) ที่อยู่กับรายการอื่นแล้ว → <code>INVALID_SLIP</code> · (3) <strong>เทียบข้อมูลในสลิปกับรายการ</strong>: ยอดเงินตรงทุกสตางค์ · บัญชีผู้รับ + ธนาคารเป็นบัญชีของรายการ · เวลาโอนหลังสร้างรายการและไม่เก่าเกินกำหนด — ทุกข้อที่ไม่ตรงอยู่ใน <code>mismatches</code> · <strong>ชื่อผู้โอน</strong>ไม่ตรงกับ <code>metadata.memberName</code> (เช่น สามีโอนแทนภรรยา) <strong>ไม่ปฏิเสธ</strong> — แจ้งใน <code>warnings</code> และยังอนุมัติได้ · <strong>มีผู้ให้บริการตรวจสลิป</strong> (EasySlip / SlipOK ในตั้งค่าระบบ): ตรวจกับธนาคารจริง ผ่านครบ → <code>PAID</code> อัตโนมัติ (เว้นแต่ตั้ง “ต้องให้ผู้ดูแลยืนยันก่อน”) · <strong>ไม่มีผู้ให้บริการ / ผู้ให้บริการไม่ตอบ</strong>: ระบบอ่านข้อมูลจากภาพสลิป (OCR ไทย+อังกฤษ) — ยอด บัญชีผู้รับ หรือเวลาไม่ตรง → <code>INVALID_SLIP</code> · ตรงครบ หรืออ่านไม่ได้ → <code>PENDING_REVIEW</code> ให้ผู้ดูแลยืนยัน (<strong>ไม่อนุมัติอัตโนมัติ</strong> เพราะภาพแก้ไขได้) · ชื่อผู้โอน/ธนาคารที่ยืนยันจากภาพไม่ได้ จะแจ้งผู้ดูแลแทนการปฏิเสธ · <strong>Errors</strong>: ไฟล์ไม่ใช่รูป/ใหญ่เกิน → <code>400 INVALID_SLIP</code> · ออเดอร์ไม่ PENDING → <code>409 ORDER_NOT_PENDING</code> · ไม่พบ orderId → <code>404 ORDER_NOT_FOUND</code>";
+const SLIP_RULES = "<strong>การตรวจสลิป</strong> — (1) <strong>สลิปตัวอย่าง</strong>จาก Option Pay → <code>400 SAMPLE_SLIP</code> · (2) <strong>สลิปซ้ำ</strong>: สลิปเดียวกัน (ไฟล์เดียวกัน หรือ QR ธนาคารเดียวกัน) ที่อยู่กับรายการอื่นแล้ว → <code>INVALID_SLIP</code> · (3) <strong>เทียบข้อมูลในสลิปกับรายการ</strong>: ยอดเงินตรงทุกสตางค์ · บัญชีผู้รับ + ธนาคารเป็นบัญชีของรายการ · เวลาโอนหลังสร้างรายการและไม่เก่าเกินกำหนด — ทุกข้อที่ไม่ตรงอยู่ใน <code>mismatches</code> · <strong>เงินโอนจากรายการก่อนหน้า</strong>: สลิปที่โอนก่อนสร้างรายการ ผ่านได้เมื่อร้านเดียวกันมีรายการที่ยังไม่ได้ชำระ (หมดอายุ / ยกเลิก / ยังเปิดอยู่ — รายการที่ยังเปิดจะถูกยกเลิกอัตโนมัติ + webhook <code>payment.rejected</code>) บนบัญชีผู้รับเดียวกัน สร้างก่อนเวลาโอนไม่เกิน 24 ชม. และผู้โอนเป็นลูกค้าคนเดียวกับรายการนั้น (ชื่อ หรือเลขบัญชีผู้โอน) — ผลมี <code>carriedFrom</code> = เลขรายการก่อนหน้า, <code>carryOver</code> = รายละเอียด (fromRef, fromOrderId, fromAmount, fromStatus: EXPIRED / CANCELLED / CANCELLED_AUTOMATICALLY, transferAmount, transferredAt, reason) และ <code>message</code> อธิบายเป็นภาษาไทย · <code>autoCancelled</code> = รายการที่ถูกยกเลิกอัตโนมัติพร้อมเหตุผล (ว่าง = ไม่มี) · <strong>ทุกผลลัพธ์ของการแนบสลิป</strong>มี <code>checks</code> = ผลการตรวจทีละข้อ (BANK_VERIFICATION, AMOUNT, TRANSFER_TIME, RECEIVER_ACCOUNT, SENDER_NAME, SLIP_AGE, DUPLICATE · status: PASS / FAIL / WARN / UNKNOWN / SKIPPED พร้อมคำอธิบาย), <code>slip</code> = ข้อมูลจากธนาคาร (ยอด เวลาโอน เลขอ้างอิง ผู้โอน ผู้รับ — null ถ้าตรวจกับธนาคารไม่ได้) และ <code>nextStep</code> = สิ่งที่ร้านควรทำต่อ · <strong>สลิปเดียวกันที่เคยไม่ผ่าน</strong>ในรายการอื่นของร้านที่ยังเปิดอยู่ (เช่น โอน ฿500 ให้รายการ ฿250 แล้วผ่านในรายการใหม่ ฿500): รายการนั้นถูกยกเลิกอัตโนมัติ + webhook <code>payment.rejected</code> · <strong>ชื่อผู้โอน</strong>ไม่ตรงกับ <code>metadata.memberName</code> (เช่น สามีโอนแทนภรรยา) <strong>ไม่ปฏิเสธ</strong> — แจ้งใน <code>warnings</code> และยังอนุมัติได้ · <strong>มีผู้ให้บริการตรวจสลิป</strong> (EasySlip / SlipOK ในตั้งค่าระบบ): ตรวจกับธนาคารจริง ผ่านครบ → <code>PAID</code> อัตโนมัติ (เว้นแต่ตั้ง “ต้องให้ผู้ดูแลยืนยันก่อน”) · <strong>ไม่มีผู้ให้บริการ / ผู้ให้บริการไม่ตอบ</strong>: ระบบอ่านข้อมูลจากภาพสลิป (OCR ไทย+อังกฤษ) — ยอด บัญชีผู้รับ หรือเวลาไม่ตรง → <code>INVALID_SLIP</code> · ตรงครบ หรืออ่านไม่ได้ → <code>PENDING_REVIEW</code> ให้ผู้ดูแลยืนยัน (<strong>ไม่อนุมัติอัตโนมัติ</strong> เพราะภาพแก้ไขได้) · ชื่อผู้โอน/ธนาคารที่ยืนยันจากภาพไม่ได้ จะแจ้งผู้ดูแลแทนการปฏิเสธ · <strong>Errors</strong>: ไฟล์ไม่ใช่รูป/ใหญ่เกิน → <code>400 INVALID_SLIP</code> · ออเดอร์ไม่ PENDING → <code>409 ORDER_NOT_PENDING</code> · ไม่พบ orderId → <code>404 ORDER_NOT_FOUND</code>";
 
 export const SECTIONS: Section[] = [
   {
@@ -49,7 +99,8 @@ export const SECTIONS: Section[] = [
         m: "POST", p: "/payment/create", d: "สร้าง Payment (QR PromptPay)", auth: KEY,
         body: `{
   "amount": 100.00,            // required, > 0 (ทศนิยมไม่เกิน 2 ตำแหน่ง)
-  "orderId": "ORD-001",        // required, unique ต่อ merchant
+  "orderId": "ORD-001",        // optional — เลขออเดอร์ของร้าน ต้องไม่ซ้ำภายในร้าน (ซ้ำ = 409 DUPLICATE_ORDER_ID)
+                               //            ไม่ส่ง = Option Pay สร้างให้ (OP-…) ไม่ซ้ำแน่นอน → ดูใน transaction.orderId และ orderIdGenerated: true
   "description": "สินค้า A",    // optional
   "metadata": {                                // optional ทั้ง block
     "senderAccountNumber": "1234567890",       // เลขบัญชีผู้โอน (≥8 หลักถ้าส่ง)
@@ -62,17 +113,21 @@ export const SECTIONS: Section[] = [
 }`,
         res: `{
   "success": true,
+  "orderIdGenerated": false,   // true = ไม่ได้ส่ง orderId มา Option Pay สร้างให้ (เช่น "OP-MGQ3K7ZB-9F1C2A7D4E") — เก็บ transaction.orderId ไว้
   "transaction": ${TXN.replace(/\n/g, "\n  ")},
-  "selectedAccount": { "id": "1", "type": "PROMPTPAY", "accountNumber": "0812345678",
-                       "accountName": "...", "bankCode": "KBANK", "bankName": "ธนาคารกสิกรไทย" }
-}`,
-        note: "<strong>แสดงยอดจาก response เสมอ</strong> — ถ้าเปิด “ยอดไม่ซ้ำ” ในตั้งค่าระบบ <code>amount</code> จะถูกบวกสตางค์เพื่อจับคู่เงินเข้าอัตโนมัติ · บัญชีรับเงิน: บัญชีของร้านก่อน ถ้าไม่มีใช้บัญชีกลางตามการกระจายที่ตั้งไว้ · อายุออเดอร์ตาม “อายุออเดอร์ (นาที)” · <strong>Errors</strong>: orderId ซ้ำ → <code>409 DUPLICATE_ORDER_ID</code> · ช่องสตางค์เต็ม → <code>400 DUPLICATE_PENDING_AMOUNT</code> · ยอดต่ำกว่ายอดฝากขั้นต่ำ → <code>400 PAYMENT_CONTRACT_POLICY_VIOLATION</code> (<code>details.error: below_min_amount</code> + <code>minAmount</code>) · ไม่มีบัญชีรับเงิน → <code>400 NO_PAYMENT_ACCOUNT</code> · ขาด field → <code>400 validation_error</code>",
+  "selectedAccount": { "id": "8", "type": "BANK", "accountNumber": "4182186378",
+                       "accountName": "มิดทาวน์ไลท์ จำกัด", "bankCode": "SCB", "bankName": "ธนาคารไทยพาณิชย์" }
+}
+
+// บัญชีรับเงินที่มี PromptPay: "paymentMethod": "PROMPTPAY", "qrCode": "{BASE}/payment/qr/{id}.png",
+// "selectedAccount": { "type": "PROMPTPAY", "accountNumber": "0812345678", ... }`,
+        note: PAYMENT_CREATE_FIELDS_HTML + "<strong>แสดงยอดจาก response เสมอ</strong> — ถ้าเปิด “ยอดไม่ซ้ำ” ในตั้งค่าระบบ <code>amount</code> จะถูกบวกสตางค์เพื่อจับคู่เงินเข้าอัตโนมัติ (ถ้าลูกค้าโอนยอดที่ร้านส่งมาโดยไม่รวมสตางค์ ระบบยังยอมรับเมื่อธนาคารยืนยันสลิป และปรับ <code>amount</code> เป็นยอดที่ได้รับจริง) · บัญชีรับเงิน: บัญชีของร้านก่อน ถ้าไม่มีใช้บัญชีกลางตามการกระจายที่ตั้งไว้ · อายุออเดอร์ตาม “อายุออเดอร์ (นาที)” · <strong>Errors</strong>: orderId ซ้ำ → <code>409 DUPLICATE_ORDER_ID</code> · ช่องสตางค์เต็ม → <code>400 DUPLICATE_PENDING_AMOUNT</code> · ยอดต่ำกว่ายอดฝากขั้นต่ำ → <code>400 PAYMENT_CONTRACT_POLICY_VIOLATION</code> (<code>details.error: below_min_amount</code> + <code>minAmount</code>) · ไม่มีบัญชีรับเงิน → <code>400 NO_PAYMENT_ACCOUNT</code> · ขาด field → <code>400 validation_error</code>",
       },
       {
         m: "POST", p: "/payment/slip/create", d: "สร้าง Payment (สลิป) — เปิดออเดอร์รอแนบสลิป", auth: `${KEY} + <code>Content-Type: application/json</code>`,
         body: `{
   "amount": 250.00,           // required
-  "orderId": "ORD-002",       // required, unique ต่อ merchant
+  "orderId": "ORD-002",       // optional, unique ต่อ merchant — ไม่ส่ง = Option Pay สร้างให้ (OP-…)
   "description": "สินค้า B",   // optional
   "image": "<base64>",        // optional — แนบสลิปมาเลย = create + verify ในคำขอเดียว
   "mime": "image/jpeg"        // image/png | image/jpeg | image/webp
@@ -87,26 +142,90 @@ export const SECTIONS: Section[] = [
   "image": "<base64>",      // required, ไม่เกิน 8 MB
   "mime": "image/jpeg"      // required: image/png | image/jpeg | image/webp
 }`,
-        res: `{
-  "success": true,
-  "verified": false,
-  "result": "PENDING_REVIEW",    // PAID | PENDING_REVIEW | INVALID_SLIP
-  "message": "ตรงกับรายการ: ยอด ฿250.00, บัญชีผู้รับ 4182186378, เวลาโอน ... — อ่านจากภาพสลิป รอผู้ดูแลยืนยัน",
-  "mismatches": [],              // INVALID_SLIP: ทุกข้อที่ไม่ตรง แยกเป็นรายการ
-  "transaction": { ... }
+        res: `// ทุกผลลัพธ์ของการตรวจสลิปตอบ HTTP 200 และมีฟิลด์ครบชุดเดียวกันเสมอ (กรณีปกติ / เงินโอนจากออเดอร์ก่อนหน้า / ไม่ผ่าน / รอตรวจ)
+// HTTP ไม่ใช่ 2xx = ถูกปฏิเสธก่อนตรวจ → { "error": { "code", "message", "details"? } }
+
+// ① กรณีปกติ — ผ่าน อนุมัติอัตโนมัติ
+{
+  "success": true,                 // false เฉพาะ INVALID_SLIP
+  "verified": true,                // true เฉพาะ PAID
+  "result": "PAID",                // PAID | PENDING_REVIEW | INVALID_SLIP  ← ใช้ตัวนี้ตัดสินใจ
+  "message": "ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว (อนุมัติอัตโนมัติ)",
+  "mismatches": [],                // string[] — ข้อที่ไม่ผ่าน (มีค่าเมื่อ INVALID_SLIP)
+  "warnings": [],                  // string[] — คำเตือนที่ไม่ทำให้ไม่ผ่าน (เช่น ชื่อผู้โอนไม่ตรง)
+  "carriedFrom": null,             // string | null — ref ออเดอร์ก่อนหน้าที่เงินโอนนี้มาจาก
+  "carryOver": null,               // object | null — รายละเอียดของ carriedFrom
+  "autoCancelled": [],             // object[] — ออเดอร์อื่นที่ถูกยกเลิกอัตโนมัติ
+  "checks": [                      // object[] — ไม่ว่างเสมอ · ผลการตรวจทีละข้อ
+    { "check": "BANK_VERIFICATION", "status": "PASS", "detail": "ธนาคารยืนยันว่ามีการโอนจริง (easyslip) · เลขอ้างอิง 016287100512BTF04211" },
+    { "check": "AMOUNT",            "status": "PASS", "detail": "ยอดในสลิป ฿250.00 ตรงกับยอดออเดอร์" },
+    { "check": "TRANSFER_TIME",     "status": "PASS", "detail": "โอนเมื่อ 14 ต.ค. 2569 10:05 — หลังสร้างออเดอร์ (14 ต.ค. 2569 10:01)" },
+    { "check": "RECEIVER_ACCOUNT",  "status": "PASS", "detail": "โอนเข้า SCB xxx-x-x6378-x — ตรงกับบัญชีของออเดอร์ (SCB 4182186378 (บจก. ตัวอย่าง))" },
+    { "check": "SENDER_NAME",       "status": "PASS", "detail": "ผู้โอน นาย สมชาย ใจดี ตรงกับชื่อลูกค้า" },
+    { "check": "SLIP_AGE",          "status": "PASS", "detail": "ไม่เก่าเกิน 6 ชั่วโมง" },
+    { "check": "DUPLICATE",         "status": "PASS", "detail": "สลิปและเงินโอนนี้ยังไม่เคยใช้ชำระรายการอื่น" }
+  ],
+  "slip": {                        // object | null — ข้อมูลจากธนาคาร (null = ตรวจกับธนาคารไม่ได้)
+    "provider": "easyslip", "transRef": "016287100512BTF04211", "amount": 250,
+    "transferredAt": "2026-10-14T03:05:00.000Z",
+    "sender":   { "name": "นาย สมชาย ใจดี", "bank": "KBANK", "account": "xxx-x-x1234-x" },
+    "receiver": { "name": "บจก. ตัวอย่าง",  "bank": "SCB",   "account": "xxx-x-x6378-x" }
+  },
+  "nextStep": "ไม่ต้องทำอะไรเพิ่ม — ออเดอร์ชำระแล้ว ส่งสินค้า/บริการได้",
+  "transaction": { ... "ref": "TXN172830", "orderId": "ORD-002", "status": "PAID", "paidAt": "2026-10-14T03:05:20.000Z" ... }
 }
 
-// ตัวอย่างสลิปไม่ผ่าน
+// ② เงินโอนจากออเดอร์ก่อนหน้า (ฟิลด์เหมือน ① ทุกตัว — ต่างกันแค่ค่า)
+//    ลูกค้าเปิด TXN172829 ยอด ฿250 โอนมา ฿200 → ร้านเปิด TXN172830 ยอด ฿200 แล้วแนบสลิปเดิม
+{
+  "success": true, "verified": true, "result": "PAID",
+  "message": "ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว (อนุมัติอัตโนมัติ) · ใช้เงินโอน 200.00 บาท (โอนเมื่อ 14 ต.ค. 2569 10:05) จากออเดอร์ก่อนหน้า TXN172829 (ORD-001) ยอด 250.00 บาท ที่ยังไม่ได้ชำระ — ลูกค้าคนเดียวกัน บัญชีผู้รับเดียวกัน · ยกเลิก TXN172829 (ORD-001) อัตโนมัติ — ลูกค้าชำระผ่าน TXN172830 แทน (ใช้เงินโอนเดียวกัน)",
+  "mismatches": [],
+  "warnings": [],
+  "carriedFrom": "TXN172829",
+  "carryOver": {
+    "fromRef": "TXN172829", "fromOrderId": "ORD-001", "fromAmount": 250,
+    "fromStatus": "CANCELLED_AUTOMATICALLY",   // EXPIRED | CANCELLED | CANCELLED_AUTOMATICALLY (ยังเปิดอยู่ → ถูกปิดตอนนี้)
+    "transferAmount": 200, "transferredAt": "2026-10-14T03:05:00.000Z",
+    "reason": "เงินโอนนี้เกิดขึ้นหลังสร้างออเดอร์ก่อนหน้าของลูกค้าคนเดียวกัน (บัญชีผู้รับเดียวกัน) ซึ่งยังไม่ได้ชำระ และยังไม่เคยใช้ชำระออเดอร์ใด จึงใช้ชำระออเดอร์นี้แทน"
+  },
+  "autoCancelled": [
+    { "ref": "TXN172829", "orderId": "ORD-001", "amount": 250, "reason": "ลูกค้าชำระผ่าน TXN172830 แทน (ใช้เงินโอนเดียวกัน)" }
+  ],
+  "checks": [
+    { "check": "BANK_VERIFICATION", "status": "PASS", "detail": "..." },
+    { "check": "AMOUNT",            "status": "PASS", "detail": "ยอดในสลิป ฿200.00 ตรงกับยอดออเดอร์" },
+    { "check": "TRANSFER_TIME",     "status": "PASS", "detail": "โอนเมื่อ 14 ต.ค. 2569 10:05 — ก่อนสร้างออเดอร์ (14 ต.ค. 2569 10:20) — แต่เป็นเงินโอนของออเดอร์ก่อนหน้า TXN172829 ที่ยังไม่ได้ชำระ (ลูกค้าคนเดียวกัน) จึงใช้แทนได้" },
+    { "check": "RECEIVER_ACCOUNT",  "status": "PASS", "detail": "..." },
+    { "check": "SENDER_NAME",       "status": "PASS", "detail": "..." },
+    { "check": "SLIP_AGE",          "status": "PASS", "detail": "อยู่ในช่วง 24 ชั่วโมงของเงินโอนจากออเดอร์ก่อนหน้า" },
+    { "check": "DUPLICATE",         "status": "PASS", "detail": "สลิปและเงินโอนนี้ยังไม่เคยใช้ชำระรายการอื่น" }
+  ],
+  "slip": { ... เหมือน ① ... },
+  "nextStep": "ไม่ต้องทำอะไรเพิ่ม — ออเดอร์ชำระแล้ว ส่งสินค้า/บริการได้ · บันทึกว่าออเดอร์นี้ชำระด้วยเงินโอนของ TXN172829 · อัปเดตออเดอร์ TXN172829 เป็นยกเลิกในระบบของร้าน",
+  "transaction": { ... "ref": "TXN172830", "status": "PAID" ... }
+}
+
+// ③ สลิปไม่ผ่าน (HTTP 200 เช่นกัน · ออเดอร์ยัง PENDING แนบใหม่ได้)
 {
   "success": false, "verified": false, "result": "INVALID_SLIP",
-  "message": "ยอดเงินในสลิป ฿200.00 ไม่ตรงกับยอดที่ต้องชำระ ฿250.00 — ต้องโอนตรงยอดทุกสตางค์ · บัญชีผู้รับในสลิป (XXX-XXX111-1) ไม่ใช่บัญชีของรายการนี้ — ต้องโอนเข้า SCB 4182186378 (...)",
-  "mismatches": [
-    "ยอดเงินในสลิป ฿200.00 ไม่ตรงกับยอดที่ต้องชำระ ฿250.00 — ต้องโอนตรงยอดทุกสตางค์",
-    "บัญชีผู้รับในสลิป (XXX-XXX111-1) ไม่ใช่บัญชีของรายการนี้ — ต้องโอนเข้า SCB 4182186378 (...)"
+  "message": "ยอดเงินในสลิป ฿200.00 ไม่ตรงกับยอดที่ต้องชำระ ฿250.00 — ต้องโอนตรงยอดทุกสตางค์",
+  "mismatches": [ "ยอดเงินในสลิป ฿200.00 ไม่ตรงกับยอดที่ต้องชำระ ฿250.00 — ต้องโอนตรงยอดทุกสตางค์" ],
+  "warnings": [],
+  "carriedFrom": null, "carryOver": null, "autoCancelled": [],
+  "checks": [
+    { "check": "BANK_VERIFICATION", "status": "PASS", "detail": "..." },
+    { "check": "AMOUNT",            "status": "FAIL", "detail": "ยอดในสลิป ฿200.00 แต่ออเดอร์ต้องชำระ ฿250.00 (โอนขาด ฿50.00)" },
+    ...
   ],
-  "transaction": { ... status: "PENDING" ... }
-}`,
-        note: SLIP_RULES,
+  "slip": { ... },
+  "nextStep": "สลิปไม่ผ่าน — แจ้งลูกค้าตามข้อที่ FAIL ใน checks แล้วแนบสลิปที่ถูกต้องใหม่ (ออเดอร์ยังรอชำระ) · ถ้าลูกค้าโอนยอดไม่ตรง สร้างออเดอร์ใหม่ตามยอดที่โอนจริงแล้วแนบสลิปเดิมได้",
+  "transaction": { ... "status": "PENDING" ... }
+}
+
+// ④ PENDING_REVIEW (ตรวจกับธนาคารไม่ได้ / ตั้งให้เจ้าหน้าที่ยืนยัน): success true, verified false,
+//    slip = null ได้, BANK_VERIFICATION = UNKNOWN · รอ webhook payment.approved / payment.rejected`,
+        note: `${SLIP_COMPARE_HTML}<br>${SLIP_PARSE}<br><br>${SLIP_RULES}`,
       },
       { m: "POST", p: "/payment/:ref/slip", d: "แนบสลิปเข้าออเดอร์ตาม ref หรือ transaction id — shape เดิม", auth: KEY, body: `{ "image": "<base64>", "mime": "image/png" }`, res: "เหมือน /payment/slip/verify", note: "ตรวจสลิปตามกฎเดียวกับ /payment/slip/verify · แนบทับสลิปเดิมได้ (หน้าชำระเงินของลูกค้าแนบได้ครั้งเดียว)" },
       { m: "GET", p: "/payment/order/:orderId", d: "ตรวจสอบ Payment ตาม Order ID", auth: KEY, res: `{ "success": true, "transaction": { ... } }`, note: "404 <code>ORDER_NOT_FOUND</code> ถ้าไม่พบ" },
@@ -129,7 +248,7 @@ export const SECTIONS: Section[] = [
       {
         m: "POST", p: "/payment/checkout/:transactionId/slip", d: "ลูกค้าแนบสลิปจากหน้าชำระเงิน (ไม่ต้องส่ง API Key)", auth: "ไม่ต้องมี key — transaction id เป็นความลับของลูกค้าคนนั้น",
         body: `{ "image": "<base64>", "mime": "image/jpeg" }   // png | jpeg | webp, ไม่เกิน 8 MB`,
-        res: `{ "success": true, "verified": false, "result": "PENDING_REVIEW", "message": "...", "mismatches": [], "status": "PENDING" }`,
+        res: `{ "success": true, "verified": false, "result": "PENDING_REVIEW", "message": "...", "mismatches": [], "status": "PENDING" }   // แบบย่อ — ฟิลด์ชุดนี้เสมอ`,
         note: "ตรวจตามกฎเดียวกับ /payment/slip/verify · <strong>แนบได้ครั้งเดียวต่อรายการ</strong> — มีสลิปที่รับแล้ว/รอตรวจอยู่ → <code>409 SLIP_ALREADY_UPLOADED</code> (แนบใหม่ได้เฉพาะเมื่อสลิปก่อนหน้าไม่ผ่าน) · สลิปตัวอย่าง → <code>400 SAMPLE_SLIP</code>",
       },
       { m: "GET", p: "/payment/qr/:token.png", d: "รูป QR ของออเดอร์ (PNG, ไม่ต้องส่ง API Key)", auth: "ไม่ต้องมี key", res: "image/png (480×480)", note: "ตอบ <code>410</code> เมื่อออเดอร์ไม่ PENDING แล้ว หรือบัญชีรับเงินไม่มี PromptPay" },
@@ -150,14 +269,14 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "payout", nav: "Payout", title: "Payout (โอนเงินออก)",
-    sub: "สั่งโอนเงินออกจากยอดของร้าน — เข้าคิวที่หน้า <strong>รายการเงินออก</strong> ให้ผู้ดูแลโอนและยืนยัน · สถานะ: <code>PENDING | COMPLETED | FAILED</code>",
+    sub: "สั่งโอนเงินออกจากยอดของร้าน — <strong>ผู้ดูแลตรวจและอนุมัติเองทุกรายการ (ไม่มีอนุมัติอัตโนมัติ)</strong>: เข้าคิวที่หน้า <strong>รายการเงินออก</strong> ผู้ดูแลโอนให้ผู้รับนอกระบบแล้วกดอนุมัติ · สถานะ: <code>PENDING</code> (กันยอด amount + fee ไว้ — ใช้ไม่ได้) → <code>COMPLETED</code> (หักยอด amount + fee จากร้าน) หรือ <code>FAILED</code> (คืนยอดที่กันไว้ ไม่หักอะไร) · <strong>ไม่มี webhook สำหรับ payout</strong> — ตรวจสถานะด้วย <code>GET /payout/:id</code> หรือ <code>GET /payout/ref/:merchantRef</code>",
     eps: [
       {
         m: "POST", p: "/payout/create", d: "สร้าง Payout — รองรับ Idempotency-Key header", auth: `${KEY} + <code>Idempotency-Key</code> (optional)`,
         body: `{
   "amount": 500.00,             // required
-  "bankCode": "SCB",            // required — BAY | BBL | KBANK | KTB | SCB | TTB
-  "accountNumber": "1234567890",// required, 6–20 หลัก
+  "bankCode": "SCB",            // required — รหัสธนาคาร (31 ธนาคาร): SCB BAY KKP KTB UOB HSBC GHB TISCO BBL KBANK CIMB GSB BAAC LHBANK MHCB TTB CITI SCBT ISBT ACL TCRB ANZ SMTB SMEB ABN TRUEMONEY ICBC SMBC BOC DB IOB
+  "accountNumber": "1234567890",// required, 6–20 หลัก — ใส่ขีด/เว้นวรรคได้ (เช่น "123-4-56789-0") ระบบตัดออกให้
   "accountName": "นาย ก",        // required
   "merchantRef": "PO-001",      // optional, unique ต่อ merchant
   "description": "ค่าสินค้า"      // optional
@@ -178,6 +297,7 @@ export const SECTIONS: Section[] = [
     sub: "คำขอถอนเงินเข้าบัญชีของร้าน — ผู้ดูแลอนุมัติที่หน้า <strong>คำขอถอนเงิน</strong> · สถานะ: <code>PENDING | APPROVED | REJECTED</code>",
     eps: [
       { m: "POST", p: "/withdrawal/request/create", d: "สร้างคำขอถอนเงิน", auth: KEY, body: `{ "amount": 1000, "bankCode": "KBANK", "accountNumber": "9876543210", "accountName": "นาย ก",
+  // bankCode: รหัสธนาคารชุดเดียวกับ /payout/create (31 ธนาคาร) · accountNumber 6–20 หลัก ใส่ขีด/เว้นวรรคได้
   "merchantRef": "W-001",   // optional, unique ต่อ merchant
   "note": "ถอนประจำวัน" }`, res: `{ "success": true, "request": ${WDR} }`, note: "ตรวจยอดใช้ได้ / ยอดคงเหลือขั้นต่ำ / ยอดถอนขั้นต่ำ เหมือน payout" },
       { m: "GET", p: "/withdrawal/requests", d: "รายการคำขอถอนเงิน", auth: KEY, res: LIST("{ ...request }"), note: QS },
@@ -186,7 +306,7 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "accounts", nav: "Payment Accounts", title: "Payment Accounts (บัญชีรับเงิน)",
-    sub: "บัญชีรับเงินของร้าน — 1 บัญชีใช้ร่วมได้หลายร้าน (ผู้ดูแลระบบเป็นผู้ผูก): <code>shared: true</code> = บัญชีนี้ร้านอื่นใช้ด้วย · ออเดอร์บนบัญชีที่ใช้ร่วมได้ยอดไม่ซ้ำกันเสมอ (บวกสตางค์อัตโนมัติ — ส่ง <code>copy.amount</code> ให้ลูกค้าโอนตรงยอด) · ร้านย่อยที่ไม่มีบัญชีของตัวเองใช้บัญชีของร้านแม่ · ถ้าร้านไม่มีบัญชีของตัวเอง ออเดอร์จะใช้บัญชีกลางของระบบ (เมื่อเปิดโหมดบัญชีรับเงินกลาง)",
+    sub: "บัญชีรับเงินของร้าน — 1 บัญชีใช้ร่วมได้หลายร้าน (ผู้ดูแลระบบเป็นผู้ผูก): <code>shared: true</code> = บัญชีนี้ร้านอื่นใช้ด้วย · การใช้บัญชีร่วม<strong>ไม่เปลี่ยนยอด</strong> — <code>amount</code> เท่ากับที่ส่งมา (บวกสตางค์เฉพาะเมื่อผู้ดูแลเปิด “ยอดไม่ซ้ำ” ในตั้งค่าระบบ — แสดง <code>copy.amount</code> จาก response ให้ลูกค้าเสมอ) · ร้านย่อยที่ไม่มีบัญชีของตัวเองใช้บัญชีของร้านแม่ · ถ้าร้านไม่มีบัญชีของตัวเอง ออเดอร์จะใช้บัญชีกลางของระบบ (เมื่อเปิดโหมดบัญชีรับเงินกลาง)",
     eps: [
       { m: "GET", p: "/payment/accounts", d: "รายการบัญชีรับเงิน", auth: KEY, res: `{ "success": true, "data": [ { "id": "7", "type": "PROMPTPAY", "accountNumber": "0812345678", "shared": false, "bankCode": "KBANK", "status": "ACTIVE" } ],
   "centralReceiving": true, "note": null }` },

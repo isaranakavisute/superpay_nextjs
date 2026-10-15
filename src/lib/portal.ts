@@ -5,6 +5,7 @@ import { getBranding } from "./branding";
 import type { MerchantPermission } from "./merchant-perms";
 import { cookies } from "next/headers";
 import { getPortalUser, PORTAL_VIEW_COOKIE, type PortalUser } from "./session";
+import { errorText } from "./api-error";
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 
@@ -50,7 +51,7 @@ export async function portalCall<T = Record<string, unknown>>(u: PortalUser, met
   try {
     const r = await fetch(`${BASE}/api/console/portal/${u.merchantId}${path}`, { method, headers: headers(u), body: body === undefined ? undefined : JSON.stringify(body), cache: "no-store" });
     const j = await r.json().catch(() => null);
-    if (!r.ok) return { ok: false, error: j?.error?.message ?? `HTTP ${r.status}` } as ActionResult & Partial<T>;
+    if (!r.ok) return { ok: false, error: errorText(j, `HTTP ${r.status}`) } as ActionResult & Partial<T>;
     return { ok: true, ...(j ?? {}) };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) } as ActionResult & Partial<T>;

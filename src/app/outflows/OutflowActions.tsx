@@ -81,7 +81,9 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
   const [pending, start] = useTransition();
   const [reason, setReason] = useState("");
   const [form, setForm] = useState({ category: o.category, bankAccountId: o.bankAccountId ? String(o.bankAccountId) : "", receiverBankCode: o.receiverBankCode, description: o.description ?? "" });
-  const [accountId, setAccountId] = useState(o.bankAccountId ? String(o.bankAccountId) : String(accounts[0]?.id ?? ""));
+  // Deducting account is optional (payouts are paid outside Option Pay): "" = not specified.
+  const [accountId, setAccountId] = useState(o.bankAccountId ? String(o.bankAccountId) : "");
+  const [transferRef, setTransferRef] = useState("");
   const [slipVersion, setSlipVersion] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -131,7 +133,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
       )}
       {isPending && (
         <>
-          <button className={`${sm} ${btn.success}`} onClick={() => (o.bankAccountId ? run(() => approveOutflow(o.ref)) : open("approve"))} disabled={pending} title="อนุมัติและโอนออก">
+          <button className={`${sm} ${btn.success}`} onClick={() => open("approve")} disabled={pending} title="อนุมัติและโอนออก">
             <Check size={13} /> อนุมัติ
           </button>
           <button className={`${sm} border-[#fecaca]/40 bg-transparent text-danger hover:bg-danger/10`} onClick={() => open("reject")} disabled={pending} title="ปฏิเสธรายการนี้" aria-label="ปฏิเสธ">
@@ -218,11 +220,14 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
         <Modal
           title={`อนุมัติ ${o.ref}`}
           onClose={close}
-          footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.success}`} disabled={pending || !accountId} onClick={() => run(() => approveOutflow(o.ref, Number(accountId)))}>อนุมัติและโอนออก</button></>}
+          footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.success}`} disabled={pending} onClick={() => run(() => approveOutflow(o.ref, accountId ? Number(accountId) : undefined, transferRef))}>ยืนยันอนุมัติ</button></>}
         >
-          <p className="mb-3 text-[13px] text-muted">โอน {fmtMoney(o.amount)} ให้ {o.receiverName} — เลือกบัญชีที่จะหักเงิน</p>
-          <label className={fieldLabel} htmlFor={`aa-${o.ref}`}>บัญชีที่หัก</label>
+          <p className="mb-3 text-[13px] text-muted">ยืนยันว่าโอน {fmtMoney(o.amount)} ให้ {o.receiverName} แล้ว — ยอด {fmtMoney(o.amount)} + ค่าธรรมเนียม จะถูกหักจากยอดคงเหลือของร้าน</p>
+          <label className={fieldLabel} htmlFor={`at-${o.ref}`}>เลขอ้างอิงการโอน / หมายเหตุ (ถ้ามี)</label>
+          <input id={`at-${o.ref}`} className={field} value={transferRef} maxLength={200} onChange={(e) => setTransferRef(e.target.value)} placeholder="เช่น เลขที่รายการจากแอปธนาคาร" autoFocus />
+          <label className={`${fieldLabel} mt-3`} htmlFor={`aa-${o.ref}`}>บัญชีที่หัก (ถ้ามี)</label>
           <select id={`aa-${o.ref}`} className={field} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+            <option value="">ไม่ระบุ — โอนนอกระบบ</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
           </select>
           {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
