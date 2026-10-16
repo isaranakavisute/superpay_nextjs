@@ -25,11 +25,15 @@ export type PayoutView = Pick<OutflowRow, "ref" | "merchantRef" | "receiverName"
   /** pending · approved (อนุมัติแล้ว) · completed (ถอนสำเร็จ — transferred) · rejected */
   status: OutflowRow["status"] | "completed";
   failureReason: string | null;
+  /** When the money was transferred (ถอนสำเร็จ) — the time only; who did it is never shown to the shop. */
+  transferredAt: string | null;
 };
 export const toView = (o: OutflowRow): PayoutView => ({
   ref: o.ref, merchantRef: o.merchantRef, receiverName: o.receiverName, receiverBankCode: o.receiverBankCode, receiverBankName: o.receiverBankName,
   receiverAccount: o.receiverAccount, amount: o.amount, fee: o.fee, status: o.status === "approved" && o.adminDone ? "completed" : o.status, source: o.source, description: o.description,
   createdAt: o.createdAt, completedAt: o.completedAt, failureReason: o.status === "rejected" ? o.reviewNote : null,
+  // Older rows marked done before the transfer time was recorded fall back to the approval time.
+  transferredAt: o.status === "approved" && o.adminDone ? String(o.adminDoneAt ?? o.completedAt ?? "") || null : null,
 });
 
 /** Balance − reserved (pending payouts + pending withdrawal requests, amount + fee) = available. */

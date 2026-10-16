@@ -334,16 +334,16 @@ function PortalDialog({ m, onClose }: { m: MerchantForActions; onClose: () => vo
         </select>
       </div>
       <div className="mb-1.5 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <input className={field} aria-label="อีเมล" type="email" placeholder="อีเมล (สำหรับ login API)" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
-        <input className={field} aria-label="รหัสผ่าน" type="password" placeholder="รหัสผ่าน ≥ 8 ตัว (สำหรับ login API)" autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+        <input className={field} aria-label="อีเมล" type="email" placeholder="อีเมล (ไม่บังคับ)" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
+        <input className={field} aria-label="รหัสผ่าน" type="password" placeholder="รหัสผ่าน ≥ 8 ตัว (สำหรับเข้า Merchant Portal)" autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
         <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || !f.username.trim() || !f.fullName.trim()} onClick={() => act(() => addPortalUser(m.id, f.username, f.fullName, f.tier, f.email, f.password), () => setF(empty))}>
           <Plus size={15} /> เพิ่ม
         </button>
       </div>
-      <p className="mb-4 text-[12px] text-muted">ใส่อีเมล + รหัสผ่าน เพื่อให้ผู้ใช้นี้เข้า Merchant Portal ได้ · ผู้ใช้ขอ secret key / API key ของตัวเองได้ใน Portal (ตั้งค่า → Secret key และ API key) · บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ login API ไม่ได้</p>
+      <p className="mb-4 text-[12px] text-muted">ตั้งรหัสผ่าน เพื่อให้ผู้ใช้นี้เข้า Merchant Portal ด้วย username (หรืออีเมล ถ้าใส่) · อีเมลไม่บังคับ · ผู้ใช้ขอ secret key / API key ของตัวเองได้ใน Portal (ตั้งค่า → Secret key และ API key) · บัญชีผู้ดูแลคอนโซล (เช่น admin) ใช้ login API ไม่ได้</p>
       {(error || err) && <p className="mb-3 text-[13px] text-danger">{error || err}</p>}
       <table className="w-full border-collapse">
-        <thead><tr>{["ผู้ใช้", "อีเมล", "Login API", "ระดับ", "สถานะ", "เข้าใช้ล่าสุด", ""].map((h) => <th key={h} className={th}>{h}</th>)}</tr></thead>
+        <thead><tr>{["ผู้ใช้", "อีเมล", "เข้า Portal ได้", "ระดับ", "สถานะ", "เข้าใช้ล่าสุด", ""].map((h) => <th key={h} className={th}>{h}</th>)}</tr></thead>
         <tbody>
           {items.map((u) => (
             <tr key={String(u.id)}>

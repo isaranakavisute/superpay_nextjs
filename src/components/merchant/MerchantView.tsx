@@ -12,12 +12,16 @@ import { bkkDayStart, type PaymentStatus } from "@/lib/domain";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
 import { requestTime } from "@/lib/request-time";
 import type { MerchantRow, PaymentRow, WithdrawalRow } from "@/lib/rows";
+import { BreakdownButton } from "./BreakdownButton";
+import { CarryArrow, FlowArrow } from "./FlowArrow";
+import { MerchantTree } from "./MerchantTree";
 import { MerchantSelect } from "./MerchantSelect";
 
 type Sum = ListResult["summary"][number] & { fee?: string; commission?: string };
 const by = (s: ListResult["summary"]) => Object.fromEntries(s.map((x) => [x.key, x as Sum])) as Record<string, Sum | undefined>;
 const n = (v: string | number | null | undefined) => Number(v ?? 0);
 const STATUSES: PaymentStatus[] = ["pending", "approved", "rejected", "refunded", "expired"];
+const FLOW = "mb-6 grid gap-[18px] sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_168px_minmax(0,1fr)_168px_minmax(0,1fr)] xl:gap-x-2";
 
 /**
  * One shop's numbers, laid out like the original "แดชบอร์ดร้านค้า":
@@ -59,17 +63,28 @@ export async function MerchantView({ params, pickerPath, merchantId, portal = fa
     getDashboardTrend(30, m.id),
     listResource("outflows", { merchantId: m.id, status: "approved", limit: 1 }),
   ]);
+  // Admin view: payouts (amount + out-fee) in the selected period, for the flow cards.
+  const periodOut = portal ? null : by((await listResource("outflows", { merchantId: m.id, status: "approved", ...win, limit: 1 })).summary).approved;
   const p = by(period.summary);
   const life = by(lifetime.summary);
   const wPend = by(pendingW.summary);
   const lifetimeNet = n(life.approved?.amount) - n(life.approved?.fee);
-  const lifetimeOut = n(by(paidOut.summary).approved?.amount);
+  const lifetimeOutRow = by(paidOut.summary).approved;
+  const lifetimeOut = n(lifetimeOutRow?.amount);
+  const lifetimeOutFee = n(lifetimeOutRow?.fee);
 
   const gross = n(p.approved?.amount);
   const fee = n(p.approved?.fee);
-  const commission = n(p.approved?.commission);
+  // The old fixed 5% "คอม" (payments.commission) is paid to nobody and is not part of any balance: not shown.
+  const commission = 0;
   const totalCount = period.summary.reduce((x, s) => x + s.count, 0);
   const PORTAL: Record<string, string> = { "/payments": "/merchant/transactions", "/withdrawals": "/merchant/withdrawals" };
+  // Same page for another shop, keeping the selected period.
+  const shopLink = (id: number) => {
+    const q = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => typeof e[1] === "string" && e[0] !== "merchantId"));
+    q.set("merchantId", String(id));
+    return `${pickerPath ?? "/merchant-dashboard"}?${q}`;
+  };
   const href = (path: string, extra = "") => (portal ? `${PORTAL[path] ?? path}?${extra.replace(/^&/, "")}` : `${path}?merchantId=${m.id}${extra}`);
 
   return (
@@ -85,41 +100,110 @@ export async function MerchantView({ params, pickerPath, merchantId, portal = fa
 
       <DayBar sel={sel} label={range.label} today={toDayKey(today)} />
 
-      <SectionLabel>ยอดในช่วงที่เลือก — {range.label}</SectionLabel>
-      <StatGrid>
-        <StatCard href={href("/payments", "&status=approved")} tone="emerald" icon={<DollarSign size={24} />} label="ยอดรับชำระ (gross)" value={fmtMoney(gross)} note={`${p.approved?.count ?? 0} รายการอนุมัติ`} />
-        <StatCard
-          href={href("/payments", "&status=approved")}
-          tone="amber"
-          icon={<DollarSign size={24} />}
-          label={commission ? "ค่าธรรมเนียม (ระบบได้)" : "ค่าธรรมเนียม"}
-          value={fmtMoney(fee - commission)}
-          note={
-            <span className="flex flex-col">
-              {commission > 0 && <span className="text-ink">เต็ม {fmtMoney(fee)} − คอม {fmtMoney(commission)}</span>}
-              <span>จาก {n(m.feePercent)}% + {fmtMoney(m.feeFlat)} / รายการ</span>
-            </span>
-          }
-        />
-        <StatCard href={href("/payments", "&status=approved")} tone="sky" icon={<TrendingUp size={24} />} label="ยอดสุทธิเข้าร้าน (net)" value={fmtMoney(gross - fee)} note="gross − fee" />
-        <StatCard href={href("/withdrawals")} tone="rose" icon={<ArrowUp size={24} />} label="ถอนแล้ว" value={fmtMoney(m.withdrawTotal)} note={`${m.withdrawCount} รายการเงินออกที่อนุมัติ`} />
-      </StatGrid>
+      {portal ? (
+        <>
+        <SectionLabel>ยอดในช่วงที่เลือก — {range.label}</SectionLabel>
+        <StatGrid>
+          <StatCard href={href("/payments", "&status=approved")} tone="emerald" icon={<DollarSign size={24} />} label="ยอดรับชำระ (gross)" value={fmtMoney(gross)} note={`${p.approved?.count ?? 0} รายการอนุมัติ`} />
+          <StatCard
+            href={href("/payments", "&status=approved")}
+            tone="amber"
+            icon={<DollarSign size={24} />}
+            label={commission ? "ค่าธรรมเนียม (ระบบได้)" : "ค่าธรรมเนียม"}
+            value={fmtMoney(fee - commission)}
+            note={
+              <span className="flex flex-col">
+                {commission > 0 && <span className="text-ink">เต็ม {fmtMoney(fee)} − คอม {fmtMoney(commission)}</span>}
+                <span>จาก {n(m.feePercent)}% + {fmtMoney(m.feeFlat)} / รายการ</span>
+              </span>
+            }
+          />
+          <StatCard href={href("/payments", "&status=approved")} tone="sky" icon={<TrendingUp size={24} />} label="ยอดสุทธิเข้าร้าน (net)" value={fmtMoney(gross - fee)} note="gross − fee" />
+          <StatCard href={href("/withdrawals")} tone="rose" icon={<ArrowUp size={24} />} label="ถอนแล้ว" value={fmtMoney(m.withdrawTotal)} note={`${m.withdrawCount} รายการเงินออกที่อนุมัติ`} />
+        </StatGrid>
 
-      <SectionLabel>ยอด ณ ตอนนี้ &amp; ยอดสะสม</SectionLabel>
-      <StatGrid>
-        <StatCard
-          href={href("/withdrawals")}
-          tone="sky"
-          icon={<Landmark size={24} />}
-          label="ยอดคงเหลือถอนได้ (ตอนนี้)"
-          value={fmtMoney(m.currentBalance)}
-          valueClass={n(m.currentBalance) < n(m.minBalance) ? "text-danger" : ""}
-          note={`net สะสม ${fmtMoney(lifetimeNet)} − ถอนสะสม ${fmtMoney(lifetimeOut)}`}
-        />
-        <StatCard href={href("/payments", "&status=approved&range=all")} tone="emerald" icon={<DollarSign size={24} />} label="ยอดรับสะสมทั้งหมด" value={fmtMoney(life.approved?.amount)} note={`${life.approved?.count ?? 0} รายการตลอดอายุ`} />
-        <StatCard href={href("/payments", "&status=pending&range=all")} tone="amber" icon={<Clock size={24} />} label="รอตรวจสอบ (ตอนนี้)" value={life.pending?.count ?? 0} note={fmtMoney(life.pending?.amount)} />
-        <StatCard href={href("/withdrawals")} tone="amber" icon={<Clock size={24} />} label="คำขอถอนรอ (ตอนนี้)" value={wPend.pending?.count ?? 0} note={fmtMoney(wPend.pending?.amount)} />
-      </StatGrid>
+        <SectionLabel>ยอด ณ ตอนนี้ &amp; ยอดสะสม</SectionLabel>
+        <StatGrid>
+          <StatCard
+            href={href("/withdrawals")}
+            tone="sky"
+            icon={<Landmark size={24} />}
+            label="ยอดคงเหลือถอนได้ (ตอนนี้)"
+            value={fmtMoney(m.currentBalance)}
+            valueClass={n(m.currentBalance) < n(m.minBalance) ? "text-danger" : ""}
+            note={`net สะสม ${fmtMoney(lifetimeNet)} − ถอนสะสม ${fmtMoney(lifetimeOut)}`}
+          />
+          <StatCard href={href("/payments", "&status=approved&range=all")} tone="emerald" icon={<DollarSign size={24} />} label="ยอดรับสะสมทั้งหมด" value={fmtMoney(life.approved?.amount)} note={`${life.approved?.count ?? 0} รายการตลอดอายุ`} />
+          <StatCard href={href("/payments", "&status=pending&range=all")} tone="amber" icon={<Clock size={24} />} label="รอตรวจสอบ (ตอนนี้)" value={life.pending?.count ?? 0} note={fmtMoney(life.pending?.amount)} />
+          <StatCard href={href("/withdrawals")} tone="amber" icon={<Clock size={24} />} label="คำขอถอนรอ (ตอนนี้)" value={wPend.pending?.count ?? 0} note={fmtMoney(wPend.pending?.amount)} />
+        </StatGrid>
+        </>
+      ) : (
+        <>
+          {/* Two rows on one 5-column grid (card · arrow · card · arrow · card) so the arrows line up. */}
+          <SectionLabel>ยอดในช่วงที่เลือก — {range.label}</SectionLabel>
+          <div className={FLOW}>
+            <StatCard href={href("/payments", "&status=approved")} tone="emerald" icon={<DollarSign size={24} />} label="ยอดรับชำระ (gross)" value={fmtMoney(gross)} note={`${p.approved?.count ?? 0} รายการอนุมัติ`} />
+            <FlowArrow lines={[{ label: `ค่าธรรมเนียมเงินเข้า ${n(m.feePercent)}%`, value: `− ${fmtMoney(fee)}`, tone: "text-warning" }]}>
+              <BreakdownButton kind="payments" merchantId={m.id} from={win.from} to={win.to} label={range.label} title={`${m.name} — ยอดรับชำระ → ยอดสุทธิเข้าร้าน (${range.label})`} />
+            </FlowArrow>
+            <StatCard href={href("/payments", "&status=approved")} tone="sky" icon={<TrendingUp size={24} />} label="ยอดสุทธิเข้าร้าน (net)" value={fmtMoney(gross - fee)} note="ยอดรับชำระ − ค่าธรรมเนียมเงินเข้า" />
+            <div className="xl:col-span-2">
+              <Card className="h-full p-5">
+                <div className="mb-3 flex items-center gap-2 text-[13px] text-muted"><ArrowUp size={16} className="text-danger" /> โอนออกในช่วงนี้ · {periodOut?.count ?? 0} รายการที่อนุมัติ</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><div className="text-[11.5px] text-muted">ยอดโอนออก</div><div className="text-[22px] font-bold tabular-nums">{fmtMoney(periodOut?.amount)}</div></div>
+                  <div><div className="text-[11.5px] text-muted">ค่าธรรมเนียมเงินออก ({n(m.outFeePercent)}%)</div><div className="text-[22px] font-bold tabular-nums text-warning">{fmtMoney(periodOut?.fee)}</div></div>
+                </div>
+                <div className="mt-2 text-[11.5px] text-muted">หักจากร้านรวม {fmtMoney(n(periodOut?.amount) + n(periodOut?.fee))} · <Link href={`/outflows?merchantId=${m.id}`} className="text-primary hover:underline">ดูรายการเงินออก</Link></div>
+              </Card>
+            </div>
+          </div>
+
+          {/* The period's net is part of the running total below it. */}
+          <div className={`${FLOW} -my-3`}>
+            <div className="hidden xl:block" /><div className="hidden xl:block" />
+            <CarryArrow label="ยกไปรวมในยอดสะสม" note={range.isAll ? "ทั้งหมด = ยอดสะสม" : `+ ช่วงอื่น ${fmtMoney(lifetimeNet - (gross - fee))}`} />
+          </div>
+
+          <SectionLabel>ยอดสะสมตั้งแต่เปิดร้าน → ยอดคงเหลือ ณ ตอนนี้</SectionLabel>
+          <div className={FLOW}>
+            <StatCard href={href("/payments", "&status=approved&range=all")} tone="emerald" icon={<DollarSign size={24} />} label="ยอดรับสะสม (gross)" value={fmtMoney(life.approved?.amount)} note={`${life.approved?.count ?? 0} รายการตลอดอายุ`} />
+            <FlowArrow lines={[{ label: "ค่าธรรมเนียมเงินเข้าสะสม", value: `− ${fmtMoney(life.approved?.fee)}`, tone: "text-warning" }]}>
+              <BreakdownButton kind="payments" merchantId={m.id} from={null} to={null} label="สะสมทั้งหมด" title={`${m.name} — ยอดรับสะสม → ยอดสุทธิเข้าร้านสะสม`} />
+            </FlowArrow>
+            <StatCard href={href("/payments", "&status=approved&range=all")} tone="sky" icon={<TrendingUp size={24} />} label="ยอดสุทธิเข้าร้านสะสม" value={fmtMoney(lifetimeNet)} note="ยอดรับสะสม − ค่าธรรมเนียมเงินเข้าสะสม" />
+            <FlowArrow lines={[
+              ...(n(m.openingBalance) ? [{ label: "ยอดตั้งต้น", value: `+ ${fmtMoney(m.openingBalance)}` }] : []),
+              { label: `ยอดโอนออก (${lifetimeOutRow?.count ?? 0})`, value: `− ${fmtMoney(lifetimeOut)}`, tone: "text-danger" },
+              { label: "ค่าธรรมเนียมเงินออก", value: `− ${fmtMoney(lifetimeOutFee)}`, tone: "text-warning" },
+              // Also part of the balance — shown only when the shop has them, so the arrow always adds up.
+              ...(n(m.creditAdjustments) ? [{ label: "ปรับยอด", value: `${n(m.creditAdjustments) > 0 ? "+" : "−"} ${fmtMoney(Math.abs(n(m.creditAdjustments)))}` }] : []),
+              ...(n(m.commissionEarned) ? [{ label: "ค่าคอมจากร้านย่อย", value: `+ ${fmtMoney(m.commissionEarned)}`, tone: "text-success" }] : []),
+            ]}>
+              <BreakdownButton kind="balance" merchantId={m.id} from={null} to={null} label="สะสมทั้งหมด" title={`${m.name} — ยอดสุทธิเข้าร้านสะสม → ยอดคงเหลือถอนได้`} />
+            </FlowArrow>
+            <StatCard
+              href={`/outflows?merchantId=${m.id}`}
+              tone="emerald"
+              icon={<Landmark size={24} />}
+              label="ยอดคงเหลือถอนได้ (ตอนนี้)"
+              value={fmtMoney(m.currentBalance)}
+              valueClass={n(m.currentBalance) < n(m.minBalance) ? "text-danger" : ""}
+              note="สุทธิสะสม − โอนออก − ค่าธรรมเนียมเงินออก"
+            />
+          </div>
+
+          <StatGrid>
+            <StatCard href={href("/payments", "&status=pending&range=all")} tone="amber" icon={<Clock size={24} />} label="รอตรวจสอบ (ตอนนี้)" value={life.pending?.count ?? 0} note={fmtMoney(life.pending?.amount)} />
+            <StatCard href={href("/withdrawals")} tone="amber" icon={<Clock size={24} />} label="คำขอถอนรอ (ตอนนี้)" value={wPend.pending?.count ?? 0} note={fmtMoney(wPend.pending?.amount)} />
+          </StatGrid>
+
+          <div className="mb-6">
+            <MerchantTree merchantId={m.id} from={win.from} to={win.to} rangeLabel={range.label} link={(id) => shopLink(id)} />
+          </div>
+        </>
+      )}
 
       <div className="space-y-5">
         <TrendChart trend={trend.map((t) => ({ day: t.day, amount: n(t.amount), count: t.count }))} />

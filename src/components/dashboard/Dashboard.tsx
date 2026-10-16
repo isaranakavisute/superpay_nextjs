@@ -38,7 +38,6 @@ export function Dashboard({ sel, rangeLabel, isAll, userName, summary, trend }: 
   const approvedAmount = st("approved", "amount");
   const approvedCount = st("approved", "count");
   const fees = st("approved", "fee") + st("refunded", "fee");
-  const commission = st("approved", "commission") + st("refunded", "commission");
 
   const outApproved = summary.outflows.byStatus.find((b) => b.status === "approved");
   const outflowTotal = num(outApproved?.amount);
@@ -70,15 +69,8 @@ export function Dashboard({ sel, rangeLabel, isAll, userName, summary, trend }: 
           tone="amber"
           icon={<DollarSign size={24} />}
           label="ค่าธรรมเนียม (ระบบได้)"
-          value={fmtMoney(fees - commission)}
-          note={
-            <span className="flex flex-col">
-              <span className="text-ink">
-                เติม {fmtMoney(fees)} – คอม {fmtMoney(commission)}
-              </span>
-              <span>จาก {approvedCount} รายการที่อนุมัติ</span>
-            </span>
-          }
+          value={fmtMoney(fees)}
+          note={<span>จาก {approvedCount} รายการที่อนุมัติ</span>}
         />
         <StatCard
           href="/accounts"

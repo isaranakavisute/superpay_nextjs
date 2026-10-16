@@ -19,9 +19,10 @@ export async function GET(req: Request) {
     rows.push(...page.data);
     if (page.data.length < 200) break;
   }
-  const head = "เลขที่,merchantRef,ประเภท,ธนาคารผู้รับ,เลขบัญชีผู้รับ,ชื่อผู้รับ,ยอด,ค่าธรรมเนียม,หักจากร้าน,สถานะ,เหตุผล (ไม่สำเร็จ),สร้างเมื่อ,อนุมัติ/ปิดเมื่อ";
+  const head = "เลขที่,merchantRef,ประเภท,ธนาคารผู้รับ,เลขบัญชีผู้รับ,ชื่อผู้รับ,ยอด,ค่าธรรมเนียม,หักจากร้าน,สถานะ,เหตุผล (ไม่สำเร็จ),สร้างเมื่อ,อนุมัติ/ปิดเมื่อ,ถอนสำเร็จเมื่อ";
   const lines = rows.map(toView).map((o) => [o.ref, o.merchantRef, SOURCE_LABEL[o.source] ?? o.source, o.receiverBankCode, o.receiverAccount, o.receiverName,
-    o.amount, o.fee, (Number(o.amount) + Number(o.fee)).toFixed(2), PAYOUT_STATUS[o.status]?.[0] ?? o.status, o.failureReason, o.createdAt, o.completedAt].map(cell).join(","));
+    o.amount, o.fee, (Number(o.amount) + Number(o.fee)).toFixed(2), PAYOUT_STATUS[o.status]?.[0] ?? o.status, o.failureReason, o.createdAt, o.completedAt,
+    o.transferredAt ?? (o.status === "approved" ? "รอโอน" : "")].map(cell).join(","));
   const name = `payouts-${user.merchantId}-${new Date().toISOString().slice(0, 10)}.csv`;
   return new Response("﻿" + [head, ...lines].join("\n"), {
     headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="${name}"`, "cache-control": "no-store" },

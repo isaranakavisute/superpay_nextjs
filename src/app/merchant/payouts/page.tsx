@@ -87,6 +87,9 @@ export default async function PortalPayouts({ searchParams }: PageProps<"/mercha
                 </>) },
                 { header: "สร้าง", cell: (o) => <span className="whitespace-nowrap text-muted">{fmtDateTime(o.createdAt)}</span> },
                 { header: "อนุมัติ / ปิด", cell: (o) => <span className="whitespace-nowrap text-muted">{o.completedAt ? fmtDateTime(o.completedAt) : "—"}</span> },
+                { header: "ถอนสำเร็จเมื่อ", cell: (o) => o.transferredAt
+                  ? <span className="whitespace-nowrap text-success">{fmtDateTime(o.transferredAt)}</span>
+                  : <span className="whitespace-nowrap text-muted">{o.status === "approved" ? "รอโอน" : "—"}</span> },
               ]}
             />
             <div className="border-t border-line px-[22px] py-3"><Pager path={PATH} params={params} bucket="o" page={pg.page} size={pg.size} total={res.pagination.total} /></div>

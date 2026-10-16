@@ -29,6 +29,38 @@ const DONE_BADGE = "bg-[rgba(16,185,129,0.15)] text-[#6ee7b7]";
 const th = "border-b border-line bg-surface-alt px-[18px] py-[13px] text-left text-xs font-semibold tracking-[0.5px] text-muted uppercase whitespace-nowrap";
 const td = "px-[18px] py-[13px] align-middle";
 const timeOnly = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
+const dayOf = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+/** "19:19", or "16 ต.ค. 19:19" when it happened on a different day than the outflow was created. */
+const at = (t: string | Date, created: string | Date) => {
+  const d = new Date(t);
+  return dayOf(d) === dayOf(new Date(created)) ? timeOnly.format(d) : fmtDateTime(d);
+};
+
+/**
+ * Second line of the date cell: the transfer (ถอนสำเร็จ + who), the automatic approval still waiting for the
+ * transfer, or the rejection — instead of one "สำเร็จ" time that was really the approval.
+ */
+function WhenDone({ o }: { o: OutflowRow }) {
+  if (o.status === "approved" && o.adminDone) {
+    const t = o.adminDoneAt ?? o.completedAt;
+    return t ? (
+      <div className="text-[11.5px] text-success" title="เวลาที่ admin ดำเนินการ = yes (โอนเงินแล้ว)">
+        ✓ ถอนสำเร็จ {at(t, o.createdAt)}{o.adminDoneBy ? ` · ${o.adminDoneBy}` : ""}
+      </div>
+    ) : null;
+  }
+  if (o.status === "approved") {
+    return o.completedAt ? (
+      <div className="text-[11.5px] text-warning" title="หักยอดร้านแล้ว — รอทีมโอนเงินและตั้ง admin ดำเนินการ = yes">
+        {o.source === "api" ? "อนุมัติอัตโนมัติ" : "อนุมัติแล้ว"} {at(o.completedAt, o.createdAt)} · รอโอน
+      </div>
+    ) : null;
+  }
+  if (o.status === "rejected" && o.completedAt) {
+    return <div className="text-[11.5px] text-danger">✕ ปฏิเสธ {at(o.completedAt, o.createdAt)}</div>;
+  }
+  return null;
+}
 const HEADERS = ["เลขที่", "ร้านค้า", "หักจาก", "โอนไปยัง", "ยอด", "สถานะ", "ที่มา", "วันที่", "รายละเอียด", "admin ดำเนินการ", "จัดการ"];
 // Same minimum widths in every table on the page, so the columns line up even when a table is empty.
 const MIN_W: Record<string, number> = { "เลขที่": 120, "ร้านค้า": 120, "หักจาก": 170, "โอนไปยัง": 230, "ยอด": 160, "สถานะ": 120, "ที่มา": 90, "วันที่": 140, "รายละเอียด": 220, "admin ดำเนินการ": 130 };
@@ -97,9 +129,7 @@ function Row({ o, selectable, accounts, tone }: { o: OutflowRow; selectable?: bo
       </td>
       <td className={`${td} whitespace-nowrap text-muted`}>
         {fmtDateTime(o.createdAt)}
-        {o.completedAt && o.status === "approved" && (
-          <div className="text-[11.5px] text-success" title="เวลาที่แก้ไขล่าสุด — ปกติคือตอนอนุมัติ/จับคู่สำเร็จ">✓ สำเร็จ {timeOnly.format(new Date(o.completedAt))}</div>
-        )}
+        <WhenDone o={o} />
       </td>
       <td className={`${td} max-w-[240px] text-muted`}>{o.description ?? <span className="text-soft">—</span>}</td>
       <td className={td}><AdminDoneSelect refId={o.ref} done={o.adminDone} /></td>

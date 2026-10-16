@@ -127,7 +127,7 @@ function SettingsCard({ settings }: { settings: BotSettings }) {
       <div className={head}><h2 className="text-lg font-semibold">ตั้งค่าบอท</h2><span className="text-[12.5px] text-muted">@OptionPaySupportBot</span></div>
       <form className="grid gap-3 px-[22px] py-4 text-[13px] md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); start(async () => setR(await saveSettings(v))); }}>
         <div className="md:col-span-2"><Err r={r} />{r?.ok && <div role="status" className="text-emerald-300">บันทึกแล้ว</div>}</div>
-        <label className="flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={v.enabled} onChange={(e) => setV({ ...v, enabled: e.target.checked })} /> เปิดใช้งานบอท</label>
+        <label className="flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={v.enabled} onChange={(e) => setV({ ...v, enabled: e.target.checked })} /> เปิดใช้งานบอทตอบคำถาม <span className="text-muted">(ปิดแล้วบอทไม่ตอบคำถาม แต่ประชาสัมพันธ์ยังโพสต์ตามเวลาปกติ)</span></label>
         <label className="flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={v.allGroups ?? true} onChange={(e) => setV({ ...v, allGroups: e.target.checked })} /> ตอบในทุกกลุ่มที่บอทอยู่ (ไม่ต้องอนุมัติทีละกลุ่ม — ถ้าไม่ติ๊ก ตอบเฉพาะกลุ่มในรายการที่อนุญาต)</label>
         <label className="flex items-center gap-2 md:col-span-2"><input type="checkbox" checked={v.allowPrivate ?? true} onChange={(e) => setV({ ...v, allowPrivate: e.target.checked })} /> ตอบในแชทส่วนตัว (ทุกคนที่เพิ่มบอทเป็นเพื่อนถามได้)</label>
         <div><label htmlFor="sb-t" className={fieldLabel}>Bot token</label>
