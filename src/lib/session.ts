@@ -65,6 +65,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 export type PortalUser = {
   id: number; merchantId: number; username: string; fullName: string; tier: "owner" | "staff" | "viewer"; merchantName: string;
   mustChangePassword?: boolean;
+  /** Portal super-admin: may open every shop (parent or sub-merchant) as its owner — see requirePortal. */
+  superAdmin?: boolean;
   /** Set by requirePortal when the user views a shop below their own (sub-merchant): their own shop, view only. */
   homeMerchantId?: number; homeMerchantName?: string; viewing?: boolean;
 };
@@ -95,7 +97,7 @@ export async function getPortalUser(): Promise<PortalUser | null> {
   try {
     const p = JSON.parse(Buffer.from(payload, "base64url").toString());
     if (typeof p.exp !== "number" || p.exp < Date.now() || !Number.isInteger(p.merchantId)) return null;
-    return { id: p.id, merchantId: p.merchantId, username: p.username, fullName: p.fullName, tier: p.tier, merchantName: p.merchantName, mustChangePassword: !!p.mustChangePassword };
+    return { id: p.id, merchantId: p.merchantId, username: p.username, fullName: p.fullName, tier: p.tier, merchantName: p.merchantName, mustChangePassword: !!p.mustChangePassword, superAdmin: !!p.superAdmin };
   } catch {
     return null;
   }

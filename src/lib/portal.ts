@@ -11,7 +11,7 @@ const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 
 export type ViewableShop = { id: number; name: string; depth: number; status: "active" | "suspended" | "pending" };
 
-/** The user's own shop and every sub-merchant below it (the shop switcher; also the view check). */
+/** The user's own shop and every sub-merchant below it (the shop switcher; also the view check) — every shop for a super-admin. */
 export async function viewableShops(u: PortalUser): Promise<ViewableShop[]> {
   const home: PortalUser = { ...u, merchantId: u.homeMerchantId ?? u.merchantId, homeMerchantId: undefined };
   const r = await portalCall<{ shops: ViewableShop[] }>(home, "GET", "/viewable");
@@ -32,7 +32,10 @@ export async function requirePortal(path: string): Promise<PortalUser> {
   const view = Number((await cookies()).get(PORTAL_VIEW_COOKIE)?.value);
   if (!Number.isInteger(view) || view <= 0 || view === u.merchantId) return own;
   const shop = (await viewableShops(u)).find((s) => s.id === view);
-  return shop ? { ...own, merchantId: shop.id, merchantName: shop.name, viewing: true } : own;
+  if (!shop) return own;
+  // A super-admin opens the shop AS its owner (the shop becomes their "own" shop: writes allowed), not view-only.
+  if (u.superAdmin) return { ...own, merchantId: shop.id, merchantName: shop.name, homeMerchantId: shop.id, homeMerchantName: shop.name, tier: "owner" };
+  return { ...own, merchantId: shop.id, merchantName: shop.name, viewing: true };
 }
 
 /** What this portal user may do (Settings → สิทธิ์ผู้ใช้ร้านค้า, by level). */
@@ -44,6 +47,7 @@ const headers = (u: PortalUser) => ({
   "content-type": "application/json", ...consoleHeaders(u.username), "x-portal-tier": u.tier,
   // The user's own shop: the backend lets it read its subtree and write only to itself.
   "x-portal-home": String(u.homeMerchantId ?? u.merchantId),
+  ...(u.superAdmin ? { "x-portal-super": "1" } : {}),
 });
 
 /** Backend portal call scoped to the session's shop. */

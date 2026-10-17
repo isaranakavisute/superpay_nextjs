@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import type { ViewableShop } from "@/lib/portal";
 import { viewShop } from "./actions";
+import { treeLabels } from "./shopTree";
 
 /** Own shop + every sub-merchant below it; choosing one views it (read only). */
 export function ShopSwitcher({ shops, current, home }: { shops: ViewableShop[]; current: number; home: number }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const label = treeLabels(shops);
   return (
     <select
       aria-label="เลือกร้านที่จะดู"
@@ -19,7 +21,7 @@ export function ShopSwitcher({ shops, current, home }: { shops: ViewableShop[]; 
     >
       {shops.map((s) => (
         <option key={s.id} value={s.id}>
-          {`${"  ".repeat(s.depth)}${s.depth ? "└ " : ""}${s.name}${s.id === home ? " (ร้านของฉัน)" : ""}${s.status === "pending" ? " · รออนุมัติ" : s.status === "suspended" ? " · ระงับ" : ""}`}
+          {`${label.get(s.id)}${s.id === home ? " (ร้านของฉัน)" : ""}${s.status === "pending" ? " · รออนุมัติ" : s.status === "suspended" ? " · ระงับ" : ""}`}
         </option>
       ))}
     </select>

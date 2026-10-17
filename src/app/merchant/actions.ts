@@ -24,6 +24,8 @@ export async function loginPortal(_prev: PortalLoginState, form: FormData): Prom
   await createPortalSession(r.user);
   (await cookies()).delete(PORTAL_VIEW_COOKIE);
   if (r.user.mustChangePassword) redirect("/merchant/settings?pw=1");
+  // A super-admin has no shop of its own: pick the shop to open first.
+  if (r.user.superAdmin) redirect("/merchant/choose-shop");
   const back = String(form.get("returnTo") ?? "");
   redirect(back.startsWith("/merchant/") && !back.startsWith("//") ? back : "/merchant/dashboard");
 }
@@ -66,7 +68,8 @@ export async function viewShop(id: number) {
   const u = await getPortalUser();
   if (!u) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" } as ActionResult;
   const jar = await cookies();
-  if (!id || id === u.merchantId) {
+  // A super-admin always opens a chosen shop (its own row's shop included) — keep the choice even for that shop.
+  if (!id || (id === u.merchantId && !u.superAdmin)) {
     jar.delete(PORTAL_VIEW_COOKIE);
   } else {
     if (!(await viewableShops(u)).some((s) => s.id === id)) return { ok: false, error: "ไม่มีสิทธิ์ดูร้านนี้" } as ActionResult;

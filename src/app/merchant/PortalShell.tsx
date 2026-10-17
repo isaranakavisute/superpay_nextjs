@@ -23,10 +23,11 @@ const TIER: Record<string, string> = { owner: "เจ้าของร้าน
 /** Merchant Portal frame: top bar with the shop, tabs, and the signed-in portal user. */
 export async function PortalShell({ user, path, children }: { user: PortalUser; path: string; children: React.ReactNode }) {
   const [branding, shops, can] = await Promise.all([getBranding(), viewableShops(user), portalPerms(user)]);
-  const home = user.homeMerchantId ?? user.merchantId;
+  // A super-admin has no "own" shop in the switcher: every shop opens as its owner.
+  const home = user.superAdmin ? -1 : user.homeMerchantId ?? user.merchantId;
   const current = shops.find((s) => s.id === user.merchantId);
   // Sub-merchants are managed from the user's own shop; when viewing another shop, its tab is hidden.
-  const hasSubs = shops.some((s) => s.depth > 0);
+  const hasSubs = user.superAdmin ? shops.some((s) => s.depth > (current?.depth ?? 0)) : shops.some((s) => s.depth > 0);
   const nav = NAV.filter((n) => !n.perm || (can.has(n.perm) && !user.viewing && (!n.needsSubs || hasSubs)));
   return (
     <div className="ui-compact min-h-screen">
@@ -37,7 +38,7 @@ export async function PortalShell({ user, path, children }: { user: PortalUser; 
             <div className="hidden h-8 w-px bg-line sm:block" />
             <div className="hidden min-w-0 sm:block">
               {shops.length > 1 ? <ShopSwitcher shops={shops} current={user.merchantId} home={home} /> : <div className="truncate font-semibold">{user.merchantName}</div>}
-              <div className="text-[11.5px] text-muted">{user.viewing ? "ร้านย่อย (ดูอย่างเดียว)" : "ร้านค้า"}</div>
+              <div className="text-[11.5px] text-muted">{user.superAdmin ? "Super admin — เปิดได้ทุกร้านในฐานะเจ้าของร้าน" : user.viewing ? "ร้านย่อย (ดูอย่างเดียว)" : "ร้านค้า"}</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
