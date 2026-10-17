@@ -7,6 +7,7 @@ import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import type { PaymentStatus } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
+import { ApproveDialog } from "./ApproveDialog";
 import {
   approvePayment,
   assignPayment,
@@ -18,7 +19,7 @@ import {
   uploadSlip,
 } from "./actions";
 
-type Dialog = null | "reject" | "amount" | "refund" | "delete" | "assign" | "slip";
+type Dialog = null | "approve" | "reject" | "amount" | "refund" | "delete" | "assign" | "slip";
 
 export type PaymentForActions = {
   ref: string;
@@ -28,6 +29,13 @@ export type PaymentForActions = {
   merchantId: number | null;
   merchantOrderId: string | null;
   hasSlipImage: boolean;
+  customerName?: string | null;
+  reviewNote?: string | null;
+  slipAmount?: string | null;
+  slipDecision?: string | null;
+  slipTransferLeft?: string | null;
+  slipTransferUsedBy?: string | null;
+  customerLeftover?: string | null;
 };
 
 /** Read a File as base64 (no data: prefix). */
@@ -121,7 +129,7 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
       )}
       {open_ && (
         <>
-          <button className={`${sm} ${btn.success}`} onClick={() => run(() => approvePayment(p.ref))} disabled={pending} title="ยืนยันว่าเงินเข้าแล้ว">
+          <button className={`${sm} ${btn.success}`} onClick={() => open("approve")} disabled={pending} title="ยืนยันว่าเงินเข้าแล้ว">
             <Check size={13} /> อนุมัติ
           </button>
           <button className={dangerGhost} onClick={() => open("reject")} disabled={pending} title="ปฏิเสธรายการนี้">
@@ -141,6 +149,12 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
       )}
       {error && !dialog && <span className="text-[11px] whitespace-normal text-danger">{error}</span>}
 
+      {dialog === "approve" && (
+        <ApproveDialog
+          items={[{ ref: p.ref, amount: p.amount, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount, slipDecision: p.slipDecision, slipTransferLeft: p.slipTransferLeft, slipTransferUsedBy: p.slipTransferUsedBy, customerLeftover: p.customerLeftover, reviewNote: p.reviewNote }]}
+          pending={pending} error={error} onClose={() => setDialog(null)} onConfirm={() => run(() => approvePayment(p.ref))}
+        />
+      )}
       {dialog === "slip" && (
         <Modal title={`สลิป ${p.ref}`} onClose={close} width={560}>
           {/* eslint-disable-next-line @next/next/no-img-element -- private, auth-gated image route */}

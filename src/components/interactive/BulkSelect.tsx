@@ -5,13 +5,18 @@ import { Check, X } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import { fmtMoney } from "@/lib/format";
 import type { ActionResult } from "@/lib/api";
+import { ApproveDialog } from "@/app/payments/ApproveDialog";
+import type { ApprovalInput } from "@/app/payments/approvalCheck";
 
 type Ctx = { selected: Set<string>; toggle: (ref: string) => void; setAll: (refs: string[], on: boolean) => void };
 const SelectionContext = createContext<Ctx | null>(null);
 
 export type BulkAction = (action: "approve" | "reject", refs: string[], reason?: string, accountId?: number) => Promise<ActionResult>;
 
+type Item = ApprovalInput;
 type BarOptions = {
+  /** Payments: confirm every bulk approval (Thai dialog, mismatches must be ticked). */
+  confirmApprove?: boolean;
   bulk: BulkAction;
   /** "always": bar is always shown (payments). "selected": appears once something is ticked (outflows). */
   show?: "always" | "selected";
@@ -20,7 +25,7 @@ type BarOptions = {
 };
 
 /** Selection state for one bucket; the bar and the checkboxes share it. */
-export function BulkSelect({ items, children, ...bar }: { items: { ref: string; amount: string }[]; children: React.ReactNode } & BarOptions) {
+export function BulkSelect({ items, children, ...bar }: { items: Item[]; children: React.ReactNode } & BarOptions) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // Rows that left the bucket (approved elsewhere, auto-refresh) drop out of the selection.
   const live = new Set(items.map((i) => i.ref));
@@ -63,7 +68,7 @@ export function AllCheckbox({ refs }: { refs: string[] }) {
 }
 
 /** "เลือกไว้ N รายการ · รวม ฿X" + ยกเลิกที่เลือก / ✕ ปฏิเสธที่เลือก / ✓ อนุมัติที่เลือก */
-function BulkBar({ items, bulk, show = "always", accounts }: { items: { ref: string; amount: string }[] } & BarOptions) {
+function BulkBar({ items, bulk, show = "always", accounts, confirmApprove }: { items: Item[] } & BarOptions) {
   const { selected, setAll } = useSelection();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -99,10 +104,13 @@ function BulkBar({ items, bulk, show = "always", accounts }: { items: { ref: str
         <button className={`${btn.base} ${btn.sm} border-[#fecaca]/40 bg-transparent text-danger hover:bg-danger/10`} disabled={!refs.length || pending} onClick={() => setRejecting(true)}>
           <X size={13} /> ปฏิเสธที่เลือก
         </button>
-        <button className={`${btn.base} ${btn.sm} ${btn.success}`} disabled={!refs.length || pending} onClick={() => (accounts ? setApproving(true) : run("approve"))}>
+        <button className={`${btn.base} ${btn.sm} ${btn.success}`} disabled={!refs.length || pending} onClick={() => (accounts || confirmApprove ? setApproving(true) : run("approve"))}>
           <Check size={13} /> อนุมัติที่เลือก
         </button>
       </div>
+      {approving && confirmApprove && !accounts && (
+        <ApproveDialog items={items.filter((i) => selected.has(i.ref))} pending={pending} error={error} onClose={() => setApproving(false)} onConfirm={() => run("approve")} />
+      )}
       {approving && accounts && (
         <Modal
           title={`อนุมัติ ${refs.length} รายการ`}

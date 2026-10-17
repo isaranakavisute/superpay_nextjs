@@ -94,6 +94,13 @@ function Row({ p, selectable, merchants }: { p: PaymentRow; selectable?: boolean
             merchantId: p.merchantId,
             merchantOrderId: p.merchantOrderId,
             hasSlipImage: p.hasSlipImage,
+            customerName: p.customerName,
+            reviewNote: p.reviewNote,
+            slipAmount: p.slipAmount ?? null,
+            slipDecision: p.slipDecision ?? null,
+            slipTransferLeft: p.slipTransferLeft ?? null,
+            slipTransferUsedBy: p.slipTransferUsedBy ?? null,
+            customerLeftover: p.customerLeftover ?? null,
           }}
         />
       </td>
@@ -261,7 +268,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
         badge={{ text: `${data.review.pagination.total} รายการ`, bg: "#fee2e2", fg: "#b91c1c" }}
         hint="ต้องมีคนดู — มีสลิป/แจ้งเตือนที่ระบบจับคู่เองไม่ได้, เงินเข้าโดยไม่มีออเดอร์, หรือ P2P ติด"
       >
-        <BulkSelect items={data.review.data.map((p) => ({ ref: p.ref, amount: p.amount }))} bulk={bulkPayments}>
+        <BulkSelect items={data.review.data.map((p) => ({ ref: p.ref, amount: p.amount, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount ?? null, slipDecision: p.slipDecision ?? null, slipTransferLeft: p.slipTransferLeft ?? null, slipTransferUsedBy: p.slipTransferUsedBy ?? null, customerLeftover: p.customerLeftover ?? null, reviewNote: p.reviewNote }))} bulk={bulkPayments} confirmApprove>
           <Table rows={data.review.data} selectable empty="ไม่มีรายการที่ต้องตรวจสอบ ✓" merchants={pickList} />
         </BulkSelect>
       </Bucket>

@@ -19,6 +19,7 @@ const KIND: Record<string, [string, string]> = {
   "webhook.failed": ["ส่ง webhook ไม่สำเร็จ", "ลองครบ 5 ครั้งแล้วร้านยังไม่ได้รับ"],
   "webhook.delivery": ["ผลการส่ง webhook ไปยังร้าน", "ทุกครั้งที่ระบบส่ง webhook / callback ไปยังร้าน (ชำระเงิน, payout.completed, payout.failed, ส่งซ้ำ): ข้อมูลที่ส่ง + ส่งถึงหรือไม่ + ปลายทางตอบอะไร"],
   "slip.provider_down": ["ระบบตรวจสลิปขัดข้อง", "ผู้ให้บริการตรวจสลิปไม่ตอบตามเกณฑ์ด้านล่าง"],
+  "midnight.cancel": ["ยกเลิกอัตโนมัติตอนเที่ยงคืน", "สรุปทุกคืน: จำนวนรายการชำระเงินและรายการเงินออกที่ระบบยกเลิกเพราะยังไม่เสร็จภายในเที่ยงคืน + รายการที่ยกเลิกไม่ได้"],
 };
 
 const draftOf = (b: Bot): Draft => ({ key: `b${b.id}`, id: b.id, name: b.name, enabled: b.enabled, botChannelId: b.botChannelId, botToken: "", chatIds: b.chatIds, mentions: b.mentions ?? "", merchantId: b.merchantId ?? null, events: b.events, hasOwnToken: b.hasOwnToken });

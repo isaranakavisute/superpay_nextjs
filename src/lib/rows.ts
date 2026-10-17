@@ -12,6 +12,9 @@ export type PaymentRow = {
   amount: Money; fee: Money; commission: Money; currency: string; status: PaymentStatus; reviewedBy: string | null; createdAt: When;
   merchantOrderId: string | null; slipReceivedAt: When | null; reviewNote: string | null; completedAt: When | null; refundedAmount: Money;
   slipReusedRef: string | null; hasSlipImage: boolean; checkoutToken?: string | null; source?: string; expiresAt?: When | null;
+  /** What the slip check read from the bank (null = no slip / not verified) and its decision. */
+  slipAmount?: string | null; slipDecision?: string | null;
+  slipTransferLeft?: string | null; slipTransferUsedBy?: string | null; customerLeftover?: string | null;
 };
 
 export type OutflowRow = {
@@ -104,6 +107,15 @@ export type P2pRow = {
   amount: Money; receiverName: string; receiverAccount: string | null;
   status: "reserved" | "settled" | "disputed" | "released"; disputeReason: string | null;
   matchedAt: When; settledAt: When | null; releasedAt: When | null;
+};
+
+/** A bank transfer that paid only part of its amount: its left-over and the exact order amount that would use it. */
+export type TransferLeftoverRow = {
+  id: number | string; transRef: string; merchantId: number | null; merchantName: string | null;
+  bankCode: string | null; accountNo: string | null; accountName: string | null;
+  transferAt: When | null; amount: Money; used: Money; left: Money; leftoverUntil: When | null; status: "open" | "expired" | "used";
+  customerName: string | null; firstRef: string | null; firstOrderId: string | null; note: string | null;
+  paidOrders: { ref: string; orderId: string | null; amount: Money; kind: string; at: When }[] | null;
 };
 
 export type DoubleCreditRow = {
