@@ -8,6 +8,7 @@ import type { ActionResult } from "@/lib/api";
 import type { PaymentStatus } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
 import { ApproveDialog } from "./ApproveDialog";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import {
   approvePayment,
   assignPayment,
@@ -232,14 +233,14 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
       )}
 
       {dialog === "delete" && (
-        <Modal
-          title="ลบรายการ"
+        <DeleteDialog
+          title="ยืนยันการลบรายการ"
+          what={<>ลบ <strong>{p.ref}</strong> ยอด {fmtMoney(p.amount)}{p.customerName ? <> · {p.customerName}</> : null}?</>}
+          warning={p.status === "rejected" ? undefined : "รายการนี้ยังเปิดอยู่ — จะถูกปฏิเสธด้วยเหตุผลนี้ก่อน และร้านจะได้รับแจ้ง payment.rejected"}
+          placeholder="เช่น ออเดอร์ซ้ำกับ TXN… / ร้านสร้างผิด"
+          onConfirm={(reason) => deletePayment(p.ref, reason)}
           onClose={close}
-          footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.danger}`} disabled={pending} onClick={() => run(() => deletePayment(p.ref))}>ลบรายการ</button></>}
-        >
-          <p className="text-sm">ลบ <strong>{p.ref}</strong> ยอด {fmtMoney(p.amount)} ออกจากระบบ? การลบจะถูกบันทึกใน Audit Log และย้อนกลับไม่ได้</p>
-          {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
-        </Modal>
+        />
       )}
     </div>
   );

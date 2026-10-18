@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { DollarSign, KeyRound, Link2, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
 import {
   addPortalUser,
@@ -423,8 +424,6 @@ function CreditDialog({ m, onClose }: { m: MerchantForActions; onClose: () => vo
 /** Row icon actions, in the original's order. */
 export function MerchantActions({ m, parents = [] }: { m: MerchantForActions; parents?: ParentOption[] }) {
   const [dialog, setDialog] = useState<Dialog>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
   const close = () => setDialog(null);
   const icon = `${btn.base} ${btn.sm} ${btn.ghost}`;
 
@@ -435,7 +434,7 @@ export function MerchantActions({ m, parents = [] }: { m: MerchantForActions; pa
       <button className={icon} title="Portal Users" aria-label="Portal Users" onClick={() => setDialog("portal")}><Users size={14} /></button>
       <button className={icon} title="ปรับเครดิต" aria-label="ปรับเครดิต" onClick={() => setDialog("credit")}><DollarSign size={14} /></button>
       <button className={icon} title="แก้ไข" aria-label="แก้ไข" onClick={() => setDialog("edit")}><Pencil size={14} /></button>
-      <button className={`${btn.base} ${btn.sm} border-line bg-transparent text-danger hover:bg-danger/10`} title="ลบ" aria-label="ลบ" onClick={() => { setError(null); setDialog("delete"); }}><Trash2 size={14} /></button>
+      <button className={`${btn.base} ${btn.sm} border-line bg-transparent text-danger hover:bg-danger/10`} title="ลบ" aria-label="ลบ" onClick={() => setDialog("delete")}><Trash2 size={14} /></button>
 
       {dialog === "keys" && <KeysDialog m={m} onClose={close} />}
       {dialog === "webhook" && <WebhookDialog m={m} onClose={close} />}
@@ -443,25 +442,14 @@ export function MerchantActions({ m, parents = [] }: { m: MerchantForActions; pa
       {dialog === "credit" && <CreditDialog m={m} onClose={close} />}
       {dialog === "edit" && <MerchantForm initial={m} onDone={close} parents={parents} />}
       {dialog === "delete" && (
-        <Modal
-          title={`ลบ ${m.name}`}
+        <DeleteDialog
+          title={`ยืนยันการลบร้าน ${m.name}`}
+          what={<>ลบร้าน <strong>{m.name}</strong> (<code>{m.slug}</code>)? ร้านที่มีรายการเงินแล้วลบไม่ได้ — ให้เปลี่ยนสถานะเป็น &ldquo;ระงับ&rdquo; แทน</>}
+          warning="ร้านจะถูกระงับทันที: API key และการเข้าสู่ระบบของร้านใช้ไม่ได้ และ webhook ถูกปิด"
+          placeholder="เช่น สร้างร้านผิด / ร้านทดสอบ"
+          onConfirm={(reason) => deleteMerchant(m.id, reason)}
           onClose={close}
-          footer={
-            <>
-              {cancelBtn(close)}
-              <button
-                className={`${btn.base} ${btn.md} ${btn.danger}`}
-                disabled={pending}
-                onClick={() => start(async () => { const r = await deleteMerchant(m.id); if (r.ok) close(); else setError(r.error); })}
-              >
-                ลบร้าน
-              </button>
-            </>
-          }
-        >
-          <p className="text-sm">ลบร้าน <strong>{m.name}</strong> (<code>{m.slug}</code>)? ร้านที่มีรายการเงินแล้วลบไม่ได้ — ให้เปลี่ยนสถานะเป็น &ldquo;ระงับ&rdquo; แทน</p>
-          {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
-        </Modal>
+        />
       )}
     </div>
   );

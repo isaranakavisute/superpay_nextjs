@@ -214,7 +214,7 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
   }
 
   const shell = (body: React.ReactNode, actions?: React.ReactNode) => (
-    <ConsoleShell title="รายการเงินออก" path={PATH} search={{ placeholder: "ค้นหาเลขที่ / รายละเอียด...", params }}>
+    <ConsoleShell title="รายการเงินออก" path={PATH} search={{ placeholder: "ค้นหาเลขที่ / รายละเอียด...", params, txn: true }}>
       <PageHeader title="รายการเงินออก" subtitle="จัดการรายการเงินออก คืนเงิน ค่าใช้จ่าย และรายการที่ระบบหักอัตโนมัติจากอีเมลธนาคาร" actions={actions} />
       {body}
     </ConsoleShell>
@@ -237,7 +237,7 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
       <AutoRefresh seconds={10} />
       <RangeBar sel={sel} label={range.label} />
 
-      <FilterCard
+      <FilterCard txn
         searchPlaceholder="ค้นหาเลขที่ / รายละเอียด..."
         filters={[
           { name: "category", options: [{ value: "", label: "ทุกหมวดหมู่" }, ...OUTFLOW_CATEGORIES] },

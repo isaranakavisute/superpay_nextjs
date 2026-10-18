@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus, Trash2, Zap } from "lucide-react";
 import { btn, field, fieldLabel } from "@/components/interactive/Modal";
 import { saveAlerts, testBot, type BotInput } from "./actions";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 
 export type Bot = { id: number; name: string; enabled: boolean; botChannelId: number | null; hasOwnToken: boolean; chatIds: string; mentions?: string; merchantId?: number | null; events: string[] };
 type Thresholds = { repeatMinutes: number; slipFailCount: number; slipDownMinutes: number };
@@ -26,7 +27,8 @@ const draftOf = (b: Bot): Draft => ({ key: `b${b.id}`, id: b.id, name: b.name, e
 
 export function AlertsEditor({ bots, channels, shops, kinds, thresholds }: { bots: Bot[]; channels: { id: number; name: string }[]; shops: { id: number; name: string }[]; kinds: string[]; thresholds: Thresholds }) {
   const [list, setList] = useState<Draft[]>(bots.map(draftOf));
-  const [deleted, setDeleted] = useState<number[]>([]);
+  const [deleted, setDeleted] = useState<{ id: number; reason: string }[]>([]);
+  const [del, setDel] = useState<{ id: number; key: string; name: string } | null>(null);
   const [th, setTh] = useState(thresholds);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -46,6 +48,15 @@ export function AlertsEditor({ bots, channels, shops, kinds, thresholds }: { bot
 
   return (
     <>
+      {del && (
+        <DeleteDialog
+          title="ยืนยันการลบ bot แจ้งเตือน"
+          what={<>ลบ bot <strong>{del.name}</strong>? bot จะหยุดส่งแจ้งเตือน — <strong>มีผลเมื่อกด &ldquo;บันทึก&rdquo;</strong> ด้านล่าง</>}
+          placeholder="เช่น ย้ายไปกลุ่มใหม่ / ไม่ใช้แล้ว"
+          onConfirm={(reason) => { setDeleted((x) => [...x, { id: del.id, reason }]); setList((l) => l.filter((x) => x.key !== del.key)); return { ok: true }; }}
+          onClose={() => setDel(null)}
+        />
+      )}
       {list.length === 0 && (
         <div className="mb-4 rounded-xl border border-line bg-surface px-5 py-10 text-center text-[13px] text-muted">ยังไม่มี bot — ยังไม่มีการแจ้งเตือนใด ๆ กด &ldquo;เพิ่ม bot&rdquo; ด้านล่าง</div>
       )}
@@ -76,7 +87,7 @@ export function AlertsEditor({ bots, channels, shops, kinds, thresholds }: { bot
                 <button
                   className={`${btn.base} ${btn.sm} border-line bg-transparent text-danger hover:bg-danger/10`}
                   aria-label="ลบ bot"
-                  onClick={() => { if (d.id) setDeleted((x) => [...x, d.id!]); setList((l) => l.filter((x) => x.key !== d.key)); }}
+                  onClick={() => { if (d.id) setDel({ id: d.id, key: d.key, name: d.name || `bot #${d.id}` }); else if (confirm("ทิ้งการ์ด bot ที่ยังไม่ได้บันทึกนี้?")) setList((l) => l.filter((x) => x.key !== d.key)); }}
                 >
                   <Trash2 size={14} />
                 </button>

@@ -34,10 +34,10 @@ const VARIANTS = [
   'PATHQ="/api/v1/payment/validation-report?date=2026-10-14&start_time=16%3A52%3A49&end_time=17%3A04%3A10"',
   '',
   '# กลุ่มรายการที่ Option Pay ติดป้ายไว้ให้ (batch)',
-  'PATHQ="/api/v1/payment/validation-report?batch=coffee9-2026-10-14"',
+  'PATHQ="/api/v1/payment/validation-report?batch=shop-2026-10-14"',
   '',
-  '# ร้านแม่ดูรายการของร้านย่อย id 58 — เพิ่ม header นี้ (ไม่ต้องเซ็น header นี้)',
-  '  -H "X-Sub-Merchant: 58"',
+  '# ร้านแม่ดูรายการของร้านย่อย id 123 — เพิ่ม header นี้ (ไม่ต้องเซ็น header นี้)',
+  '  -H "X-Sub-Merchant: 123"',
 ].join("\n");
 
 const NEXT = [
@@ -71,7 +71,7 @@ export function ValidationReportSection() {
       <div className={H}>Query parameters — ใส่อย่างน้อย 1 ใน refs / batch / date / start_time (ใส่หลายตัว = ต้องตรงทุกเงื่อนไข)</div>
       <Table head={["Parameter", "รูปแบบ", "ตัวอย่าง (ตามที่ส่งใน URL)", "ได้มาจากไหน"]} rows={[
         [c("refs"), "เลขที่รายการ (TXN…) หรือ orderId คั่นด้วย , (ไม่เกิน 100)", c("refs=TXN100001%2CORD-1002", "e"), <>{c("transaction.ref", "r")} / {c("transaction.orderId", "o")} ที่ได้จาก {c("POST /payment/create", "p")} (orderId = เลขที่ร้านส่งมา หรือ OP-… ที่ระบบสร้างให้) · หรือคอลัมน์ <strong key="n">เลขที่</strong> ในหน้า รายการชำระเงิน · หรือจาก {c("GET /transactions", "t")}</>],
-        [c("batch"), "ชื่อป้ายกลุ่ม (a-z 0-9 . _ -)", c("batch=coffee9-2026-10-14", "e"), "ทีม Option Pay ติดป้ายให้กลุ่มรายการที่ต้องการดูพร้อมกัน แล้วแจ้งชื่อป้ายให้ร้าน"],
+        [c("batch"), "ชื่อป้ายกลุ่ม (a-z 0-9 . _ -)", c("batch=shop-2026-10-14", "e"), "ทีม Option Pay ติดป้ายให้กลุ่มรายการที่ต้องการดูพร้อมกัน แล้วแจ้งชื่อป้ายให้ร้าน"],
         [c("date"), "YYYY-MM-DD (วันที่สร้างรายการ เวลาไทย)", c("date=2026-10-14", "e"), <>วันที่ที่ต้องการตรวจ · หรือจาก {c("transaction.createdAt", "c")} (เวลา UTC — แปลงเป็นเวลาไทย +7 ชม.)</>],
         [c("source"), c("API · SLIP · COLLECT · PORTAL", "v"), c("source=API", "e"), <>ช่องทางที่สร้างรายการ: API = {c("/payment/create", "a")} · SLIP = {c("/payment/slip/create", "s")} · COLLECT = {c("/collect", "c")} · PORTAL = สร้างใน Portal (ดูได้จาก {c("transaction.source", "t")})</>],
         [c("start_time"), "HH:MM หรือ HH:MM:SS (คู่กับ date) หรือ ISO พร้อมเขตเวลา", c("start_time=16%3A52%3A49", "e"), "เวลาสร้างรายการเริ่มต้นที่ต้องการ (รวมเวลานั้น)"],

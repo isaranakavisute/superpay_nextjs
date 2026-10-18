@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
+import { reasonError } from "@/lib/delete-reason";
 
 const REF = /^OUT\d{1,12}$/;
 const CATEGORIES = new Set(["refund", "fee", "expense", "transfer", "other", "auto", "commission"]);
@@ -41,9 +42,11 @@ export async function updateOutflow(ref: string, input: { category: string; bank
   return as((actor) => consoleWrite("POST", `/api/console/outflows/${ref}/update`, actor, input));
 }
 
-export async function deleteOutflow(ref: string) {
+export async function deleteOutflow(ref: string, reason: string) {
   if (!REF.test(ref)) return bad("เลขที่รายการไม่ถูกต้อง");
-  return as((actor) => consoleWrite("DELETE", `/api/console/outflows/${ref}`, actor));
+  const err = reasonError(reason);
+  if (err) return bad(err);
+  return as((actor) => consoleWrite("DELETE", `/api/console/outflows/${ref}`, actor, { reason: reason.trim() }));
 }
 
 export async function bulkOutflows(action: "approve" | "reject", refs: string[], reason?: string, bankAccountId?: number, note?: string) {

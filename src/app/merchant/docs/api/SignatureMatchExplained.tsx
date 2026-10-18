@@ -17,7 +17,7 @@ const TEST = {
 
 const H = ({ children }: { children: React.ReactNode }) => <div className="mt-5 mb-2 text-[15px] font-semibold">{children}</div>;
 
-/** The worked example's results for the demo path (shops whose webhook path is not prismapays'). */
+/** The worked example's results for the demo path (shops whose webhook path differs from the one below). */
 const TEST_DEMO_PATH = {
   path: "/optionpay/callback",
   key: "1b73526bbe51c46d83195993cf246f011c3aee6328e2a180685a213899c2f5c9",
@@ -25,12 +25,11 @@ const TEST_DEMO_PATH = {
   v1AmountChanged: "ef15008c0bcf3819136087b2c65fec983f260727dc3cd9014fa4c9d65577b448",
   v1KeyChanged: "ee8a0889edd57bb3d2361372bbc66aa8939774af08db6209d6cd9d3bab5093f6",
 };
-const PRISMAPAYS_PATH = "/api/v1/payment-external-callback/superpay";
 
-export function SignatureMatchExplained({ path: shopPath }: { path: string }) {
-  // The worked example's numbers exist for two paths; other shops see it with the demo path (stated in the table).
-  const ex = shopPath === PRISMAPAYS_PATH ? { ...TEST, path: PRISMAPAYS_PATH } : { ...TEST, ...TEST_DEMO_PATH };
-  const path = shopPath;
+export function SignatureMatchExplained() {
+  // Demo values only (no shop data): the worked example uses the demo callback path.
+  const ex = { ...TEST, ...TEST_DEMO_PATH };
+  const path = ex.path;
   return (
     <div className="my-4 rounded-xl border border-line p-4">
       <div className="text-[16px] font-semibold">อธิบายละเอียด: ทำไมลายเซ็นที่ร้านคำนวณเอง จึงตรงกับลายเซ็นที่ Option Pay ส่งมา</div>
@@ -46,7 +45,7 @@ export function SignatureMatchExplained({ path: shopPath }: { path: string }) {
       <H>2. ทั้งสองฝั่งใช้ input ชุดเดียวกันครบทั้ง 4 ตัว</H>
       <p>ลายเซ็นของ callback คำนวณจาก input 4 ตัว ทั้ง Option Pay (ผู้ส่ง) และร้าน (ผู้รับ) มี input ชุดเดียวกันครบทุกตัว:</p>
       <Table head={["Input", "ฝั่ง Option Pay (ตอนส่ง)", "ฝั่งร้าน (ตอนรับ)"]} rows={[
-        [<strong key="a">1. secret key</strong>, <><code>sk_live_…</code> ของร้านบังหนุ่ม (เก็บไว้แบบเข้ารหัส)</>, <><code>sk_live_…</code> ตัวเดียวกัน — ร้านได้จาก Merchant Portal → ตั้งค่า (ร้านย่อยใช้ของร้านแม่)</>],
+        [<strong key="a">1. secret key</strong>, <><code>sk_live_…</code> ของร้านคุณ (เก็บไว้แบบเข้ารหัส)</>, <><code>sk_live_…</code> ตัวเดียวกัน — ร้านได้จาก Merchant Portal → ตั้งค่า</>],
         [<strong key="b">2. body</strong>, "ข้อความ JSON ที่ส่งไป", "ข้อความ JSON ที่ได้รับ — ต้องใช้แบบดิบ ทุกตัวอักษรเหมือนที่ได้รับ"],
         [<strong key="c">3. t (เวลา)</strong>, "เวลาตอนส่ง (unix วินาที) — ใส่ไว้ใน header x-signature", <>อ่านจาก header <code>x-signature: t=…</code> ที่ได้รับ</>],
         [<strong key="d">4. path + สูตร</strong>, <><code>{path}</code> + สูตร 2 ขั้น</>, <><code>{path}</code> + สูตร 2 ขั้นเดียวกัน (ในคู่มือนี้)</>],
@@ -88,7 +87,7 @@ echo $V1    # ${ex.v1}`} />
       <H>5. ถ้าลายเซ็นไม่ตรง — ตรวจทีละข้อ</H>
       <Table head={["สาเหตุ", "วิธีแก้"]} rows={[
         ["ใช้ body ที่แปลงแล้ว (เช่น JSON.parse แล้ว JSON.stringify กลับ, จัดรูปแบบ, เว้นวรรค)", <>ใช้ body ดิบที่ได้รับ เช่น <code>await req.text()</code> ก่อนแปลงเป็น JSON</>],
-        ["ใช้ key ผิดตัว", <>ต้องเป็น <code>sk_live_…</code> ของร้านบังหนุ่ม (ไม่ใช่ API key <code>ak_live_…</code> และไม่ใช่ <code>whsec_…</code>) · ถ้าเพิ่งสร้าง secret key ใหม่ ต้องใช้ตัวใหม่</>],
+        ["ใช้ key ผิดตัว", <>ต้องเป็น <code>sk_live_…</code> ของร้านคุณ (ไม่ใช่ API key <code>ak_live_…</code> และไม่ใช่ <code>whsec_…</code>) · ถ้าเพิ่งสร้าง secret key ใหม่ ต้องใช้ตัวใหม่</>],
         ["path ไม่ตรง", <>ใช้ <code>{path}</code> ตรงทุกตัวอักษร ไม่ใส่โดเมน ไม่ใส่ query ไม่มี / ท้าย</>],
         ["ลืมจุด (.) หรือคำว่า POST", <><code>{`t + ".POST." + path + "." + body`}</code> และ <code>{"t + \".\" + body"}</code></>],
         [<>ใช้ <code>t</code> ผิด</>, <>ใช้ <code>t</code> จาก header ของ callback นั้น ไม่ใช่เวลาปัจจุบันของเครื่องร้าน</>],

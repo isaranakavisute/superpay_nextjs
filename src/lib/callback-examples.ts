@@ -20,11 +20,11 @@ export const CALLBACK_EXAMPLES: { event: string; when: string; cmd: string }[] =
  {
   "event": "payout.completed",
   "when": "ทีม Option Pay โอนเงิน payout ให้ผู้รับแล้ว",
-  "cmd": "curl -X POST \"https://your-site.com/optionpay/callback\" \\\n  -H \"content-type: application/json\" \\\n  -H \"user-agent: OptionPay-Webhook/1.0\" \\\n  -H \"x-webhook-event: payout.completed\" \\\n  -H \"x-signature: t=1792236290,v1=9306fec10cfb6773614585ee1482d20da040889f46da2f8c86787b365cdfdd43\" \\\n  --data-raw '{\"event\":\"payout.completed\",\"ref\":\"OUT40231\",\"orderId\":\"WD-1001\",\"merchantRef\":\"WD-1001\",\"amount\":\"2000.00\",\"status\":\"completed\",\"failureReason\":null,\"createdAt\":\"2026-10-17T09:35:04.306Z\",\"completedAt\":\"2026-10-17T09:45:06.509Z\"}'"
+  "cmd": "curl -X POST \"https://your-site.com/optionpay/callback\" \\\n  -H \"content-type: application/json\" \\\n  -H \"user-agent: OptionPay-Webhook/1.0\" \\\n  -H \"x-webhook-event: payout.completed\" \\\n  -H \"x-signature: t=1792236290,v1=f7b235f7bdd6bc423fa3511de99369165469526fae5bee21e79578a6a9279fb6\" \\\n  --data-raw '{\"event\":\"payout.completed\",\"ref\":\"OUT10155\",\"orderId\":\"WD-1001\",\"merchantRef\":\"WD-1001\",\"amount\":\"2000.00\",\"status\":\"completed\",\"failureReason\":null,\"createdAt\":\"2026-10-17T09:35:04.306Z\",\"completedAt\":\"2026-10-17T09:45:06.509Z\"}'"
  },
  {
   "event": "payout.failed",
   "when": "payout ถูกปฏิเสธ — คืนยอด amount + fee เข้ายอดคงเหลือของร้านแล้ว",
-  "cmd": "curl -X POST \"https://your-site.com/optionpay/callback\" \\\n  -H \"content-type: application/json\" \\\n  -H \"user-agent: OptionPay-Webhook/1.0\" \\\n  -H \"x-webhook-event: payout.failed\" \\\n  -H \"x-signature: t=1792234817,v1=74bc20d2bbcb0e67896ef0c46918365beeecae526ed6b0c03a47e6d3ee150f4a\" \\\n  --data-raw '{\"event\":\"payout.failed\",\"ref\":\"OUT40232\",\"orderId\":\"WD-1002\",\"merchantRef\":\"WD-1002\",\"amount\":\"302.00\",\"status\":\"failed\",\"failureReason\":\"ยกเลิกโดยผู้ดูแลระบบ\",\"createdAt\":\"2026-10-17T06:47:40.956Z\",\"completedAt\":\"2026-10-17T07:40:30.505Z\"}'"
+  "cmd": "curl -X POST \"https://your-site.com/optionpay/callback\" \\\n  -H \"content-type: application/json\" \\\n  -H \"user-agent: OptionPay-Webhook/1.0\" \\\n  -H \"x-webhook-event: payout.failed\" \\\n  -H \"x-signature: t=1792234817,v1=c110fcdb3533f672122bc8ac736824ae12f0257e1cce6b5f13fc47b18fe9ee25\" \\\n  --data-raw '{\"event\":\"payout.failed\",\"ref\":\"OUT10156\",\"orderId\":\"WD-1002\",\"merchantRef\":\"WD-1002\",\"amount\":\"302.00\",\"status\":\"failed\",\"failureReason\":\"ยกเลิกโดยผู้ดูแลระบบ\",\"createdAt\":\"2026-10-17T06:47:40.956Z\",\"completedAt\":\"2026-10-17T07:40:30.505Z\"}'"
  }
 ];

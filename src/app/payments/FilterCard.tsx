@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
+import { TxnSuggest } from "@/components/txn/TxnSuggest";
 
 type Option = { value: string; label: string };
 
@@ -13,10 +14,14 @@ const select =
 export function FilterCard({
   filters,
   searchPlaceholder,
+  txn = false,
 }: {
   filters: { name: string; options: Option[] }[];
   searchPlaceholder: string;
+  /** Transaction search box: suggest refs containing the text, open a ref's full history. */
+  txn?: boolean;
 }) {
+  const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -48,10 +53,12 @@ export function FilterCard({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            onBlur={() => q.trim() !== (params.get("q") ?? "") && set({ q: q.trim() })}
+            ref={input}
+            onBlur={() => !txn && q.trim() !== (params.get("q") ?? "") && set({ q: q.trim() })}
             placeholder={searchPlaceholder}
             className="min-w-[220px] rounded-lg border border-line bg-surface py-2 pr-3 pl-9 text-[13px] text-ink outline-none placeholder:text-soft focus:border-primary"
           />
+          {txn && <TxnSuggest inputRef={input} />}
         </label>
         {filters.map((f) => (
           <select key={f.name} aria-label={f.options[0]?.label} className={select} value={params.get(f.name) ?? ""} onChange={(e) => set({ [f.name]: e.target.value })}>

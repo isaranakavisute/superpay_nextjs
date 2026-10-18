@@ -14,7 +14,7 @@ async function as(fn: (actor: string) => Promise<ActionResult>) {
   return r;
 }
 
-export async function saveAlerts(bots: BotInput[], deleted: number[], thresholds: { repeatMinutes: number; slipFailCount: number; slipDownMinutes: number }) {
+export async function saveAlerts(bots: BotInput[], deleted: { id: number; reason: string }[], thresholds: { repeatMinutes: number; slipFailCount: number; slipDownMinutes: number }) {
   if (bots.some((b) => !b.name.trim())) return { ok: false, error: "ทุก bot ต้องมีชื่อ" } as ActionResult;
   return as((actor) => consoleWrite("POST", "/api/console/alert-bots", actor, { bots, deleted, thresholds }));
 }

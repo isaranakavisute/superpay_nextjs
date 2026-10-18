@@ -12,6 +12,7 @@ import { fmtMoney } from "@/lib/format";
 const ADMIN_CANCEL_REASON = "ยกเลิกโดยผู้ดูแลระบบ";
 import { approveOutflow, deleteOutflow, rejectOutflow, updateOutflow, uploadOutflowSlip } from "./actions";
 import { OUTFLOW_CATEGORIES } from "./categories";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 
 type Dialog = null | "slip" | "edit" | "qr" | "approve" | "reject" | "delete";
 
@@ -260,14 +261,14 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
       )}
 
       {dialog === "delete" && (
-        <Modal
-          title="ลบรายการ"
+        <DeleteDialog
+          title="ยืนยันการลบรายการเงินออก"
+          what={<>ลบ <strong>{o.ref}</strong> ยอด {fmtMoney(o.amount)} · {o.receiverName}?</>}
+          warning={o.status === "pending" ? "รายการนี้ยังรออนุมัติ — จะถูกปฏิเสธด้วยเหตุผลนี้ก่อน (รายการจาก API ร้านจะได้รับแจ้ง payout.failed)" : undefined}
+          placeholder="เช่น สร้างซ้ำ / ข้อมูลผู้รับผิด"
+          onConfirm={(reason) => deleteOutflow(o.ref, reason)}
           onClose={close}
-          footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.danger}`} disabled={pending} onClick={() => run(() => deleteOutflow(o.ref))}>ลบรายการ</button></>}
-        >
-          <p className="text-sm">ลบ <strong>{o.ref}</strong> ยอด {fmtMoney(o.amount)}? การลบจะถูกบันทึกใน Audit Log และย้อนกลับไม่ได้</p>
-          {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
-        </Modal>
+        />
       )}
     </div>
   );

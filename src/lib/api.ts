@@ -12,6 +12,15 @@ export function consoleHeaders(actor?: string): Record<string, string> {
   return { "x-console-key": KEY, ...(actor ? { "x-console-actor": actor } : {}) };
 }
 
+/**
+ * Console headers naming who is looking (x-console-user-id): private test records are shown only to their owner
+ * (backend shared/private-records.js). Use for every read of lists / totals.
+ */
+export async function viewerHeaders(): Promise<Record<string, string>> {
+  const me = await (await import("./session")).getSessionUser().catch(() => null);
+  return { ...consoleHeaders(me?.username), ...(me ? { "x-console-user-id": String(me.id) } : {}) };
+}
+
 // The backend returns numeric/bigint columns as strings to keep full precision.
 type Money = string;
 
@@ -84,7 +93,7 @@ export type DashboardSummary = {
 export type TrendPoint = { day: string; amount: Money; fee?: Money; count: number };
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(BASE + path, { cache: "no-store", headers: consoleHeaders() });
+  const res = await fetch(BASE + path, { cache: "no-store", headers: await viewerHeaders() });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(errorText(body, `${path} → HTTP ${res.status}`));

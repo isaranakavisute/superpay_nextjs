@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import { BANKS } from "@/lib/domain";
-import { accountAction, createAccount, resetAccounts, updateAccount, type AccountInput } from "./actions";
+import { accountAction, deleteAccount, createAccount, resetAccounts, updateAccount, type AccountInput } from "./actions";
 
 export type EditableAccount = { id: number; bankCode: string; accountNo: string | null; accountName: string | null; accountType: AccountInput["accountType"]; promptpayId: string | null; merchantIds: number[]; label: string };
 type Shop = { id: number; name: string };
@@ -86,14 +87,25 @@ export function AccountSwitch({ id, on }: { id: number; on: boolean }) {
 
 export function AccountActions({ account, shops }: { account: EditableAccount; shops: Shop[] }) {
   const [edit, setEdit] = useState(false);
+  const [del, setDel] = useState(false);
   const [pending, start] = useTransition();
-  const run = (action: "reset" | "delete", q: string) => { if (confirm(q)) start(async () => { const r = await accountAction(account.id, action); if (!r.ok) alert(r.error); }); };
+  const run = (action: "reset", q: string) => { if (confirm(q)) start(async () => { const r = await accountAction(account.id, action); if (!r.ok) alert(r.error); }); };
   return (
     <>
       <button className={B("ghost")} onClick={() => setEdit(true)}><Pencil size={14} /> แก้ไข</button>
       <button className={`${B("ghost")} text-danger`} disabled={pending} title="ตั้งยอดเงินเป็น 0 และเริ่มนับรายการใหม่" onClick={() => run("reset", `Reset ${account.label}? ยอดเงินจะเป็น 0 และเริ่มนับรายการใหม่ (รายการเดิมไม่ถูกลบ)`)}><RotateCcw size={13} /> Reset</button>
-      <button className={`${B("ghost")} text-danger`} disabled={pending} aria-label="ลบบัญชี" onClick={() => run("delete", `ลบบัญชี ${account.label}?`)}><Trash2 size={14} /></button>
+      <button className={`${B("ghost")} text-danger`} disabled={pending} aria-label="ลบบัญชี" onClick={() => setDel(true)}><Trash2 size={14} /></button>
       {edit && <AccountForm account={account} shops={shops} onClose={() => setEdit(false)} />}
+      {del && (
+        <DeleteDialog
+          title={`ยืนยันการลบบัญชี ${account.label}`}
+          what={<>ลบบัญชี <strong>{account.label}</strong>? บัญชีที่มีรายการเงินแล้วลบไม่ได้ — ให้ปิดใช้งานแทน</>}
+          warning="บัญชีจะถูกปิดใช้งานทันที (ไม่รับออเดอร์ใหม่)"
+          placeholder="เช่น เพิ่มบัญชีผิด / ปิดบัญชีแล้ว"
+          onConfirm={(reason) => deleteAccount(account.id, reason)}
+          onClose={() => setDel(false)}
+        />
+      )}
     </>
   );
 }

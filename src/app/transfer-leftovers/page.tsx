@@ -94,7 +94,7 @@ export default async function TransferLeftoversPage({ searchParams }: PageProps<
             ))}
           </div>
 
-          <FilterCard
+          <FilterCard txn
             searchPlaceholder="ค้นหาลูกค้า / เลขที่ / เลขอ้างอิงธนาคาร..."
             filters={[
               {

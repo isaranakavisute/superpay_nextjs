@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import { deleteDevice, renameDevice, resumeDevice, suspendDevice } from "./actions";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 
 /** เปลี่ยนชื่อ · ระงับ / เปิดใช้ · ลบ — suspend and delete confirm first. */
 export function DeviceActions({ id, name, suspended }: { id: number; name: string; suspended: boolean }) {
@@ -45,9 +46,13 @@ export function DeviceActions({ id, name, suspended }: { id: number; name: strin
         </Modal>
       )}
       {dialog === "delete" && (
-        <Modal title={`ลบ ${name}`} onClose={() => setDialog(null)} footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.danger}`} disabled={pending} onClick={() => run(() => deleteDevice(id))}>ลบอุปกรณ์</button></>}>
-          <p className="text-sm">ลบอุปกรณ์ออกจากระบบ? เครื่องจะต้องจับคู่ใหม่ด้วย QR ถ้าจะใช้อีก</p>
-        </Modal>
+        <DeleteDialog
+          title={`ยืนยันการลบ ${name}`}
+          what={<>ลบอุปกรณ์ <strong>{name}</strong>? เครื่องจะถูกระงับทันที (ส่งข้อความเข้าระบบไม่ได้)</>}
+          placeholder="เช่น เครื่องเสีย / เปลี่ยนเครื่องใหม่"
+          onConfirm={(reason) => deleteDevice(id, reason)}
+          onClose={() => setDialog(null)}
+        />
       )}
     </div>
   );

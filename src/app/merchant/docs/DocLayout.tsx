@@ -2,14 +2,34 @@ import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
 
 /** Two-column reading layout: sticky section menu on the left, document on the right. */
-export function DocLayout({ title, subtitle, pdf, toc, children }: { title: string; subtitle: string; pdf: string; toc: { id: string; label: string }[]; children: React.ReactNode }) {
+export type TocItem = { id: string; label: string; children?: { id: string; label: string; method?: string }[] };
+
+const METHOD_TONE: Record<string, string> = { GET: "text-[#10b981]", POST: "text-[#3b82f6]", PATCH: "text-[#f59e0b]", PUT: "text-[#f59e0b]", DELETE: "text-[#ef4444]" };
+
+export function DocLayout({ title, subtitle, pdf, toc, children }: { title: string; subtitle: string; pdf: string; toc: TocItem[]; children: React.ReactNode }) {
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[230px_1fr]">
-      <nav className="rounded-xl border border-line bg-surface p-4 lg:sticky lg:top-28">
+      <nav className="rounded-xl border border-line bg-surface p-4 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
         <Link href="/merchant/docs" className="mb-3 inline-flex items-center gap-1.5 text-[12.5px] text-muted hover:text-ink"><ArrowLeft size={13} /> คู่มือทั้งหมด</Link>
         <div className="mb-2 text-[11px] font-semibold tracking-[1px] text-soft uppercase">สารบัญ</div>
         <ol className="space-y-0.5 text-[13px]">
-          {toc.map((t) => <li key={t.id}><a href={`#${t.id}`} className="block rounded-md px-2 py-1.5 text-muted hover:bg-surface-alt hover:text-ink">{t.label}</a></li>)}
+          {toc.map((t, i) => (
+            <li key={t.id}>
+              <a href={`#${t.id}`} className="flex gap-1.5 rounded-md px-2 py-1.5 text-muted hover:bg-surface-alt hover:text-ink"><span className="text-soft tabular-nums">{i + 1}.</span><span>{t.label}</span></a>
+              {!!t.children?.length && (
+                <ol className="mb-1 ml-5 space-y-px border-l border-line pl-2">
+                  {t.children.map((c) => (
+                    <li key={c.id}>
+                      <a href={`#${c.id}`} className="flex items-baseline gap-1.5 rounded px-1.5 py-1 font-mono text-[11.5px] text-muted hover:bg-surface-alt hover:text-ink">
+                        {c.method && <span className={`w-[42px] shrink-0 text-[10px] font-bold ${METHOD_TONE[c.method] ?? ""}`}>{c.method}</span>}
+                        <span className="break-all">{c.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </li>
+          ))}
         </ol>
         <a href={`/merchant/docs/${pdf}?download=1`} className="mt-3 inline-flex items-center gap-1.5 border-t border-line pt-3 text-[12.5px] text-primary hover:underline"><Download size={13} /> ดาวน์โหลด PDF</a>
       </nav>

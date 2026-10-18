@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BUILTIN_SOUNDS, playSound } from "@/components/shell/sounds";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { deleteAsset, saveSection, uploadAsset } from "./actions";
 import { B, Msg, SCard, field, hint, readFile, select, useRun } from "./parts";
 
@@ -15,6 +16,7 @@ export function SoundCard({ sequence, customs }: { sequence: string[]; customs: 
   const [file, setFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { r, setR, pending, run } = useRun();
+  const [del, setDel] = useState<{ id: string; name: string } | null>(null);
 
   const all = [
     ...BUILTIN_SOUNDS.map((s) => ({ id: s.id, name: `${s.name} (${s.seconds} วิ)`, custom: false })),
@@ -31,6 +33,16 @@ export function SoundCard({ sequence, customs }: { sequence: string[]; customs: 
 
   return (
     <SCard title="เสียงแจ้งเตือนรายการเงินออก" note="ดังทุก 10 วินาทีบนทุกหน้า ขณะที่ยังมีรายการเงินออกรอดำเนินการ จนกว่าจะหมด">
+      {del && (
+        <DeleteDialog
+          title="ยืนยันการลบเสียง"
+          what={<>ลบเสียง <strong>{del.name}</strong>? เสียงนี้จะถูกเอาออกจากลำดับเสียงแจ้งเตือน</>}
+          placeholder="เช่น ไม่ใช้แล้ว / ไฟล์ผิด"
+          onConfirm={(reason) => deleteAsset("sound", reason, del.id)}
+          onDone={(x) => { setR(x); router.refresh(); }}
+          onClose={() => setDel(null)}
+        />
+      )}
       <div className={`${hint} mt-0 mb-2.5`}>
         ติ๊กเสียงที่จะใช้กี่เสียงก็ได้ แล้วเลือก<strong className="text-ink">ลำดับ</strong> — ดังทีละเสียงทุก 10 วินาทีตามลำดับ ครบแล้ววนกลับเสียงแรก · รายการหมดแล้วมีใหม่เข้ามา จะเล่น<strong className="text-ink">ต่อจากเสียงล่าสุด</strong> ไม่เริ่มใหม่
       </div>
@@ -48,7 +60,7 @@ export function SoundCard({ sequence, customs }: { sequence: string[]; customs: 
               )}
               <span className="min-w-[120px] flex-1"><strong>{s.name}</strong><span className="ml-1.5 rounded-full bg-surface-alt px-2 py-0.5 text-[11px] text-muted">{s.custom ? "อัปโหลด" : "สำเร็จรูป"}</span></span>
               <button type="button" className={B("ghost", "sm")} onClick={() => playSound(s.id)}>▶ ลองฟัง</button>
-              {s.custom && <button type="button" className={B("ghost", "sm")} disabled={pending} onClick={() => { if (confirm(`ลบเสียง "${s.name}"?`)) run(() => deleteAsset("sound", s.id.slice(7)), (res) => res.ok && router.refresh()); }}>ลบ</button>}
+              {s.custom && <button type="button" className={B("ghost", "sm")} disabled={pending} onClick={() => setDel({ id: s.id.slice(7), name: s.name })}>ลบ</button>}
             </div>
           );
         })}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
+import { reasonError } from "@/lib/delete-reason";
 
 const SECTIONS = ["brand", "theme", "sounds", "slip", "quota", "balance", "limits", "security", "merchantPerms", "outbound"] as const;
 export type Section = (typeof SECTIONS)[number];
@@ -26,9 +27,11 @@ export async function uploadAsset(kind: "logo" | "favicon" | "sound", file: { mi
   return as(`/assets/${kind}`, file);
 }
 
-export async function deleteAsset(kind: "logo" | "favicon" | "sound", id?: string) {
+export async function deleteAsset(kind: "logo" | "favicon" | "sound", reason: string, id?: string) {
   if (id && !/^[a-f0-9]{12}$/.test(id)) return { ok: false, error: "ไฟล์ไม่ถูกต้อง" } as ActionResult;
-  return as(id ? `/assets/${kind}/${id}/delete` : `/assets/${kind}/delete`, {});
+  const err = reasonError(reason);
+  if (err) return { ok: false, error: err } as ActionResult;
+  return as(id ? `/assets/${kind}/${id}/delete` : `/assets/${kind}/delete`, { reason: reason.trim() });
 }
 
 export async function testSlip(which: "primary" | "fallback", form: Record<string, unknown>) {

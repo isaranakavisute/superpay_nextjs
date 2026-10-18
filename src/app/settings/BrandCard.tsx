@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogoMark } from "@/components/Logo";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { deleteAsset, saveSection, uploadAsset } from "./actions";
 import { B, Msg, SCard, field, fieldLabel, hint, readFile, row, useRun } from "./parts";
 
@@ -43,12 +44,23 @@ export function BrandCard({ brand }: { brand: Brand }) {
   };
   const upload = (kind: "logo" | "favicon", f: { file: File } | null, clear: () => void) =>
     f && img.run(async () => uploadAsset(kind, await readFile(f.file)), (r) => { if (r.ok) { clear(); router.refresh(); } });
-  const remove = (kind: "logo" | "favicon") => img.run(() => deleteAsset(kind), (r) => r.ok && router.refresh());
+  const [del, setDel] = useState<"logo" | "favicon" | null>(null);
+  const remove = (kind: "logo" | "favicon") => setDel(kind);
   const saveScale = (v: number) => img.run(() => saveSection("brand", { ...base, logoScale: v }), (r) => r.ok && router.refresh());
 
   const previewLogo = logo?.url ?? logoUrl;
   return (
     <SCard title="โลโก้และชื่อเว็บไซต์" note="ใช้กับ sidebar, หน้าเข้าสู่ระบบ และ favicon บนแท็บ">
+      {del && (
+        <DeleteDialog
+          title={del === "logo" ? "ยืนยันการลบโลโก้" : "ยืนยันการล้าง favicon"}
+          what={del === "logo" ? "ลบโลโก้ปัจจุบัน? เว็บจะกลับไปใช้โลโก้เริ่มต้น" : "ล้าง favicon ปัจจุบัน? แท็บจะกลับไปใช้ไอคอนเริ่มต้น"}
+          placeholder="เช่น เปลี่ยนแบรนด์ / ไฟล์ผิด"
+          onConfirm={(reason) => deleteAsset(del, reason)}
+          onDone={() => router.refresh()}
+          onClose={() => setDel(null)}
+        />
+      )}
       <Msg r={img.r} />
       <div className={`${row} items-start`}>
         <div>

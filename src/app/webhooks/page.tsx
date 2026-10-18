@@ -5,7 +5,7 @@ import { Pager, pageState } from "@/components/list/Pager";
 import { param, withParams, type Params } from "@/components/list/query";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
 import { Card } from "@/components/ui";
-import { consoleHeaders, listResource } from "@/lib/api";
+import { viewerHeaders, listResource } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
 import { requestTime } from "@/lib/request-time";
 import type { MerchantRow, WebhookRow } from "@/lib/rows";
@@ -55,7 +55,7 @@ export default async function WebhooksPage({ searchParams }: PageProps<"/webhook
       listResource<WebhookRow>("webhooks", { ...common, state: "pending", limit: 200 }),
       listResource<WebhookRow>("webhooks", { ...common, state: "delivered", limit: dp.size, offset: (dp.page - 1) * dp.size }),
       listResource<MerchantRow>("merchants"),
-      fetch(`${BASE}/api/console/webhooks/missing?${missingQ}`, { headers: consoleHeaders(), cache: "no-store" }).then(async (r) => {
+      fetch(`${BASE}/api/console/webhooks/missing?${missingQ}`, { headers: await viewerHeaders(), cache: "no-store" }).then(async (r) => {
         if (!r.ok) throw new Error(`webhooks/missing → HTTP ${r.status}`);
         return ((await r.json()) as { data: Missing[] }).data;
       }),
@@ -68,7 +68,7 @@ export default async function WebhooksPage({ searchParams }: PageProps<"/webhook
   const shown = (t: number) => (t ? `แสดง ${((dp.page - 1) * dp.size + 1).toLocaleString()}–${Math.min(t, dp.page * dp.size).toLocaleString()} จาก ${t.toLocaleString()} รายการ` : "ไม่มีรายการ");
 
   return (
-    <ConsoleShell title="Webhook ร้านค้า" path={PATH} search={{ placeholder: "ค้นหา TXN / เลขถอน WD / Order ID / ชื่อร้าน / URL...", params }}>
+    <ConsoleShell title="Webhook ร้านค้า" path={PATH} search={{ placeholder: "ค้นหา TXN / เลขถอน WD / Order ID / ชื่อร้าน / URL...", params, txn: true }}>
       <div className="mb-5 flex flex-wrap gap-1 border-b border-line">
         {RANGES.map((r) => (
           <Link
@@ -114,7 +114,7 @@ export default async function WebhooksPage({ searchParams }: PageProps<"/webhook
             )}
           </section>
 
-          <FilterCard
+          <FilterCard txn
             searchPlaceholder="ค้นหา TXN / Order ID / ชื่อร้าน / URL..."
             filters={[
               { name: "merchantId", options: [{ value: "", label: "ทุกร้านค้า" }, ...[...data.merchants].sort((a, b) => a.name.localeCompare(b.name, "th")).map((m) => ({ value: String(m.id), label: m.name }))] },

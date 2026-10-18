@@ -2,10 +2,11 @@ import LIVE from "./api-live-examples.json";
 
 /**
  * Per merchant-API endpoint (keyed "METHOD path" as in src/app/api-docs/docs.ts):
- * the permission it needs, and REAL examples — a curl script and a Next.js route
- * handler that derive the request signature, built from an actual run against
- * production (src/lib/api-live-examples.json; the keys used there were revoked
- * right after). Shown in the Merchant Portal API guide and its PDF.
+ * the permission it needs, and examples — a curl script and a Next.js route
+ * handler that derive the request signature (src/lib/api-live-examples.json: captured
+ * from a run against production, then every shop / customer / account value replaced by
+ * demo values and re-signed with demo keys, 18 Oct 2026 — no real data in the guide).
+ * Shown in the Merchant Portal API guide and its PDF.
  */
 export const API_BASE = "https://optionpay.co/api/v1";
 
@@ -65,7 +66,7 @@ ${bodyLine}curl${e.method === "GET" ? "" : ` -X ${e.method}`} "${url}"${hasBody 
 SECRET="${e.secretKey ?? live.secretKey}"   # ใช้เซ็นเท่านั้น ห้ามส่ง
 TS="${e.timestamp}"   # ปกติใช้ TS=$(date +%s)
 ${bodyLine}SIG=$(printf '%s' "$TS.${e.method}.${e.path}.${hasBody ? "$BODY" : ""}" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $NF}')
-# SIG = ${e.signature}${IMG.test(e.body) ? " (กับรูปที่ใช้ตอนรันจริง)" : ""}
+# SIG = ${IMG.test(e.body) ? "(ขึ้นกับไฟล์รูปที่แนบ — คำนวณด้วยคำสั่งด้านบน)" : e.signature}
 
 curl${e.method === "GET" ? "" : ` -X ${e.method}`} "${url}" \\
   -H "X-API-Key: $API_KEY" \\
@@ -90,7 +91,7 @@ export async function POST() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(${e.body}),
   });
-  return Response.json(await res.json(), { status: res.status }); // → 403 (ผลจริงด้านล่าง)
+  return Response.json(await res.json(), { status: res.status }); // → 403 (ผลลัพธ์ด้านล่าง)
 }`;
   }
   if (!e.signed) {
@@ -109,19 +110,19 @@ ${img ? `import { readFile } from "node:fs/promises";\n\n` : ""}export async fun
   return `// app/api/optionpay/route.ts — Next.js route handler (ทำงานฝั่งเซิร์ฟเวอร์เท่านั้น ห้ามใช้ในหน้าเว็บของลูกค้า)
 ${imports.join("\n")}
 
-const API_KEY = process.env.OPTIONPAY_API_KEY!;    // ค่าจริงตอนรัน: "${e.apiKey ?? live.apiKey}"
-const SECRET = process.env.OPTIONPAY_SECRET_KEY!;  // ค่าจริงตอนรัน: "${e.secretKey ?? live.secretKey}" — ห้ามส่งไปกับคำขอ
+const API_KEY = process.env.OPTIONPAY_API_KEY!;    // ค่าตัวอย่าง: "${e.apiKey ?? live.apiKey}"
+const SECRET = process.env.OPTIONPAY_SECRET_KEY!;  // ค่าตัวอย่าง: "${e.secretKey ?? live.secretKey}" — ห้ามส่งไปกับคำขอ
 
 export async function ${handler}() {
   const method = "${e.method}";
   const path = "${e.path}";
   const body = ${bodyExpr === null ? `""; // ${e.method} ไม่มี body — ใช้สตริงว่างตอนเซ็น` : `JSON.stringify(${bodyExpr});`}
-  const timestamp = Math.floor(Date.now() / 1000).toString();  // ค่าจริงตอนรัน: "${e.timestamp}"
+  const timestamp = Math.floor(Date.now() / 1000).toString();  // ค่าตัวอย่าง: "${e.timestamp}"
 
   // ลายเซ็น = HMAC-SHA256(secret, "timestamp.METHOD.path.body") แบบ hex
   const signature = createHmac("sha256", SECRET)
     .update(\`\${timestamp}.\${method}.\${path}.\${body}\`)
-    .digest("hex");                                            // ค่าจริงตอนรัน: "${e.signature}"
+    .digest("hex");                                            // ${IMG.test(e.body) ? "ขึ้นกับไฟล์รูปที่แนบ" : `ค่าตัวอย่าง: "${e.signature}"`}
 
   const res = await fetch(\`${SITE}\${path}\`, {
     method,
@@ -140,7 +141,7 @@ export const CURL_EXAMPLES: Record<string, CurlExample> = Object.fromEntries(
     perm: PERMS[key] ?? null,
     cmd: curlScript(key, e),
     next: nextHandler(key, e),
-    live: { timestamp: e.timestamp, toSign: e.toSign, signature: e.signature, status: e.status, response: e.response, file: e.file },
+    live: { timestamp: e.timestamp, toSign: e.toSign, signature: IMG.test(e.body) ? null : e.signature, status: e.status, response: e.response, file: e.file },
   }]),
 );
 

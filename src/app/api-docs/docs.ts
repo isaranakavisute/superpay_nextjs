@@ -5,7 +5,7 @@ export type Section = { id: string; nav: string; title: string; sub?: string; ep
 const KEY = "<code>X-API-Key</code> + <code>X-Timestamp</code> + <code>X-Signature</code>";
 const TXN = `{
   "id": "d4dab18fc0540c9a11654ce9af78a434",   // transaction id — ใช้กับ checkout / QR / cancel (ความลับของลูกค้า)
-  "ref": "TXN172886",               // เลขที่รายการของ Option Pay
+  "ref": "TXN100018",               // เลขที่รายการของ Option Pay
   "merchantId": "6",
   "orderId": "ORD-001",             // เลขออเดอร์ของร้าน (ไม่ส่ง = Option Pay สร้างให้ "OP-…")
   "amount": 350,                    // ยอดที่ลูกค้าต้องโอน — แสดงยอดนี้ให้ลูกค้าเสมอ
@@ -27,7 +27,7 @@ const LIST = (item: string) => `{
   "pagination": { "total": 120, "limit": 50, "offset": 0 }
 }`;
 const QS = "Query: <code>limit</code> (1–200, ค่าเริ่มต้น 50) · <code>offset</code> · <code>status</code> (คั่นด้วย , ได้) · <code>from</code> / <code>to</code> (ISO 8601 พร้อม timezone)";
-const PAYOUT = `{ "id": "OUT40160", "merchantRef": "PO-001", "amount": 500,
+const PAYOUT = `{ "id": "OUT10151", "merchantRef": "PO-001", "amount": 500,
   "fee": 10, "totalDebit": 510,   // ค่าธรรมเนียมเงินออก (บวกเพิ่ม) · หักจากยอดร้าน = amount + fee · ผู้รับได้ amount เต็ม
   "status": "COMPLETED",          // อนุมัติแล้ว — อนุมัติอัตโนมัติทันที และหักยอดร้านแล้ว
   "bankCode": "SCB", "accountNumber": "1234567890", "accountName": "นาย ก",
@@ -46,15 +46,15 @@ export const SLIP_COMPARE: [string, string, string, string][] = [
   ["success", "boolean", "true", "true"],
   ["verified", "boolean", "true", "true"],
   ["result", "string", "\"PAID\"", "\"PAID\""],
-  ["message", "string", "\"ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว (อนุมัติอัตโนมัติ)\"", "ข้อความเดียวกัน + อธิบายเงินโอนจาก TXN172829 และการยกเลิกอัตโนมัติ"],
+  ["message", "string", "\"ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว (อนุมัติอัตโนมัติ)\"", "ข้อความเดียวกัน + อธิบายเงินโอนจาก TXN100016 และการยกเลิกอัตโนมัติ"],
   ["mismatches", "string[]", "[]", "[]"],
   ["warnings", "string[]", "[]", "[]"],
-  ["carriedFrom", "string | null", "null", "\"TXN172829\""],
+  ["carriedFrom", "string | null", "null", "\"TXN100016\""],
   ["carryOver", "object | null", "null", "{ fromRef, fromOrderId, fromAmount, fromStatus, transferAmount, transferredAt, reason }"],
   ["autoCancelled", "object[]", "[]", "[ { ref, orderId, amount, reason } ]"],
   ["checks", "object[]", "7 ข้อ ทุกข้อ PASS", "7 ข้อ ทุกข้อ PASS (TRANSFER_TIME อธิบายว่าใช้เงินโอนของออเดอร์ก่อนหน้า)"],
   ["slip", "object | null", "{ provider, transRef, amount, transferredAt, sender, receiver }", "เหมือนกัน"],
-  ["nextStep", "string", "\"ไม่ต้องทำอะไรเพิ่ม — …\"", "ข้อความเดียวกัน + บันทึกความเชื่อมโยง / ปิด TXN172829 ในระบบร้าน"],
+  ["nextStep", "string", "\"ไม่ต้องทำอะไรเพิ่ม — …\"", "ข้อความเดียวกัน + บันทึกความเชื่อมโยง / ปิด TXN100016 ในระบบร้าน"],
   ["transaction", "object", "{ … status: \"PAID\" }", "{ … status: \"PAID\" }"],
 ];
 const SLIP_COMPARE_HTML = `<strong>โครงสร้าง JSON: กรณีปกติ vs เงินโอนจากออเดอร์ก่อนหน้า</strong><br>${SLIP_SAME_SHAPE}<table style="margin-top:8px;width:100%;border-collapse:collapse;font-size:12px"><tr><th align=left>ชื่อฟิลด์ (key)</th><th align=left>ชนิดข้อมูล</th><th align=left>กรณีปกติ ①</th><th align=left>เงินโอนจากออเดอร์ก่อนหน้า ②</th><th>มีทั้งสองกรณี</th></tr>${SLIP_COMPARE.map(([k, t, a, b]) => `<tr style="border-top:1px solid rgba(127,127,127,.25)"><td><code>${k}</code></td><td>${t}</td><td>${a}</td><td>${b}</td><td align=center>✓</td></tr>`).join("")}</table>`;
@@ -117,8 +117,8 @@ export const SECTIONS: Section[] = [
   "success": true,
   "orderIdGenerated": false,   // true = ไม่ได้ส่ง orderId มา Option Pay สร้างให้ (เช่น "OP-MGQ3K7ZB-9F1C2A7D4E") — เก็บ transaction.orderId ไว้
   "transaction": ${TXN.replace(/\n/g, "\n  ")},
-  "selectedAccount": { "id": "8", "type": "BANK", "accountNumber": "4182186378",
-                       "accountName": "มิดทาวน์ไลท์ จำกัด", "bankCode": "SCB", "bankName": "ธนาคารไทยพาณิชย์" }
+  "selectedAccount": { "id": "8", "type": "BANK", "accountNumber": "1234567890",
+                       "accountName": "บริษัท ตัวอย่าง จำกัด", "bankCode": "SCB", "bankName": "ธนาคารไทยพาณิชย์" }
 }
 
 // บัญชีรับเงินที่มี PromptPay: "paymentMethod": "PROMPTPAY", "qrCode": "{BASE}/payment/qr/{id}.png",
@@ -162,7 +162,7 @@ export const SECTIONS: Section[] = [
     { "check": "BANK_VERIFICATION", "status": "PASS", "detail": "ธนาคารยืนยันว่ามีการโอนจริง (easyslip) · เลขอ้างอิง 016287100512BTF04211" },
     { "check": "AMOUNT",            "status": "PASS", "detail": "ยอดในสลิป ฿250.00 ตรงกับยอดออเดอร์" },
     { "check": "TRANSFER_TIME",     "status": "PASS", "detail": "โอนเมื่อ 14 ต.ค. 2569 10:05 — หลังสร้างออเดอร์ (14 ต.ค. 2569 10:01)" },
-    { "check": "RECEIVER_ACCOUNT",  "status": "PASS", "detail": "โอนเข้า SCB xxx-x-x6378-x — ตรงกับบัญชีของออเดอร์ (SCB 4182186378 (บจก. ตัวอย่าง))" },
+    { "check": "RECEIVER_ACCOUNT",  "status": "PASS", "detail": "โอนเข้า SCB xxx-x-x6378-x — ตรงกับบัญชีของออเดอร์ (SCB 1234567890 (บจก. ตัวอย่าง))" },
     { "check": "SENDER_NAME",       "status": "PASS", "detail": "ผู้โอน นาย สมชาย ใจดี ตรงกับชื่อลูกค้า" },
     { "check": "SLIP_AGE",          "status": "PASS", "detail": "ไม่เก่าเกิน 6 ชั่วโมง" },
     { "check": "DUPLICATE",         "status": "PASS", "detail": "สลิปและเงินโอนนี้ยังไม่เคยใช้ชำระรายการอื่น" }
@@ -174,38 +174,38 @@ export const SECTIONS: Section[] = [
     "receiver": { "name": "บจก. ตัวอย่าง",  "bank": "SCB",   "account": "xxx-x-x6378-x" }
   },
   "nextStep": "ไม่ต้องทำอะไรเพิ่ม — ออเดอร์ชำระแล้ว ส่งสินค้า/บริการได้",
-  "transaction": { ... "ref": "TXN172830", "orderId": "ORD-002", "status": "PAID", "paidAt": "2026-10-14T03:05:20.000Z" ... }
+  "transaction": { ... "ref": "TXN100017", "orderId": "ORD-002", "status": "PAID", "paidAt": "2026-10-14T03:05:20.000Z" ... }
 }
 
 // ② เงินโอนจากออเดอร์ก่อนหน้า (ฟิลด์เหมือน ① ทุกตัว — ต่างกันแค่ค่า)
-//    ลูกค้าเปิด TXN172829 ยอด ฿250 โอนมา ฿200 → ร้านเปิด TXN172830 ยอด ฿200 แล้วแนบสลิปเดิม
+//    ลูกค้าเปิด TXN100016 ยอด ฿250 โอนมา ฿200 → ร้านเปิด TXN100017 ยอด ฿200 แล้วแนบสลิปเดิม
 {
   "success": true, "verified": true, "result": "PAID",
-  "message": "ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว (อนุมัติอัตโนมัติ) · ใช้เงินโอน 200.00 บาท (โอนเมื่อ 14 ต.ค. 2569 10:05) จากออเดอร์ก่อนหน้า TXN172829 (ORD-001) ยอด 250.00 บาท ที่ยังไม่ได้ชำระ — ลูกค้าคนเดียวกัน บัญชีผู้รับเดียวกัน · ยกเลิก TXN172829 (ORD-001) อัตโนมัติ — ลูกค้าชำระผ่าน TXN172830 แทน (ใช้เงินโอนเดียวกัน)",
+  "message": "ตรวจสลิปผ่าน — ออเดอร์ชำระแล้ว (อนุมัติอัตโนมัติ) · ใช้เงินโอน 200.00 บาท (โอนเมื่อ 14 ต.ค. 2569 10:05) จากออเดอร์ก่อนหน้า TXN100016 (ORD-001) ยอด 250.00 บาท ที่ยังไม่ได้ชำระ — ลูกค้าคนเดียวกัน บัญชีผู้รับเดียวกัน · ยกเลิก TXN100016 (ORD-001) อัตโนมัติ — ลูกค้าชำระผ่าน TXN100017 แทน (ใช้เงินโอนเดียวกัน)",
   "mismatches": [],
   "warnings": [],
-  "carriedFrom": "TXN172829",
+  "carriedFrom": "TXN100016",
   "carryOver": {
-    "fromRef": "TXN172829", "fromOrderId": "ORD-001", "fromAmount": 250,
+    "fromRef": "TXN100016", "fromOrderId": "ORD-001", "fromAmount": 250,
     "fromStatus": "CANCELLED_AUTOMATICALLY",   // EXPIRED | CANCELLED | CANCELLED_AUTOMATICALLY (ยังเปิดอยู่ → ถูกปิดตอนนี้)
     "transferAmount": 200, "transferredAt": "2026-10-14T03:05:00.000Z",
     "reason": "เงินโอนนี้เกิดขึ้นหลังสร้างออเดอร์ก่อนหน้าของลูกค้าคนเดียวกัน (บัญชีผู้รับเดียวกัน) ซึ่งยังไม่ได้ชำระ และยังไม่เคยใช้ชำระออเดอร์ใด จึงใช้ชำระออเดอร์นี้แทน"
   },
   "autoCancelled": [
-    { "ref": "TXN172829", "orderId": "ORD-001", "amount": 250, "reason": "ลูกค้าชำระผ่าน TXN172830 แทน (ใช้เงินโอนเดียวกัน)" }
+    { "ref": "TXN100016", "orderId": "ORD-001", "amount": 250, "reason": "ลูกค้าชำระผ่าน TXN100017 แทน (ใช้เงินโอนเดียวกัน)" }
   ],
   "checks": [
     { "check": "BANK_VERIFICATION", "status": "PASS", "detail": "..." },
     { "check": "AMOUNT",            "status": "PASS", "detail": "ยอดในสลิป ฿200.00 ตรงกับยอดออเดอร์" },
-    { "check": "TRANSFER_TIME",     "status": "PASS", "detail": "โอนเมื่อ 14 ต.ค. 2569 10:05 — ก่อนสร้างออเดอร์ (14 ต.ค. 2569 10:20) — แต่เป็นเงินโอนของออเดอร์ก่อนหน้า TXN172829 ที่ยังไม่ได้ชำระ (ลูกค้าคนเดียวกัน) จึงใช้แทนได้" },
+    { "check": "TRANSFER_TIME",     "status": "PASS", "detail": "โอนเมื่อ 14 ต.ค. 2569 10:05 — ก่อนสร้างออเดอร์ (14 ต.ค. 2569 10:20) — แต่เป็นเงินโอนของออเดอร์ก่อนหน้า TXN100016 ที่ยังไม่ได้ชำระ (ลูกค้าคนเดียวกัน) จึงใช้แทนได้" },
     { "check": "RECEIVER_ACCOUNT",  "status": "PASS", "detail": "..." },
     { "check": "SENDER_NAME",       "status": "PASS", "detail": "..." },
     { "check": "SLIP_AGE",          "status": "PASS", "detail": "อยู่ในช่วง 24 ชั่วโมงของเงินโอนจากออเดอร์ก่อนหน้า" },
     { "check": "DUPLICATE",         "status": "PASS", "detail": "สลิปและเงินโอนนี้ยังไม่เคยใช้ชำระรายการอื่น" }
   ],
   "slip": { ... เหมือน ① ... },
-  "nextStep": "ไม่ต้องทำอะไรเพิ่ม — ออเดอร์ชำระแล้ว ส่งสินค้า/บริการได้ · บันทึกว่าออเดอร์นี้ชำระด้วยเงินโอนของ TXN172829 · อัปเดตออเดอร์ TXN172829 เป็นยกเลิกในระบบของร้าน",
-  "transaction": { ... "ref": "TXN172830", "status": "PAID" ... }
+  "nextStep": "ไม่ต้องทำอะไรเพิ่ม — ออเดอร์ชำระแล้ว ส่งสินค้า/บริการได้ · บันทึกว่าออเดอร์นี้ชำระด้วยเงินโอนของ TXN100016 · อัปเดตออเดอร์ TXN100016 เป็นยกเลิกในระบบของร้าน",
+  "transaction": { ... "ref": "TXN100017", "status": "PAID" ... }
 }
 
 // ③ สลิปไม่ผ่าน (HTTP 200 เช่นกัน · ออเดอร์ยัง PENDING แนบใหม่ได้)
@@ -233,24 +233,24 @@ export const SECTIONS: Section[] = [
       {
         m: "GET", p: "/payment/validation-report", d: "รายงานผลการตรวจ (อนุมัติ / ไม่อนุมัติ) พร้อมเหตุผลและข้อมูลจากธนาคาร", auth: KEY,
         body: `// Query — อย่างน้อย 1 ใน refs / batch / date / start_time (ใช้ร่วมกันได้ = ต้องตรงทุกเงื่อนไข) · ไม่เกิน 100 รายการต่อครั้ง
-refs=TXN172828%2CTXN172872%2CORD-001   // เลขที่ TXN… หรือ orderId คั่นด้วย , — ส่ง , เป็น %2C (ลายเซ็นใช้ URL ตามที่ส่ง)
-batch=coffee9-2026-10-14               // ป้ายกลุ่มรายการที่ Option Pay ตั้งให้ (เช่น ชุดที่ตรวจซ้ำพร้อมกัน)
+refs=TXN100015%2CTXN100030%2CORD-001   // เลขที่ TXN… หรือ orderId คั่นด้วย , — ส่ง , เป็น %2C (ลายเซ็นใช้ URL ตามที่ส่ง)
+batch=shop-2026-10-14               // ป้ายกลุ่มรายการที่ Option Pay ตั้งให้ (เช่น ชุดที่ตรวจซ้ำพร้อมกัน)
 date=2026-10-14                        // รายการที่สร้างวันนั้น (เวลาไทย)
 source=API                             // ช่องทางที่สร้าง: API (/payment/create) · SLIP (/payment/slip/create) · COLLECT · PORTAL
 start_time=16%3A52%3A49                // สร้างตั้งแต่ (HH:MM[:SS] คู่กับ date หรือ ISO เช่น 2026-10-14T16%3A52%3A00%2B07%3A00) — ส่ง : เป็น %3A
 end_time=17%3A04%3A10                  // สร้างถึง (รวมทั้งวินาที/นาทีนั้น)`,
         res: `{
   "success": true,
-  "report": "payment validation — Coffee9", "generatedAt": "2026-10-15T09:10:00+07:00",
+  "report": "payment validation — Sub Shop A", "generatedAt": "2026-10-15T09:10:00+07:00",
   "summary": { "total": 39, "approved": 34, "notApproved": 5, "notApprovedWithSlip": 1, "noSlipSent": 4 },   // + "notFound": [...] ถ้ามี ref ที่ไม่พบ
   "howVerified": "...",
   "orders": [                                   // อนุมัติก่อน แล้วตามด้วยไม่อนุมัติ
     {
-      "ref": "TXN172828", "orderId": "PD-01a139…", "customer": "คชาภรณ์ หันจันทร์",
+      "ref": "TXN100015", "orderId": "PD-01a139…", "customer": "คชาภรณ์ หันจันทร์",
       "decision": "APPROVED",                   // APPROVED | NOT_APPROVED
       "currentStatus": "PAID",                  // PAID | PENDING | EXPIRED | CANCELLED | REFUNDED
       "amounts": { "orderAmount": 500, "fee": 8, "netAmount": 492 },
-      "receivingAccount": "SCB 4182186378 (มิดทาวน์ไลท์ จำกัด)",
+      "receivingAccount": "SCB 1234567890 (บริษัท ตัวอย่าง จำกัด)",
       "timeline": { "orderCreated": "…+07:00", "slipUploaded": "…", "approvedAt": "…", "approvedBy": "system" },
       "bankVerification": {                     // null = ยังไม่มีสลิป · { verified:false|null, message } = ธนาคารยืนยันไม่ได้
         "source": "EasySlip (bank) — slip image", "verified": true,
@@ -367,7 +367,7 @@ end_time=17%3A04%3A10                  // สร้างถึง (รวมท
       { m: "GET", p: "/webhooks", d: "รายการ Webhooks", auth: KEY, res: `{ "success": true, "data": [ { "id": "3", "url": "https://...", "events": ["payment.approved"], "status": "ACTIVE", "secretPrefix": "whsec_AbCdEf…" } ] }` },
       { m: "POST", p: "/webhooks", d: "เพิ่ม Webhook", auth: KEY, body: `{ "url": "https://your-site.com/cb",   // https เท่านั้น
   "events": ["payment.approved", "payment.rejected"] }   // ทั้งหมด: payment.approved · payment.rejected · payment.expired · payment.refunded · payout.completed · payout.failed · withdrawal.approved · withdrawal.completed · withdrawal.rejected`, res: `{ "success": true, "webhook": { "id": "3", "url": "...", "events": [...], "status": "ACTIVE",
-  "secret": "whsec_..." } }    // แสดงครั้งเดียว — เก็บไว้ตรวจลายเซ็น`, note: `Payload: <code>{ "event": "payment.approved", "ref": "TXN…", "orderId": "ORD-001", "amount": "100.07", "status": "approved", "createdAt": "…", "resentAt": "…" }</code> (<code>resentAt</code> = เวลาที่ส่ง) · สูงสุด 5 ปลายทางต่อร้าน · ไม่ยิงไปที่อยู่ภายใน (private IP) · <strong>payment.expired / payment.refunded</strong> ใช้ payload เดียวกับ payment.approved (status <code>expired</code> / <code>refunded</code>) · <strong>withdrawal.approved / withdrawal.completed / withdrawal.rejected</strong> ใช้รูปแบบเดียวกับ payout (<code>ref</code> = WDR…, status <code>approved</code> / <code>completed</code> / <code>failed</code>, <code>failureReason</code> = เหตุผลที่ปฏิเสธ) · ผู้ดูแลระบบเปิด/ปิดแต่ละ event ต่อปลายทางได้ · <strong><code>payout.completed</code></strong> — ทีม Option Pay โอนเงิน payout ที่สร้างผ่าน <code>POST /payout/create</code> ให้ผู้รับแล้ว (สถานะในหน้าร้าน: ถอนสำเร็จ) ส่งครั้งเดียวต่อรายการ: <code>{ "event": "payout.completed", "ref": "OUT40198", "orderId": "WD-…", "merchantRef": "WD-…", "amount": "450.00", "status": "completed", "failureReason": null, "createdAt": "2026-10-15T09:29:45.872Z", "completedAt": "2026-10-15T09:40:11.245Z" }</code> — <code>completedAt</code> = เวลาที่โอนเสร็จ · <strong><code>payout.failed</code></strong> — ผู้ดูแลระบบปฏิเสธ payout ที่สร้างผ่าน <code>POST /payout/create</code> (คืนยอด amount + fee เข้ายอดคงเหลือแล้ว): <code>{ "event": "payout.failed", "ref": "OUT40197", "orderId": "WD-…", "merchantRef": "WD-…", "amount": "550.00", "status": "failed", "failureReason": "ยกเลิกโดยผู้ดูแลระบบ", "createdAt": "2026-10-15T02:14:08.819Z", "completedAt": "2026-10-15T06:09:44.502Z" }</code> — <code>orderId</code> = <code>merchantRef</code> ที่ร้านส่งตอนสร้าง · <code>completedAt</code> = เวลาที่ปฏิเสธ · ตรงกับ <code>GET /payout/:id</code> (status <code>FAILED</code>) · payout ของร้านย่อยที่สร้างด้วย key ของร้านแม่ (<code>X-Sub-Merchant</code>) ส่งไปที่ webhook ของร้านที่ใกล้ที่สุดในสายที่สมัคร event นี้ไว้` },
+  "secret": "whsec_..." } }    // แสดงครั้งเดียว — เก็บไว้ตรวจลายเซ็น`, note: `Payload: <code>{ "event": "payment.approved", "ref": "TXN…", "orderId": "ORD-001", "amount": "100.07", "status": "approved", "createdAt": "…", "resentAt": "…" }</code> (<code>resentAt</code> = เวลาที่ส่ง) · สูงสุด 5 ปลายทางต่อร้าน · ไม่ยิงไปที่อยู่ภายใน (private IP) · <strong>payment.expired / payment.refunded</strong> ใช้ payload เดียวกับ payment.approved (status <code>expired</code> / <code>refunded</code>) · <strong>withdrawal.approved / withdrawal.completed / withdrawal.rejected</strong> ใช้รูปแบบเดียวกับ payout (<code>ref</code> = WDR…, status <code>approved</code> / <code>completed</code> / <code>failed</code>, <code>failureReason</code> = เหตุผลที่ปฏิเสธ) · ผู้ดูแลระบบเปิด/ปิดแต่ละ event ต่อปลายทางได้ · <strong><code>payout.completed</code></strong> — ทีม Option Pay โอนเงิน payout ที่สร้างผ่าน <code>POST /payout/create</code> ให้ผู้รับแล้ว (สถานะในหน้าร้าน: ถอนสำเร็จ) ส่งครั้งเดียวต่อรายการ: <code>{ "event": "payout.completed", "ref": "OUT10153", "orderId": "WD-…", "merchantRef": "WD-…", "amount": "450.00", "status": "completed", "failureReason": null, "createdAt": "2026-10-15T09:29:45.872Z", "completedAt": "2026-10-15T09:40:11.245Z" }</code> — <code>completedAt</code> = เวลาที่โอนเสร็จ · <strong><code>payout.failed</code></strong> — ผู้ดูแลระบบปฏิเสธ payout ที่สร้างผ่าน <code>POST /payout/create</code> (คืนยอด amount + fee เข้ายอดคงเหลือแล้ว): <code>{ "event": "payout.failed", "ref": "OUT10152", "orderId": "WD-…", "merchantRef": "WD-…", "amount": "550.00", "status": "failed", "failureReason": "ยกเลิกโดยผู้ดูแลระบบ", "createdAt": "2026-10-15T02:14:08.819Z", "completedAt": "2026-10-15T06:09:44.502Z" }</code> — <code>orderId</code> = <code>merchantRef</code> ที่ร้านส่งตอนสร้าง · <code>completedAt</code> = เวลาที่ปฏิเสธ · ตรงกับ <code>GET /payout/:id</code> (status <code>FAILED</code>) · payout ของร้านย่อยที่สร้างด้วย key ของร้านแม่ (<code>X-Sub-Merchant</code>) ส่งไปที่ webhook ของร้านที่ใกล้ที่สุดในสายที่สมัคร event นี้ไว้` },
     ],
   },
   {

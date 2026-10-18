@@ -20,7 +20,8 @@ export async function ConsoleShell({
   title: string;
   path: string;
   /** Show the top-bar search; `params` are kept as hidden fields. */
-  search?: { placeholder: string; params: Params };
+  /** `txn`: transaction search — suggests refs containing the text and opens a ref's full history. */
+  search?: { placeholder: string; params: Params; txn?: boolean };
   children: React.ReactNode;
 }) {
   const user = await getSessionUser();
@@ -74,6 +75,7 @@ export async function ConsoleShell({
   const shellSearch: ShellSearch | null = search
     ? {
         placeholder: search.placeholder,
+        txn: search.txn,
         value: typeof search.params.q === "string" ? search.params.q : "",
         keep: Object.entries(search.params).filter(
           (e): e is [string, string] => typeof e[1] === "string" && !!e[1] && e[0] !== "q" && e[0] !== "page",

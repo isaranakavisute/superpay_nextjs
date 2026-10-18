@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
+import { reasonError } from "@/lib/delete-reason";
 
 export type FaqInput = { question: string; keywords: string; answer: string; enabled: boolean; sort: number };
 export type BotSettings = { enabled: boolean; botToken: string; webhookSecret: string; allowedChatIds: string; minScore: number; allowPrivate: boolean; allGroups: boolean };
@@ -20,6 +21,9 @@ export async function saveFaq(id: number | null, b: FaqInput) {
   if (!b.answer.trim()) return { ok: false, error: "กรุณาใส่คำตอบ" } as ActionResult;
   return as((actor) => consoleWrite("POST", id ? `/api/console/support-bot/faqs/${id}` : "/api/console/support-bot/faqs", actor, b));
 }
-export const deleteFaq = async (id: number) => as((actor) => consoleWrite("POST", `/api/console/support-bot/faqs/${Number(id) || 0}/delete`, actor, {}));
+export const deleteFaq = async (id: number, reason: string) => {
+  const err = reasonError(reason);
+  return err ? ({ ok: false, error: err } as ActionResult) : as((actor) => consoleWrite("POST", `/api/console/support-bot/faqs/${Number(id) || 0}/delete`, actor, { reason: reason.trim() }));
+};
 export const testQuestion = async (text: string) => as((actor) => consoleWrite("POST", "/api/console/support-bot/test", actor, { text }), false);
 export const saveSettings = async (b: BotSettings) => as((actor) => consoleWrite("POST", "/api/console/support-bot/settings", actor, b));

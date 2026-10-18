@@ -1,8 +1,8 @@
 {
  "capturedAt": "2026-10-12T08:08:25.906Z",
  "site": "https://optionpay.co",
- "apiKey": "ak_live_PpC6xVj6m7DdQ8qEkKdJ8mSRHMlvx_r80SAWzxgR2Jg",
- "secretKey": "sk_live_r5KDHZ8XMOBGvCYdWC0d7cMd0rgqTJpIDvL7vE_GJvk",
+ "apiKey": "ak_live_DEMO0000docsonly0000000000000000000000000",
+ "secretKey": "sk_live_DEMO0000docsonly000000000000000000000000",
  "entries": {
   "POST /payment/create": {
    "method": "POST",
@@ -11,11 +11,11 @@
    "signed": true,
    "timestamp": "1791792505",
    "toSign": "1791792505.POST./api/v1/payment/create.{\"amount\":100,\"orderId\":\"ORD-DOC-001\",\"description\":\"สินค้า A\",\"metadata\":{\"senderAccountNumber\":\"1234567890\",\"senderBankCode\":\"SCB\",\"memberName\":\"สมชาย ใจดี\",\"customerId\":\"CUST-9\"}}",
-   "signature": "1c646abf0ebe00a82490a8a5412020cfc397bbb5a9b48ea696b8a444144fc9eb",
+   "signature": "75871079d00b21f2deb12dd833bd4551b5a41d85a9833e942c117f4751deb9cc",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"orderIdGenerated\": false,\n  \"transaction\": {\n    \"id\": \"661c801a2a9ce1bb6fc4dcacda0c98ab\",\n    \"ref\": \"TXN172812\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"fee\": 1.5,\n    \"netAmount\": 98.5,\n    \"status\": \"PENDING\",\n    \"source\": \"API\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า A\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=661c801a2a9ce1bb6fc4dcacda0c98ab\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    }\n  },\n  \"selectedAccount\": {\n    \"id\": \"8\",\n    \"type\": \"BANK\",\n    \"accountNumber\": \"4182186378\",\n    \"accountName\": \"มิดทาวน์ไลท์ จำกัด\",\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\"\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"orderIdGenerated\": false,\n  \"transaction\": {\n    \"id\": \"d3m00000000000000000000000000001\",\n    \"ref\": \"TXN100011\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"fee\": 1.5,\n    \"netAmount\": 98.5,\n    \"status\": \"PENDING\",\n    \"source\": \"API\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า A\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=d3m00000000000000000000000000001\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    }\n  },\n  \"selectedAccount\": {\n    \"id\": \"8\",\n    \"type\": \"BANK\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"บริษัท ตัวอย่าง จำกัด\",\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\"\n  }\n}"
   },
   "POST /payment/slip/create": {
    "method": "POST",
@@ -24,11 +24,11 @@
    "signed": true,
    "timestamp": "1791792507",
    "toSign": "1791792507.POST./api/v1/payment/slip/create.{\"amount\":250,\"orderId\":\"ORD-DOC-002\",\"description\":\"สินค้า B\"}",
-   "signature": "fc004da08896e322d082db7c5cc262247404ba1ea7399e9a3b39bc9afb3d0c57",
+   "signature": "2d8c21fb21c46e135201f698d58fb960bf5f8286489d8f353609bad15df5f538",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"orderIdGenerated\": false,\n  \"transaction\": {\n    \"id\": \"70d7c30c515b19110c95775386c308cb\",\n    \"ref\": \"TXN172813\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-002\",\n    \"amount\": 250,\n    \"fee\": 3.75,\n    \"netAmount\": 246.25,\n    \"status\": \"PENDING\",\n    \"source\": \"SLIP\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า B\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:28.238Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=70d7c30c515b19110c95775386c308cb\",\n    \"createdAt\": \"2026-10-12T08:08:28.238Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"250.00\"\n    }\n  },\n  \"selectedAccount\": {\n    \"id\": \"8\",\n    \"type\": \"BANK\",\n    \"accountNumber\": \"4182186378\",\n    \"accountName\": \"มิดทาวน์ไลท์ จำกัด\",\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\"\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"orderIdGenerated\": false,\n  \"transaction\": {\n    \"id\": \"70d7c30c515b19110c95775386c308cb\",\n    \"ref\": \"TXN100012\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-002\",\n    \"amount\": 250,\n    \"fee\": 3.75,\n    \"netAmount\": 246.25,\n    \"status\": \"PENDING\",\n    \"source\": \"SLIP\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า B\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:28.238Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=70d7c30c515b19110c95775386c308cb\",\n    \"createdAt\": \"2026-10-12T08:08:28.238Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"250.00\"\n    }\n  },\n  \"selectedAccount\": {\n    \"id\": \"8\",\n    \"type\": \"BANK\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"บริษัท ตัวอย่าง จำกัด\",\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\"\n  }\n}"
   },
   "POST /payment/slip/verify": {
    "method": "POST",
@@ -41,20 +41,20 @@
    "headers": {},
    "file": "slip.png",
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"verified\": false,\n  \"result\": \"PENDING_REVIEW\",\n  \"message\": \"ไม่ได้เปิดการตรวจสลิป — รอผู้ดูแลตรวจ\",\n  \"mismatches\": [],\n  \"transaction\": {\n    \"id\": \"70d7c30c515b19110c95775386c308cb\",\n    \"ref\": \"TXN172813\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-002\",\n    \"amount\": 250,\n    \"fee\": 3.75,\n    \"netAmount\": 246.25,\n    \"status\": \"PENDING\",\n    \"source\": \"SLIP\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า B\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:28.238Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=70d7c30c515b19110c95775386c308cb\",\n    \"createdAt\": \"2026-10-12T08:08:28.238Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"250.00\"\n    }\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"verified\": false,\n  \"result\": \"PENDING_REVIEW\",\n  \"message\": \"ไม่ได้เปิดการตรวจสลิป — รอผู้ดูแลตรวจ\",\n  \"mismatches\": [],\n  \"transaction\": {\n    \"id\": \"70d7c30c515b19110c95775386c308cb\",\n    \"ref\": \"TXN100012\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-002\",\n    \"amount\": 250,\n    \"fee\": 3.75,\n    \"netAmount\": 246.25,\n    \"status\": \"PENDING\",\n    \"source\": \"SLIP\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า B\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:28.238Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=70d7c30c515b19110c95775386c308cb\",\n    \"createdAt\": \"2026-10-12T08:08:28.238Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"250.00\"\n    }\n  }\n}"
   },
   "POST /payment/:ref/slip": {
    "method": "POST",
-   "path": "/api/v1/payment/TXN172814/slip",
+   "path": "/api/v1/payment/TXN100013/slip",
    "body": "{\"mime\":\"image/png\",\"image\":\"iVBORw0KGgoAAAANSUhE…(base64 ของรูปสลิป)\"}",
    "signed": true,
    "timestamp": "1791792511",
-   "toSign": "1791792511.POST./api/v1/payment/TXN172814/slip.{\"mime\":\"image/png\",\"image\":\"iVBORw0KGgoAAAANSUhE…(base64 ของรูปสลิป)\"}",
+   "toSign": "1791792511.POST./api/v1/payment/TXN100013/slip.{\"mime\":\"image/png\",\"image\":\"iVBORw0KGgoAAAANSUhE…(base64 ของรูปสลิป)\"}",
    "signature": "a4b983003885780a9e4b06e19d0fb15410fae3ebcfe903c5cea8f81ec65f7298",
    "headers": {},
    "file": "slip.png",
    "status": 200,
-   "response": "{\n  \"success\": false,\n  \"verified\": false,\n  \"result\": \"INVALID_SLIP\",\n  \"message\": \"สลิปนี้ถูกใช้กับรายการอื่นแล้ว — ใช้ซ้ำไม่ได้\",\n  \"mismatches\": [\n    \"สลิปนี้ถูกใช้กับรายการอื่นแล้ว — ใช้ซ้ำไม่ได้\"\n  ],\n  \"transaction\": {\n    \"id\": \"cd6584e2787b93f451d9c47b4513c1df\",\n    \"ref\": \"TXN172814\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-003\",\n    \"amount\": 300,\n    \"fee\": 4.5,\n    \"netAmount\": 295.5,\n    \"status\": \"PENDING\",\n    \"source\": \"SLIP\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า C\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:30.971Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=cd6584e2787b93f451d9c47b4513c1df\",\n    \"createdAt\": \"2026-10-12T08:08:30.971Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"300.00\"\n    }\n  }\n}"
+   "response": "{\n  \"success\": false,\n  \"verified\": false,\n  \"result\": \"INVALID_SLIP\",\n  \"message\": \"สลิปนี้ถูกใช้กับรายการอื่นแล้ว — ใช้ซ้ำไม่ได้\",\n  \"mismatches\": [\n    \"สลิปนี้ถูกใช้กับรายการอื่นแล้ว — ใช้ซ้ำไม่ได้\"\n  ],\n  \"transaction\": {\n    \"id\": \"cd6584e2787b93f451d9c47b4513c1df\",\n    \"ref\": \"TXN100013\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-003\",\n    \"amount\": 300,\n    \"fee\": 4.5,\n    \"netAmount\": 295.5,\n    \"status\": \"PENDING\",\n    \"source\": \"SLIP\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า C\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:30.971Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=cd6584e2787b93f451d9c47b4513c1df\",\n    \"createdAt\": \"2026-10-12T08:08:30.971Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"300.00\"\n    }\n  }\n}"
   },
   "GET /payment/order/:orderId": {
    "method": "GET",
@@ -63,15 +63,15 @@
    "signed": true,
    "timestamp": "1791792513",
    "toSign": "1791792513.GET./api/v1/payment/order/ORD-DOC-001.",
-   "signature": "ad2b9c1250d73cca9f4eb08d70018ef48934ef56840c28747f1876e67ced349f",
+   "signature": "159ab4b58d93e2ac834c33312f43550fbe5942d56324a1f005141a216232b883",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"661c801a2a9ce1bb6fc4dcacda0c98ab\",\n    \"ref\": \"TXN172812\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"fee\": 1.5,\n    \"netAmount\": 98.5,\n    \"status\": \"PENDING\",\n    \"source\": \"API\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า A\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=661c801a2a9ce1bb6fc4dcacda0c98ab\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    }\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"d3m00000000000000000000000000001\",\n    \"ref\": \"TXN100011\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"fee\": 1.5,\n    \"netAmount\": 98.5,\n    \"status\": \"PENDING\",\n    \"source\": \"API\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า A\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=d3m00000000000000000000000000001\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    }\n  }\n}"
   },
   "GET /payment/checkout/:transactionId": {
    "method": "GET",
-   "path": "/api/v1/payment/checkout/661c801a2a9ce1bb6fc4dcacda0c98ab",
+   "path": "/api/v1/payment/checkout/d3m00000000000000000000000000001",
    "body": "",
    "signed": false,
    "timestamp": null,
@@ -80,11 +80,11 @@
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"661c801a2a9ce1bb6fc4dcacda0c98ab\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"status\": \"PENDING\",\n    \"description\": \"สินค้า A\",\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    },\n    \"paymentMethod\": \"BANK_TRANSFER\"\n  },\n  \"merchant\": {\n    \"name\": \"my-shop\"\n  },\n  \"account\": {\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\",\n    \"accountName\": \"มิดทาวน์ไลท์ จำกัด\",\n    \"accountNumber\": \"4182186378\",\n    \"promptPayId\": null\n  },\n  \"qrPayload\": null,\n  \"customerName\": \"สมชาย ใจดี\",\n  \"hasSlip\": false,\n  \"slipLocked\": false,\n  \"slipProblems\": null\n}"
+   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"d3m00000000000000000000000000001\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"status\": \"PENDING\",\n    \"description\": \"สินค้า A\",\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    },\n    \"paymentMethod\": \"BANK_TRANSFER\"\n  },\n  \"merchant\": {\n    \"name\": \"your-shop\"\n  },\n  \"account\": {\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\",\n    \"accountName\": \"บริษัท ตัวอย่าง จำกัด\",\n    \"accountNumber\": \"1234567890\",\n    \"promptPayId\": null\n  },\n  \"qrPayload\": null,\n  \"customerName\": \"สมชาย ใจดี\",\n  \"hasSlip\": false,\n  \"slipLocked\": false,\n  \"slipProblems\": null\n}"
   },
   "POST /payment/checkout/:transactionId/slip": {
    "method": "POST",
-   "path": "/api/v1/payment/checkout/661c801a2a9ce1bb6fc4dcacda0c98ab/slip",
+   "path": "/api/v1/payment/checkout/d3m00000000000000000000000000001/slip",
    "body": "{\"mime\":\"image/png\",\"image\":\"iVBORw0KGgoAAAANSUhE…(base64 ของรูปสลิป)\"}",
    "signed": false,
    "timestamp": null,
@@ -97,7 +97,7 @@
   },
   "GET /payment/qr/:token.png": {
    "method": "GET",
-   "path": "/api/v1/payment/qr/661c801a2a9ce1bb6fc4dcacda0c98ab.png",
+   "path": "/api/v1/payment/qr/d3m00000000000000000000000000001.png",
    "body": "",
    "signed": false,
    "timestamp": null,
@@ -115,11 +115,11 @@
    "signed": true,
    "timestamp": "1791792518",
    "toSign": "1791792518.POST./api/v1/collect.{\"amount\":150,\"orderId\":\"ORD-DOC-004\"}",
-   "signature": "be726c5bc72c7033710c0ab8e86f872d1a8be0c1a6356c4dbb0ab5e94288282b",
+   "signature": "c270b8f6b94e105c2ef7a2913ee49982799b56967184524dc2f81803133777d6",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"orderIdGenerated\": false,\n  \"transaction\": {\n    \"id\": \"19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"ref\": \"TXN172815\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-004\",\n    \"amount\": 150,\n    \"fee\": 2.25,\n    \"netAmount\": 147.75,\n    \"status\": \"PENDING\",\n    \"source\": \"COLLECT\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": null,\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:39.021Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"createdAt\": \"2026-10-12T08:08:39.021Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"150.00\"\n    }\n  },\n  \"selectedAccount\": {\n    \"id\": \"8\",\n    \"type\": \"BANK\",\n    \"accountNumber\": \"4182186378\",\n    \"accountName\": \"มิดทาวน์ไลท์ จำกัด\",\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\"\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"orderIdGenerated\": false,\n  \"transaction\": {\n    \"id\": \"19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"ref\": \"TXN100014\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-004\",\n    \"amount\": 150,\n    \"fee\": 2.25,\n    \"netAmount\": 147.75,\n    \"status\": \"PENDING\",\n    \"source\": \"COLLECT\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": null,\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:39.021Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"createdAt\": \"2026-10-12T08:08:39.021Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"150.00\"\n    }\n  },\n  \"selectedAccount\": {\n    \"id\": \"8\",\n    \"type\": \"BANK\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"บริษัท ตัวอย่าง จำกัด\",\n    \"bankCode\": \"SCB\",\n    \"bankName\": \"ธนาคารไทยพาณิชย์\"\n  }\n}"
   },
   "GET /transactions": {
    "method": "GET",
@@ -128,24 +128,24 @@
    "signed": true,
    "timestamp": "1791792520",
    "toSign": "1791792520.GET./api/v1/transactions?limit=2&offset=0&status=PENDING.",
-   "signature": "f2d12e0eb95a7b56acbc082558c9879568d464ac957f337c58acfa1f23b9549e",
+   "signature": "c6bc15b559c0a79f148812be33cb28410768b8d0562afd0cfc5a215746f16717",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"19f96c6e2d7b1c33bf24ed3c38908eb0\",\n      \"ref\": \"TXN172815\",\n      \"merchantId\": \"6\",\n      \"orderId\": \"ORD-DOC-004\",\n      \"amount\": 150,\n      \"fee\": 2.25,\n      \"netAmount\": 147.75,\n      \"status\": \"PENDING\",\n      \"source\": \"COLLECT\",\n      \"paymentMethod\": \"BANK_TRANSFER\",\n      \"description\": null,\n      \"qrCode\": null,\n      \"qrCodeUrl\": null,\n      \"qrExpiry\": \"2026-10-12T08:23:39.021Z\",\n      \"checkoutUrl\": \"https://optionpay.co/c?t=19f96c6e2d7b1c33bf24ed3c38908eb0\",\n      \"createdAt\": \"2026-10-12T08:08:39.021Z\",\n      \"paidAt\": null,\n      \"copy\": {\n        \"amount\": \"150.00\"\n      }\n    },\n    {\n      \"id\": \"cd6584e2787b93f451d9c47b4513c1df\",\n      \"ref\": \"TXN172814\",\n      \"merchantId\": \"6\",\n      \"orderId\": \"ORD-DOC-003\",\n      \"amount\": 300,\n      \"fee\": 4.5,\n      \"netAmount\": 295.5,\n      \"status\": \"PENDING\",\n      \"source\": \"SLIP\",\n      \"paymentMethod\": \"BANK_TRANSFER\",\n      \"description\": \"สินค้า C\",\n      \"qrCode\": null,\n      \"qrCodeUrl\": null,\n      \"qrExpiry\": \"2026-10-12T08:23:30.971Z\",\n      \"checkoutUrl\": \"https://optionpay.co/c?t=cd6584e2787b93f451d9c47b4513c1df\",\n      \"createdAt\": \"2026-10-12T08:08:30.971Z\",\n      \"paidAt\": null,\n      \"copy\": {\n        \"amount\": \"300.00\"\n      }\n    }\n  ],\n  \"pagination\": {\n    \"total\": 4,\n    \"limit\": 2,\n    \"offset\": 0\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"19f96c6e2d7b1c33bf24ed3c38908eb0\",\n      \"ref\": \"TXN100014\",\n      \"merchantId\": \"6\",\n      \"orderId\": \"ORD-DOC-004\",\n      \"amount\": 150,\n      \"fee\": 2.25,\n      \"netAmount\": 147.75,\n      \"status\": \"PENDING\",\n      \"source\": \"COLLECT\",\n      \"paymentMethod\": \"BANK_TRANSFER\",\n      \"description\": null,\n      \"qrCode\": null,\n      \"qrCodeUrl\": null,\n      \"qrExpiry\": \"2026-10-12T08:23:39.021Z\",\n      \"checkoutUrl\": \"https://optionpay.co/c?t=19f96c6e2d7b1c33bf24ed3c38908eb0\",\n      \"createdAt\": \"2026-10-12T08:08:39.021Z\",\n      \"paidAt\": null,\n      \"copy\": {\n        \"amount\": \"150.00\"\n      }\n    },\n    {\n      \"id\": \"cd6584e2787b93f451d9c47b4513c1df\",\n      \"ref\": \"TXN100013\",\n      \"merchantId\": \"6\",\n      \"orderId\": \"ORD-DOC-003\",\n      \"amount\": 300,\n      \"fee\": 4.5,\n      \"netAmount\": 295.5,\n      \"status\": \"PENDING\",\n      \"source\": \"SLIP\",\n      \"paymentMethod\": \"BANK_TRANSFER\",\n      \"description\": \"สินค้า C\",\n      \"qrCode\": null,\n      \"qrCodeUrl\": null,\n      \"qrExpiry\": \"2026-10-12T08:23:30.971Z\",\n      \"checkoutUrl\": \"https://optionpay.co/c?t=cd6584e2787b93f451d9c47b4513c1df\",\n      \"createdAt\": \"2026-10-12T08:08:30.971Z\",\n      \"paidAt\": null,\n      \"copy\": {\n        \"amount\": \"300.00\"\n      }\n    }\n  ],\n  \"pagination\": {\n    \"total\": 4,\n    \"limit\": 2,\n    \"offset\": 0\n  }\n}"
   },
   "GET /transactions/:id": {
    "method": "GET",
-   "path": "/api/v1/transactions/661c801a2a9ce1bb6fc4dcacda0c98ab",
+   "path": "/api/v1/transactions/d3m00000000000000000000000000001",
    "body": "",
    "signed": true,
    "timestamp": "1791792521",
-   "toSign": "1791792521.GET./api/v1/transactions/661c801a2a9ce1bb6fc4dcacda0c98ab.",
-   "signature": "7262327d1cfa6bd0c2e9c2469524a34dccf6a2da27a0e0289aa42a9197b039ed",
+   "toSign": "1791792521.GET./api/v1/transactions/d3m00000000000000000000000000001.",
+   "signature": "84863d5b4a966d54c65806a1aebd12a8489067ebbb6a7a20a9500a46cee9a681",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"661c801a2a9ce1bb6fc4dcacda0c98ab\",\n    \"ref\": \"TXN172812\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"fee\": 1.5,\n    \"netAmount\": 98.5,\n    \"status\": \"PENDING\",\n    \"source\": \"API\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า A\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=661c801a2a9ce1bb6fc4dcacda0c98ab\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    }\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"d3m00000000000000000000000000001\",\n    \"ref\": \"TXN100011\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-001\",\n    \"amount\": 100,\n    \"fee\": 1.5,\n    \"netAmount\": 98.5,\n    \"status\": \"PENDING\",\n    \"source\": \"API\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": \"สินค้า A\",\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:26.830Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=d3m00000000000000000000000000001\",\n    \"createdAt\": \"2026-10-12T08:08:26.830Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"100.00\"\n    }\n  }\n}"
   },
   "PATCH /transactions/:id/cancel": {
    "method": "PATCH",
@@ -154,11 +154,11 @@
    "signed": true,
    "timestamp": "1791792522",
    "toSign": "1791792522.PATCH./api/v1/transactions/19f96c6e2d7b1c33bf24ed3c38908eb0/cancel.",
-   "signature": "5c84e6921fbd1e9ceb173f616f52f5bb2007be0149269b46ad5df52fa897cc58",
+   "signature": "0984af18a1595b0e0994e32d483a3f9228a311545fd93efcacbf84624cb79fe3",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"ref\": \"TXN172815\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-004\",\n    \"amount\": 150,\n    \"fee\": 2.25,\n    \"netAmount\": 147.75,\n    \"status\": \"CANCELLED\",\n    \"source\": \"COLLECT\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": null,\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:39.021Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"createdAt\": \"2026-10-12T08:08:39.021Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"150.00\"\n    }\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"transaction\": {\n    \"id\": \"19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"ref\": \"TXN100014\",\n    \"merchantId\": \"6\",\n    \"orderId\": \"ORD-DOC-004\",\n    \"amount\": 150,\n    \"fee\": 2.25,\n    \"netAmount\": 147.75,\n    \"status\": \"CANCELLED\",\n    \"source\": \"COLLECT\",\n    \"paymentMethod\": \"BANK_TRANSFER\",\n    \"description\": null,\n    \"qrCode\": null,\n    \"qrCodeUrl\": null,\n    \"qrExpiry\": \"2026-10-12T08:23:39.021Z\",\n    \"checkoutUrl\": \"https://optionpay.co/c?t=19f96c6e2d7b1c33bf24ed3c38908eb0\",\n    \"createdAt\": \"2026-10-12T08:08:39.021Z\",\n    \"paidAt\": null,\n    \"copy\": {\n      \"amount\": \"150.00\"\n    }\n  }\n}"
   },
   "POST /payout/create": {
    "method": "POST",
@@ -167,26 +167,26 @@
    "signed": true,
    "timestamp": "1791792524",
    "toSign": "1791792524.POST./api/v1/payout/create.{\"amount\":10,\"bankCode\":\"SCB\",\"accountNumber\":\"1234567890\",\"accountName\":\"สมชาย ใจดี\",\"merchantRef\":\"PO-DOC-001\",\"description\":\"ค่าสินค้า\"}",
-   "signature": "aa0196407095ff8bc61bebca98c42a13b3da106b682d40356ac7e8bcb58cc7e1",
+   "signature": "e0935ac46a504a33816003dd0ab39113246a481416b39b7ffc23909761a42e76",
    "headers": {
     "Idempotency-Key": "po-doc-001"
    },
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT10152\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
   },
   "GET /payout/:id": {
    "method": "GET",
-   "path": "/api/v1/payout/OUT40197",
+   "path": "/api/v1/payout/OUT10152",
    "body": "",
    "signed": true,
    "timestamp": "1791792525",
-   "toSign": "1791792525.GET./api/v1/payout/OUT40197.",
-   "signature": "d76d6f14bb53f139ff9d63031db14b5013869476f48a5d7e78329ff1a9ab7b84",
+   "toSign": "1791792525.GET./api/v1/payout/OUT10152.",
+   "signature": "ce0397c7c73e151f8ea240516addcd821988cebfa871f01e233e3d652f354811",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT10152\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
   },
   "GET /payout/ref/:merchantRef": {
    "method": "GET",
@@ -195,11 +195,11 @@
    "signed": true,
    "timestamp": "1791792526",
    "toSign": "1791792526.GET./api/v1/payout/ref/PO-DOC-001.",
-   "signature": "2c84d3ef161ec4d423dccef7d5ac0ec6761c39dd164fc9b82fb8d216464f6b48",
+   "signature": "26501e494ea595e71a09ff4cd7c889c111c90f247edc76b3775f5e5c9588a885",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT40197\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"payout\": {\n    \"id\": \"OUT10152\",\n    \"merchantRef\": \"PO-DOC-001\",\n    \"amount\": 10,\n    \"status\": \"COMPLETED\",\n    \"bankCode\": \"SCB\",\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"description\": \"ค่าสินค้า\",\n    \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n    \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n    \"failureReason\": null\n  }\n}"
   },
   "GET /payouts": {
    "method": "GET",
@@ -208,11 +208,11 @@
    "signed": true,
    "timestamp": "1791792528",
    "toSign": "1791792528.GET./api/v1/payouts?limit=5&offset=0.",
-   "signature": "a133ed6c9108963e39f4b1d999da6accc46431d5f616774ce11f410c24405a73",
+   "signature": "ecf85cbcd2bbc4ad43528595850ac6fa0cfa1d057318348aeb371e446847a8db",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"OUT40197\",\n      \"merchantRef\": \"PO-DOC-001\",\n      \"amount\": 10,\n      \"status\": \"COMPLETED\",\n      \"bankCode\": \"SCB\",\n      \"accountNumber\": \"1234567890\",\n      \"accountName\": \"สมชาย ใจดี\",\n      \"description\": \"ค่าสินค้า\",\n      \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n      \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n      \"failureReason\": null\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"limit\": 5,\n    \"offset\": 0\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"OUT10152\",\n      \"merchantRef\": \"PO-DOC-001\",\n      \"amount\": 10,\n      \"status\": \"COMPLETED\",\n      \"bankCode\": \"SCB\",\n      \"accountNumber\": \"1234567890\",\n      \"accountName\": \"สมชาย ใจดี\",\n      \"description\": \"ค่าสินค้า\",\n      \"createdAt\": \"2026-10-12T08:08:44.397Z\",\n      \"completedAt\": \"2026-10-12T08:08:44.397Z\",\n      \"failureReason\": null\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"limit\": 5,\n    \"offset\": 0\n  }\n}"
   },
   "POST /payout/bulk": {
    "method": "POST",
@@ -221,11 +221,11 @@
    "signed": true,
    "timestamp": "1791792529",
    "toSign": "1791792529.POST./api/v1/payout/bulk.{\"payouts\":[{\"amount\":11,\"bankCode\":\"SCB\",\"accountNumber\":\"1234567890\",\"accountName\":\"สมชาย ใจดี\",\"merchantRef\":\"PO-DOC-101\"},{\"amount\":12,\"bankCode\":\"KBANK\",\"accountNumber\":\"9876543210\",\"accountName\":\"มาลี สวยงาม\",\"merchantRef\":\"PO-DOC-102\"}]}",
-   "signature": "88c7237f2367ba36dcb28c3fdaf6dfea0a5e418bd8aa4a456ea6f21585efe278",
+   "signature": "73ba8e1ee620a96a32b2dae687c9f4451aa269b2dc89c07d27f39995d9552de9",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"created\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"index\": 0,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT40198\",\n        \"merchantRef\": \"PO-DOC-101\",\n        \"amount\": 11,\n        \"status\": \"COMPLETED\",\n        \"bankCode\": \"SCB\",\n        \"accountNumber\": \"1234567890\",\n        \"accountName\": \"สมชาย ใจดี\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-101)\",\n        \"createdAt\": \"2026-10-12T08:08:49.762Z\",\n        \"completedAt\": \"2026-10-12T08:08:49.762Z\",\n        \"failureReason\": null\n      }\n    },\n    {\n      \"index\": 1,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT40199\",\n        \"merchantRef\": \"PO-DOC-102\",\n        \"amount\": 12,\n        \"status\": \"COMPLETED\",\n        \"bankCode\": \"KBANK\",\n        \"accountNumber\": \"9876543210\",\n        \"accountName\": \"มาลี สวยงาม\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-102)\",\n        \"createdAt\": \"2026-10-12T08:08:49.778Z\",\n        \"completedAt\": \"2026-10-12T08:08:49.778Z\",\n        \"failureReason\": null\n      }\n    }\n  ]\n}"
+   "response": "{\n  \"success\": true,\n  \"created\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"index\": 0,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT10153\",\n        \"merchantRef\": \"PO-DOC-101\",\n        \"amount\": 11,\n        \"status\": \"COMPLETED\",\n        \"bankCode\": \"SCB\",\n        \"accountNumber\": \"1234567890\",\n        \"accountName\": \"สมชาย ใจดี\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-101)\",\n        \"createdAt\": \"2026-10-12T08:08:49.762Z\",\n        \"completedAt\": \"2026-10-12T08:08:49.762Z\",\n        \"failureReason\": null\n      }\n    },\n    {\n      \"index\": 1,\n      \"success\": true,\n      \"payout\": {\n        \"id\": \"OUT10154\",\n        \"merchantRef\": \"PO-DOC-102\",\n        \"amount\": 12,\n        \"status\": \"COMPLETED\",\n        \"bankCode\": \"KBANK\",\n        \"accountNumber\": \"9876543210\",\n        \"accountName\": \"มาลี สวยงาม\",\n        \"description\": \"Payout ผ่าน API (PO-DOC-102)\",\n        \"createdAt\": \"2026-10-12T08:08:49.778Z\",\n        \"completedAt\": \"2026-10-12T08:08:49.778Z\",\n        \"failureReason\": null\n      }\n    }\n  ]\n}"
   },
   "POST /withdrawal/request/create": {
    "method": "POST",
@@ -234,11 +234,11 @@
    "signed": true,
    "timestamp": "1791792530",
    "toSign": "1791792530.POST./api/v1/withdrawal/request/create.{\"amount\":100,\"bankCode\":\"KBANK\",\"accountNumber\":\"9876543210\",\"accountName\":\"สมชาย ใจดี\",\"merchantRef\":\"W-DOC-001\",\"note\":\"ถอนประจำวัน\"}",
-   "signature": "f3ce4a0364e19a0784d2389dc98fa038f44cf954af409837401c069a1afbe554",
+   "signature": "5fd9c50b066ecfdda60adc08c849cbe3eb1623a84a5cfd3be0af79e8a90596dc",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"request\": {\n    \"requestRef\": \"WDR90006\",\n    \"merchantRef\": \"W-DOC-001\",\n    \"amount\": 100,\n    \"status\": \"PENDING\",\n    \"bankCode\": \"KBANK\",\n    \"accountNumber\": \"9876543210\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"note\": \"ถอนประจำวัน\",\n    \"rejectReason\": null,\n    \"createdAt\": \"2026-10-12T08:08:51.206Z\",\n    \"decidedAt\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"request\": {\n    \"requestRef\": \"WDR10001\",\n    \"merchantRef\": \"W-DOC-001\",\n    \"amount\": 100,\n    \"status\": \"PENDING\",\n    \"bankCode\": \"KBANK\",\n    \"accountNumber\": \"9876543210\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"note\": \"ถอนประจำวัน\",\n    \"rejectReason\": null,\n    \"createdAt\": \"2026-10-12T08:08:51.206Z\",\n    \"decidedAt\": null\n  }\n}"
   },
   "GET /withdrawal/requests": {
    "method": "GET",
@@ -247,24 +247,24 @@
    "signed": true,
    "timestamp": "1791792532",
    "toSign": "1791792532.GET./api/v1/withdrawal/requests?limit=5&offset=0.",
-   "signature": "cd0f2404e719cddce365e7b004044d98cc3c3bf533cae78a121fdb33a13196f3",
+   "signature": "a798194689caa738b03ca632971257bd91ec089415540099ab31ebe09358ea40",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"requestRef\": \"WDR90006\",\n      \"merchantRef\": \"W-DOC-001\",\n      \"amount\": 100,\n      \"status\": \"PENDING\",\n      \"bankCode\": \"KBANK\",\n      \"accountNumber\": \"9876543210\",\n      \"accountName\": \"สมชาย ใจดี\",\n      \"note\": \"ถอนประจำวัน\",\n      \"rejectReason\": null,\n      \"createdAt\": \"2026-10-12T08:08:51.206Z\",\n      \"decidedAt\": null\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"limit\": 5,\n    \"offset\": 0\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"requestRef\": \"WDR10001\",\n      \"merchantRef\": \"W-DOC-001\",\n      \"amount\": 100,\n      \"status\": \"PENDING\",\n      \"bankCode\": \"KBANK\",\n      \"accountNumber\": \"9876543210\",\n      \"accountName\": \"สมชาย ใจดี\",\n      \"note\": \"ถอนประจำวัน\",\n      \"rejectReason\": null,\n      \"createdAt\": \"2026-10-12T08:08:51.206Z\",\n      \"decidedAt\": null\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"limit\": 5,\n    \"offset\": 0\n  }\n}"
   },
   "GET /withdrawal/request/:ref": {
    "method": "GET",
-   "path": "/api/v1/withdrawal/request/WDR90006",
+   "path": "/api/v1/withdrawal/request/WDR10001",
    "body": "",
    "signed": true,
    "timestamp": "1791792533",
-   "toSign": "1791792533.GET./api/v1/withdrawal/request/WDR90006.",
-   "signature": "806426abbffe1cd1fad027ad220a26b3902b6936bc4cc0e43cdb472707b09a38",
+   "toSign": "1791792533.GET./api/v1/withdrawal/request/WDR10001.",
+   "signature": "cb9cb646afaaf9aa8243f2f0ca433c7216169008c8eed4e0107c1d26ad0da3b9",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"request\": {\n    \"requestRef\": \"WDR90006\",\n    \"merchantRef\": \"W-DOC-001\",\n    \"amount\": 100,\n    \"status\": \"PENDING\",\n    \"bankCode\": \"KBANK\",\n    \"accountNumber\": \"9876543210\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"note\": \"ถอนประจำวัน\",\n    \"rejectReason\": null,\n    \"createdAt\": \"2026-10-12T08:08:51.206Z\",\n    \"decidedAt\": null\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"request\": {\n    \"requestRef\": \"WDR10001\",\n    \"merchantRef\": \"W-DOC-001\",\n    \"amount\": 100,\n    \"status\": \"PENDING\",\n    \"bankCode\": \"KBANK\",\n    \"accountNumber\": \"9876543210\",\n    \"accountName\": \"สมชาย ใจดี\",\n    \"note\": \"ถอนประจำวัน\",\n    \"rejectReason\": null,\n    \"createdAt\": \"2026-10-12T08:08:51.206Z\",\n    \"decidedAt\": null\n  }\n}"
   },
   "GET /payment/accounts": {
    "method": "GET",
@@ -273,11 +273,11 @@
    "signed": true,
    "timestamp": "1791792534",
    "toSign": "1791792534.GET./api/v1/payment/accounts.",
-   "signature": "b88eb33e7566d9563cf384c1ea346752152dc168bf2701fdf3652d72f3aca05a",
+   "signature": "b9fed33475bdea88052262d762a75fb8e56ec1d3fc7c9fd2b1e6666c9c4a5267",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"8\",\n      \"type\": \"BANK\",\n      \"accountNumber\": \"4182186378\",\n      \"accountName\": \"มิดทาวน์ไลท์ จำกัด\",\n      \"bankCode\": \"SCB\",\n      \"bankName\": \"ธนาคารไทยพาณิชย์\",\n      \"status\": \"ACTIVE\"\n    }\n  ],\n  \"centralReceiving\": true,\n  \"note\": null\n}"
+   "response": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"8\",\n      \"type\": \"BANK\",\n      \"accountNumber\": \"1234567890\",\n      \"accountName\": \"บริษัท ตัวอย่าง จำกัด\",\n      \"bankCode\": \"SCB\",\n      \"bankName\": \"ธนาคารไทยพาณิชย์\",\n      \"status\": \"ACTIVE\"\n    }\n  ],\n  \"centralReceiving\": true,\n  \"note\": null\n}"
   },
   "POST /payment/accounts": {
    "method": "POST",
@@ -286,7 +286,7 @@
    "signed": true,
    "timestamp": "1791792536",
    "toSign": "1791792536.POST./api/v1/payment/accounts.{\"type\":\"PROMPTPAY\",\"promptPayId\":\"0812345678\",\"accountName\":\"บจก. เอบีซี\"}",
-   "signature": "779b1b2c18d25e6eebc64c4dab646961f4dd92c37e033793cb51f9affa02ff41",
+   "signature": "94f903882fa356cc14cbb1637998edd6965d6e3bc8785c39e8a389c0b07a97be",
    "headers": {},
    "file": null,
    "status": 200,
@@ -299,7 +299,7 @@
    "signed": true,
    "timestamp": "1791792537",
    "toSign": "1791792537.DELETE./api/v1/payment/accounts/10.",
-   "signature": "96487e8b382bc9bf07c0e3c842035662fcabede5724841aff72d0e906f723e19",
+   "signature": "26af42dcc4e2c398bdcabfff3e9a111f33bb21880a0e5f2635e117ca50ef8b34",
    "headers": {},
    "file": null,
    "status": 200,
@@ -312,7 +312,7 @@
    "signed": true,
    "timestamp": "1791792538",
    "toSign": "1791792538.GET./api/v1/webhooks.",
-   "signature": "0d3f8b0c547c161646781f51a46e720fd5e37a5da7fd5d0946d15afce3c3a2bc",
+   "signature": "77d18202808e54a1eb1ede2636a8bec3b0134229165d141cd8118fb343f9a64c",
    "headers": {},
    "file": null,
    "status": 200,
@@ -325,7 +325,7 @@
    "signed": true,
    "timestamp": "1791792540",
    "toSign": "1791792540.POST./api/v1/webhooks.{\"url\":\"https://your-site.com/optionpay/webhook\",\"events\":[\"payment.approved\",\"payment.rejected\"]}",
-   "signature": "1dd791dd606ffa1e7eecc04e803365520b77a8e7bf148752e48ebaa2a40b72a2",
+   "signature": "ae635751e6749e04ab7dee5b169fc6fc27f2de4ca5e83ce8afeaf1cc488e09b9",
    "headers": {},
    "file": null,
    "status": 200,
@@ -338,7 +338,7 @@
    "signed": true,
    "timestamp": "1791792541",
    "toSign": "1791792541.GET./api/v1/balance.",
-   "signature": "620d4a3a983bc3f71eaa7b3d4abdd47d442ed2392f94d47ba98bd6ad36729e48",
+   "signature": "fab5caef11b00eabbc95f875c2216ad1a447b87dc44967d08fbae01200b087db",
    "headers": {},
    "file": null,
    "status": 200,
@@ -351,13 +351,13 @@
    "signed": true,
    "timestamp": "1791864965",
    "toSign": "1791864965.GET./api/v1/balance/line-summary.",
-   "signature": "76817e37213df691bcfbdda66528def54604d742cc6440a6648c02d205b32539",
+   "signature": "417e1493637cfbbeeeb6521e89a63a08fc7f2c9096dabae83eb1c3309a72f028",
    "headers": {},
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"parent\": {\n    \"id\": \"28\",\n    \"name\": \"Siam Holding\",\n    \"balance\": 10548.49\n  },\n  \"children\": [\n    {\n      \"id\": \"29\",\n      \"name\": \"ตัวแทนภาคเหนือ\",\n      \"slug\": \"demo-north\",\n      \"parentId\": \"28\",\n      \"depth\": 1,\n      \"status\": \"ACTIVE\",\n      \"balance\": 8654.4\n    },\n    {\n      \"id\": \"31\",\n      \"name\": \"เชียงใหม่ สาขา 1\",\n      \"slug\": \"demo-cm1\",\n      \"parentId\": \"29\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"balance\": 14215.8\n    },\n    {\n      \"id\": \"33\",\n      \"name\": \"ร้านนิมมาน\",\n      \"slug\": \"demo-nimman\",\n      \"parentId\": \"31\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"balance\": 20227.6\n    },\n    {\n      \"id\": \"34\",\n      \"name\": \"ร้านสันติธรรม\",\n      \"slug\": \"demo-santitham\",\n      \"parentId\": \"31\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"balance\": 11469.6\n    },\n    {\n      \"id\": \"32\",\n      \"name\": \"เชียงราย สาขา 1\",\n      \"slug\": \"demo-cr1\",\n      \"parentId\": \"29\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"balance\": 11712\n    },\n    {\n      \"id\": \"30\",\n      \"name\": \"ตัวแทนภาคใต้\",\n      \"slug\": \"demo-south\",\n      \"parentId\": \"28\",\n      \"depth\": 1,\n      \"status\": \"ACTIVE\",\n      \"balance\": 7479.04\n    },\n    {\n      \"id\": \"35\",\n      \"name\": \"ภูเก็ต สาขา 1\",\n      \"slug\": \"demo-pk1\",\n      \"parentId\": \"30\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"balance\": 15735.17\n    },\n    {\n      \"id\": \"36\",\n      \"name\": \"ร้านป่าตอง\",\n      \"slug\": \"demo-patong\",\n      \"parentId\": \"35\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"balance\": 16949.59\n    },\n    {\n      \"id\": \"37\",\n      \"name\": \"หาดใหญ่ สาขา 1\",\n      \"slug\": \"demo-hy1\",\n      \"parentId\": \"30\",\n      \"depth\": 2,\n      \"status\": \"PENDING\",\n      \"balance\": 0\n    },\n    {\n      \"id\": \"38\",\n      \"name\": \"ร้านตัวอย่าง API\",\n      \"slug\": \"demo-api-shop\",\n      \"parentId\": \"28\",\n      \"depth\": 1,\n      \"status\": \"SUSPENDED\",\n      \"balance\": 0\n    }\n  ],\n  \"total\": 116991.69,\n  \"currency\": \"THB\"\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   },
   "GET /profile": {
    "method": "GET",
@@ -366,11 +366,11 @@
    "signed": true,
    "timestamp": "1791792544",
    "toSign": "1791792544.GET./api/v1/profile.",
-   "signature": "e5b727360bf08f9c3fc8553950452cc818a68639171150ac98a3ab4cfe84175e",
+   "signature": "d69985bee6822c7f1ab6828aadca5ba2a79fcb14573b6f9c38d5a7bb8cdf7f7c",
    "headers": {},
    "file": null,
    "status": 200,
-   "response": "{\n  \"success\": true,\n  \"merchant\": {\n    \"id\": \"6\",\n    \"name\": \"my-shop\",\n    \"slug\": \"my-shop\",\n    \"status\": \"ACTIVE\",\n    \"kycStatus\": \"pending\",\n    \"feePercent\": 1.5,\n    \"feeFlat\": 0,\n    \"contactEmail\": null,\n    \"contactPhone\": null,\n    \"createdAt\": \"2026-10-04T07:51:13.753Z\"\n  }\n}"
+   "response": "{\n  \"success\": true,\n  \"merchant\": {\n    \"id\": \"6\",\n    \"name\": \"your-shop\",\n    \"slug\": \"your-shop\",\n    \"status\": \"ACTIVE\",\n    \"kycStatus\": \"pending\",\n    \"feePercent\": 1.5,\n    \"feeFlat\": 0,\n    \"contactEmail\": null,\n    \"contactPhone\": null,\n    \"createdAt\": \"2026-10-04T07:51:13.753Z\"\n  }\n}"
   },
   "GET /dashboard": {
    "method": "GET",
@@ -379,7 +379,7 @@
    "signed": true,
    "timestamp": "1791792545",
    "toSign": "1791792545.GET./api/v1/dashboard.",
-   "signature": "866b8cbc75c1fece8e7e45e903d65664b401ea836dd4e8cf98b481c78721eae4",
+   "signature": "f4ce7b4d0b089b7e24ac101568fe303ed6f847d720fdc1712dc256de874ec630",
    "headers": {},
    "file": null,
    "status": 200,
@@ -388,7 +388,7 @@
   "POST /auth/login": {
    "method": "POST",
    "path": "/api/v1/auth/login",
-   "body": "{\"secretKey\":\"sk_live_r5KDHZ8XMOBGvCYdWC0d7cMd0rgqTJpIDvL7vE_GJvk\"}",
+   "body": "{\"secretKey\":\"sk_live_DEMO0000docsonly000000000000000000000000\"}",
    "signed": false,
    "timestamp": null,
    "toSign": null,
@@ -405,13 +405,13 @@
    "signed": true,
    "timestamp": "1791864962",
    "toSign": "1791864962.GET./api/v1/sub-merchants.",
-   "signature": "a62eb3a7e9d153379a9b90161592fc05e19c5273b8f73afcf8cb23aae2babc39",
+   "signature": "9af162c4aa35d277437faaa7f96240ebbd851b86fb526570c8644e8293889209",
    "headers": {},
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"total\": 9,\n  \"subMerchants\": [\n    {\n      \"id\": \"29\",\n      \"name\": \"ตัวแทนภาคเหนือ\",\n      \"slug\": \"demo-north\",\n      \"parentId\": \"28\",\n      \"depth\": 1,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 2,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 0.8,\n      \"outFeeFlat\": 5,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:10.660Z\",\n      \"createdAt\": \"2026-10-13T04:07:08.162Z\",\n      \"contactPhone\": null,\n      \"balance\": 8654.4,\n      \"paidCount\": 4,\n      \"paidTotal\": 8500,\n      \"commissionToMe\": 42.48,\n      \"childCount\": 2,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ ตัวแทนภาคเหนือ\",\n        \"email\": \"owner@demo-north.demo\",\n        \"username\": \"demo-north\"\n      }\n    },\n    {\n      \"id\": \"31\",\n      \"name\": \"เชียงใหม่ สาขา 1\",\n      \"slug\": \"demo-cm1\",\n      \"parentId\": \"29\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 2.5,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 1,\n      \"outFeeFlat\": 10,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:18.512Z\",\n      \"createdAt\": \"2026-10-13T04:07:15.913Z\",\n      \"contactPhone\": null,\n      \"balance\": 14215.8,\n      \"paidCount\": 8,\n      \"paidTotal\": 14400,\n      \"commissionToMe\": 72,\n      \"childCount\": 2,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ เชียงใหม่ สาขา 1\",\n        \"email\": \"owner@demo-cm1.demo\",\n        \"username\": \"demo-cm1\"\n      }\n    },\n    {\n      \"id\": \"33\",\n      \"name\": \"ร้านนิมมาน\",\n      \"slug\": \"demo-nimman\",\n      \"parentId\": \"31\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 3,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 1.2,\n      \"outFeeFlat\": 10,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:26.309Z\",\n      \"createdAt\": \"2026-10-13T04:07:23.813Z\",\n      \"contactPhone\": null,\n      \"balance\": 20227.6,\n      \"paidCount\": 15,\n      \"paidTotal\": 26080,\n      \"commissionToMe\": 145.4,\n      \"childCount\": 0,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ ร้านนิมมาน\",\n        \"email\": \"owner@demo-nimman.demo\",\n        \"username\": \"demo-nimman\"\n      }\n    },\n    {\n      \"id\": \"34\",\n      \"name\": \"ร้านสันติธรรม\",\n      \"slug\": \"demo-santitham\",\n      \"parentId\": \"31\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 2.8,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 1,\n      \"outFeeFlat\": 10,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:30.211Z\",\n      \"createdAt\": \"2026-10-13T04:07:27.759Z\",\n      \"contactPhone\": null,\n      \"balance\": 11469.6,\n      \"paidCount\": 12,\n      \"paidTotal\": 11800,\n      \"commissionToMe\": 59,\n      \"childCount\": 0,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ ร้านสันติธรรม\",\n        \"email\": \"owner@demo-santitham.demo\",\n        \"username\": \"demo-santitham\"\n      }\n    },\n    {\n      \"id\": \"32\",\n      \"name\": \"เชียงราย สาขา 1\",\n      \"slug\": \"demo-cr1\",\n      \"parentId\": \"29\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 2.4,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 1,\n      \"outFeeFlat\": 5,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:22.415Z\",\n      \"createdAt\": \"2026-10-13T04:07:19.968Z\",\n      \"contactPhone\": null,\n      \"balance\": 11712,\n      \"paidCount\": 8,\n      \"paidTotal\": 12000,\n      \"commissionToMe\": 59.96,\n      \"childCount\": 0,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ เชียงราย สาขา 1\",\n        \"email\": \"owner@demo-cr1.demo\",\n        \"username\": \"demo-cr1\"\n      }\n    },\n    {\n      \"id\": \"30\",\n      \"name\": \"ตัวแทนภาคใต้\",\n      \"slug\": \"demo-south\",\n      \"parentId\": \"28\",\n      \"depth\": 1,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 1.8,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 0.6,\n      \"outFeeFlat\": 5,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:14.508Z\",\n      \"createdAt\": \"2026-10-13T04:07:12.059Z\",\n      \"contactPhone\": null,\n      \"balance\": 7479.04,\n      \"paidCount\": 4,\n      \"paidTotal\": 7480,\n      \"commissionToMe\": 22.44,\n      \"childCount\": 2,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ ตัวแทนภาคใต้\",\n        \"email\": \"owner@demo-south.demo\",\n        \"username\": \"demo-south\"\n      }\n    },\n    {\n      \"id\": \"35\",\n      \"name\": \"ภูเก็ต สาขา 1\",\n      \"slug\": \"demo-pk1\",\n      \"parentId\": \"30\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 2.2,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 0.8,\n      \"outFeeFlat\": 5,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:34.061Z\",\n      \"createdAt\": \"2026-10-13T04:07:31.609Z\",\n      \"contactPhone\": null,\n      \"balance\": 15735.17,\n      \"paidCount\": 10,\n      \"paidTotal\": 16000,\n      \"commissionToMe\": 48,\n      \"childCount\": 1,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ ภูเก็ต สาขา 1\",\n        \"email\": \"owner@demo-pk1.demo\",\n        \"username\": \"demo-pk1\"\n      }\n    },\n    {\n      \"id\": \"36\",\n      \"name\": \"ร้านป่าตอง\",\n      \"slug\": \"demo-patong\",\n      \"parentId\": \"35\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"kycStatus\": \"verified\",\n      \"feePercent\": 2.7,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 1,\n      \"outFeeFlat\": 10,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": \"2026-10-13T04:07:38.019Z\",\n      \"createdAt\": \"2026-10-13T04:07:35.590Z\",\n      \"contactPhone\": null,\n      \"balance\": 16949.59,\n      \"paidCount\": 14,\n      \"paidTotal\": 17420,\n      \"commissionToMe\": 52.21,\n      \"childCount\": 0,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ ร้านป่าตอง\",\n        \"email\": \"owner@demo-patong.demo\",\n        \"username\": \"demo-patong\"\n      }\n    },\n    {\n      \"id\": \"37\",\n      \"name\": \"หาดใหญ่ สาขา 1\",\n      \"slug\": \"demo-hy1\",\n      \"parentId\": \"30\",\n      \"depth\": 2,\n      \"status\": \"PENDING\",\n      \"kycStatus\": \"pending\",\n      \"feePercent\": 2.3,\n      \"feeFlat\": 0,\n      \"outFeePercent\": 0.8,\n      \"outFeeFlat\": 5,\n      \"allowSubMerchants\": true,\n      \"approvedAt\": null,\n      \"createdAt\": \"2026-10-13T04:07:39.408Z\",\n      \"contactPhone\": null,\n      \"balance\": 0,\n      \"paidCount\": 0,\n      \"paidTotal\": 0,\n      \"commissionToMe\": 0,\n      \"childCount\": 0,\n      \"owner\": {\n        \"fullName\": \"เจ้าของ หาดใหญ่ สาขา 1\",\n        \"email\": \"owner@demo-hy1.demo\",\n        \"username\": \"demo-hy1\"\n      }\n    }\n  ]\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   },
   "GET /sub-merchants/overview": {
    "method": "GET",
@@ -420,13 +420,13 @@
    "signed": true,
    "timestamp": "1791864963",
    "toSign": "1791864963.GET./api/v1/sub-merchants/overview?days=7.",
-   "signature": "ae61a1071e7465bcd3c12ac6dc2eb7f1ed3bc75c026b8ff9d8f5822ec4f7b1ad",
+   "signature": "f2eed18cad8b48dc31fe3071720e9c51fa1c476f8cfaf104f457d5042d0db3ac",
    "headers": {},
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"days\": 7,\n  \"shop\": null,\n  \"totals\": {\n    \"shops\": 9,\n    \"active\": 8,\n    \"pending\": 1,\n    \"suspended\": 0,\n    \"paidAmount\": 32550,\n    \"paidCount\": 19,\n    \"feesPaid\": 864.42,\n    \"outAmount\": 5000,\n    \"outCount\": 1,\n    \"outFees\": 70,\n    \"commissionToMe\": 159.36,\n    \"balance\": 106443.2,\n    \"pendingPayments\": 1,\n    \"pendingWithdrawals\": 3000\n  },\n  \"trend\": [\n    {\n      \"day\": \"2026-10-07\",\n      \"incoming\": 1520,\n      \"outgoing\": 0,\n      \"commission\": 4.56,\n      \"count\": 1\n    },\n    {\n      \"day\": \"2026-10-08\",\n      \"incoming\": 3325,\n      \"outgoing\": 0,\n      \"commission\": 14.16,\n      \"count\": 3\n    },\n    {\n      \"day\": \"2026-10-09\",\n      \"incoming\": 4125,\n      \"outgoing\": 0,\n      \"commission\": 20.62,\n      \"count\": 2\n    },\n    {\n      \"day\": \"2026-10-10\",\n      \"incoming\": 6375,\n      \"outgoing\": 0,\n      \"commission\": 24.62,\n      \"count\": 4\n    },\n    {\n      \"day\": \"2026-10-11\",\n      \"incoming\": 0,\n      \"outgoing\": 0,\n      \"commission\": 0,\n      \"count\": 0\n    },\n    {\n      \"day\": \"2026-10-12\",\n      \"incoming\": 7205,\n      \"outgoing\": 0,\n      \"commission\": 30.4,\n      \"count\": 8\n    },\n    {\n      \"day\": \"2026-10-13\",\n      \"incoming\": 10000,\n      \"outgoing\": 5000,\n      \"commission\": 65,\n      \"count\": 1\n    }\n  ],\n  \"shops\": [\n    {\n      \"id\": \"29\",\n      \"name\": \"ตัวแทนภาคเหนือ\",\n      \"slug\": \"demo-north\",\n      \"parentId\": \"28\",\n      \"depth\": 1,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 1375,\n      \"paidCount\": 1,\n      \"feesPaid\": 27.5,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 6.87,\n      \"balance\": 8654.4,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    },\n    {\n      \"id\": \"31\",\n      \"name\": \"เชียงใหม่ สาขา 1\",\n      \"slug\": \"demo-cm1\",\n      \"parentId\": \"29\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 3240,\n      \"paidCount\": 2,\n      \"feesPaid\": 81,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 16.2,\n      \"balance\": 14215.8,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    },\n    {\n      \"id\": \"33\",\n      \"name\": \"ร้านนิมมาน\",\n      \"slug\": \"demo-nimman\",\n      \"parentId\": \"31\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 13300,\n      \"paidCount\": 4,\n      \"feesPaid\": 399,\n      \"outAmount\": 5000,\n      \"outCount\": 1,\n      \"outFees\": 70,\n      \"commissionToMe\": 81.5,\n      \"balance\": 20227.6,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    },\n    {\n      \"id\": \"34\",\n      \"name\": \"ร้านสันติธรรม\",\n      \"slug\": \"demo-santitham\",\n      \"parentId\": \"31\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 2750,\n      \"paidCount\": 3,\n      \"feesPaid\": 77,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 13.75,\n      \"balance\": 11469.6,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 3000\n    },\n    {\n      \"id\": \"32\",\n      \"name\": \"เชียงราย สาขา 1\",\n      \"slug\": \"demo-cr1\",\n      \"parentId\": \"29\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 2700,\n      \"paidCount\": 2,\n      \"feesPaid\": 64.8,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 13.49,\n      \"balance\": 11712,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    },\n    {\n      \"id\": \"30\",\n      \"name\": \"ตัวแทนภาคใต้\",\n      \"slug\": \"demo-south\",\n      \"parentId\": \"28\",\n      \"depth\": 1,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 1210,\n      \"paidCount\": 1,\n      \"feesPaid\": 21.78,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 3.63,\n      \"balance\": 7479.04,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    },\n    {\n      \"id\": \"35\",\n      \"name\": \"ภูเก็ต สาขา 1\",\n      \"slug\": \"demo-pk1\",\n      \"parentId\": \"30\",\n      \"depth\": 2,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 4400,\n      \"paidCount\": 3,\n      \"feesPaid\": 96.8,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 13.2,\n      \"balance\": 15735.17,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    },\n    {\n      \"id\": \"36\",\n      \"name\": \"ร้านป่าตอง\",\n      \"slug\": \"demo-patong\",\n      \"parentId\": \"35\",\n      \"depth\": 3,\n      \"status\": \"ACTIVE\",\n      \"paidAmount\": 3575,\n      \"paidCount\": 3,\n      \"feesPaid\": 96.54,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 10.72,\n      \"balance\": 16949.59,\n      \"pendingPayments\": 1,\n      \"pendingWithdrawals\": 0\n    },\n    {\n      \"id\": \"37\",\n      \"name\": \"หาดใหญ่ สาขา 1\",\n      \"slug\": \"demo-hy1\",\n      \"parentId\": \"30\",\n      \"depth\": 2,\n      \"status\": \"PENDING\",\n      \"paidAmount\": 0,\n      \"paidCount\": 0,\n      \"feesPaid\": 0,\n      \"outAmount\": 0,\n      \"outCount\": 0,\n      \"outFees\": 0,\n      \"commissionToMe\": 0,\n      \"balance\": 0,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    }\n  ]\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   },
   "GET /sub-merchants/:id": {
    "method": "GET",
@@ -435,13 +435,13 @@
    "signed": true,
    "timestamp": "1791864963",
    "toSign": "1791864963.GET./api/v1/sub-merchants/33?days=7.",
-   "signature": "3779e075990856a2083bacd58ec63af17943be11236068824d9a6f3b2180b988",
+   "signature": "46c4427fc9f6c9456344ad72a63682bda616093925f7409bb3b5ca157e3d9635",
    "headers": {},
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"subMerchant\": {\n    \"id\": \"33\",\n    \"name\": \"ร้านนิมมาน\",\n    \"slug\": \"demo-nimman\",\n    \"parentId\": \"31\",\n    \"depth\": 3,\n    \"status\": \"ACTIVE\",\n    \"kycStatus\": \"verified\",\n    \"feePercent\": 3,\n    \"feeFlat\": 0,\n    \"outFeePercent\": 1.2,\n    \"outFeeFlat\": 10,\n    \"allowSubMerchants\": true,\n    \"approvedAt\": \"2026-10-13T04:07:26.309Z\",\n    \"createdAt\": \"2026-10-13T04:07:23.813Z\",\n    \"contactPhone\": null,\n    \"balance\": 20227.6,\n    \"paidCount\": 15,\n    \"paidTotal\": 26080,\n    \"commissionToMe\": 145.4,\n    \"childCount\": 0,\n    \"owner\": {\n      \"fullName\": \"เจ้าของ ร้านนิมมาน\",\n      \"email\": \"owner@demo-nimman.demo\",\n      \"username\": \"demo-nimman\"\n    }\n  },\n  \"overview\": {\n    \"days\": 7,\n    \"totals\": {\n      \"shops\": 1,\n      \"active\": 1,\n      \"pending\": 0,\n      \"suspended\": 0,\n      \"paidAmount\": 13300,\n      \"paidCount\": 4,\n      \"feesPaid\": 399,\n      \"outAmount\": 5000,\n      \"outCount\": 1,\n      \"outFees\": 70,\n      \"commissionToMe\": 81.5,\n      \"balance\": 20227.6,\n      \"pendingPayments\": 0,\n      \"pendingWithdrawals\": 0\n    },\n    \"trend\": [\n      {\n        \"day\": \"2026-10-07\",\n        \"incoming\": 0,\n        \"outgoing\": 0,\n        \"commission\": 0,\n        \"count\": 0\n      },\n      {\n        \"day\": \"2026-10-08\",\n        \"incoming\": 1140,\n        \"outgoing\": 0,\n        \"commission\": 5.7,\n        \"count\": 1\n      },\n      {\n        \"day\": \"2026-10-09\",\n        \"incoming\": 0,\n        \"outgoing\": 0,\n        \"commission\": 0,\n        \"count\": 0\n      },\n      {\n        \"day\": \"2026-10-10\",\n        \"incoming\": 1500,\n        \"outgoing\": 0,\n        \"commission\": 7.5,\n        \"count\": 1\n      },\n      {\n        \"day\": \"2026-10-11\",\n        \"incoming\": 0,\n        \"outgoing\": 0,\n        \"commission\": 0,\n        \"count\": 0\n      },\n      {\n        \"day\": \"2026-10-12\",\n        \"incoming\": 660,\n        \"outgoing\": 0,\n        \"commission\": 3.3,\n        \"count\": 1\n      },\n      {\n        \"day\": \"2026-10-13\",\n        \"incoming\": 10000,\n        \"outgoing\": 5000,\n        \"commission\": 65,\n        \"count\": 1\n      }\n    ]\n  }\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   },
   "POST /sub-merchants": {
    "method": "POST",
@@ -450,13 +450,13 @@
    "signed": true,
    "timestamp": "1791864964",
    "toSign": "1791864964.POST./api/v1/sub-merchants.{\"name\":\"ร้านตัวอย่าง API\",\"slug\":\"demo-api-shop\",\"feePercent\":2.2,\"feeFlat\":0,\"outFeePercent\":0.8,\"outFeeFlat\":5,\"allowSubMerchants\":false,\"contactPhone\":\"02-000-2000\",\"owner\":{\"fullName\":\"คุณตัวอย่าง เอพีไอ\",\"email\":\"owner@demo-api-shop.demo\",\"password\":\"Temp#2026Api\"}}",
-   "signature": "666636194b2797c6a5f4af7d57450c893f05095b01231ee1cb63f95480213ec1",
+   "signature": "48c68feab3eb73b8f5502baa6709faed9ef3e5dc8a1360e3dd2be85c0ddb2b09",
    "headers": {},
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"id\": 38,\n  \"owner\": {\n    \"username\": \"demo-api-shop\",\n    \"email\": \"owner@demo-api-shop.demo\"\n  },\n  \"status\": \"PENDING\"\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   },
   "POST /sub-merchants/:id": {
    "method": "POST",
@@ -465,13 +465,13 @@
    "signed": true,
    "timestamp": "1791864964",
    "toSign": "1791864964.POST./api/v1/sub-merchants/38.{\"name\":\"ร้านตัวอย่าง API\",\"feePercent\":2.4,\"feeFlat\":0,\"outFeePercent\":0.8,\"outFeeFlat\":5,\"allowSubMerchants\":false,\"status\":\"suspended\"}",
-   "signature": "23d9da333ce0e2c4c46f1f7480828fc4032779b7659d5d5111c7110dfc5b0706",
+   "signature": "258b7435b09aceb0d5639d112c838f25f29cd3bf0414d91e6df652de3048fc89",
    "headers": {},
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"status\": \"suspended\"\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   },
   "POST /sub-merchants/:id/owner-password": {
    "method": "POST",
@@ -480,13 +480,13 @@
    "signed": true,
    "timestamp": "1791864965",
    "toSign": "1791864965.POST./api/v1/sub-merchants/38/owner-password.{\"password\":\"NewTemp#2026\"}",
-   "signature": "e13f0bb84be183b9c9ae26845fc14b860e10c80a7dd97ee42e27c910d015e30d",
+   "signature": "65b15efec5084716d4a9ff3a29b6e573941b17a4910ee895ea1fe31e5c356eba",
    "headers": {},
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"owner\": {\n    \"username\": \"demo-api-shop\",\n    \"email\": \"owner@demo-api-shop.demo\"\n  }\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   },
   "GET /balance (X-Sub-Merchant)": {
    "method": "GET",
@@ -495,15 +495,15 @@
    "signed": true,
    "timestamp": "1791864965",
    "toSign": "1791864965.GET./api/v1/balance.",
-   "signature": "7c80085b562fd5a2f93b9ce547d63aa2dae2430074412a4a67c4e4f2a9a49009",
+   "signature": "b3ee5a803e98110cb1bc1766d9e2b70626f75a389dc3b57ee9ab41aebdf8b8ba",
    "headers": {
     "X-Sub-Merchant": "33"
    },
    "file": null,
    "status": 200,
    "response": "{\n  \"success\": true,\n  \"balance\": 20227.6,\n  \"availableBalance\": 20227.6,\n  \"reserved\": 0,\n  \"currency\": \"THB\",\n  \"minBalance\": 0,\n  \"minDepositAmount\": 0,\n  \"minWithdrawAmount\": 0\n}",
-   "apiKey": "ak_live_rjsHAjgkjz3ApzHguJphX-LcnsJLicql",
-   "secretKey": "ss_live_WCiJqhKmESnolBT42mJBgorrIYJPJ9J45OG6sLWX_Cc"
+   "apiKey": "ak_live_DEMOshop00docsonly000000000000",
+   "secretKey": "ss_live_DEMOshop00docsonly0000000000000000000000"
   }
  },
  "errors": [
@@ -517,7 +517,7 @@
    "toSign": null,
    "signature": null,
    "headers": {
-    "X-API-Key": "ak_live_PpC6xVj6m7DdQ8qEkKdJ8mSRHMlvx_r80SAWzxgR2Jg"
+    "X-API-Key": "ak_live_DEMO0000docsonly0000000000000000000000000"
    },
    "file": null,
    "status": 401,
@@ -545,7 +545,7 @@
    "signed": true,
    "timestamp": "1791791951",
    "toSign": "1791791951.GET./api/v1/balance.",
-   "signature": "c14af071826d18bc799b3287387d48df4499b0e6251624d93e9133224e90fc9a",
+   "signature": "1347640da53547b8ab9d3b3fedafe8e9dc4746af5234e2596b72d776dd279458",
    "headers": {},
    "file": null,
    "status": 401,
@@ -559,7 +559,7 @@
    "signed": true,
    "timestamp": "1791792552",
    "toSign": "1791792552.GET./api/v1/profile.",
-   "signature": "15c8f73091157f8ca5cbc2b27488577ddcf4d5d128d24aeb3f5be00b33c8c230",
+   "signature": "90e1916de970764154a2cb8abccb30d926bd901209413ef06b4c486a17e14891",
    "headers": {},
    "file": null,
    "status": 401,
@@ -573,7 +573,7 @@
    "signed": true,
    "timestamp": "1791792555",
    "toSign": "1791792555.GET./api/v1/balance.",
-   "signature": "7ea325dc7869b70ac46ae4ae7e7e492c9f9add0bdef8a23fa6987b04e0828977",
+   "signature": "b69626ab5c803ea8af992e3a22957fd8e012e1a6c8bd9d31f46ec576b6aa6665",
    "headers": {},
    "file": null,
    "status": 401,

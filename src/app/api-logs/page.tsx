@@ -43,14 +43,14 @@ export default async function ApiLogsPage({ searchParams }: PageProps<"/api-logs
   }
   const csv = withParams(`${PATH}/csv`, params, {});
   return (
-    <ConsoleShell title="บันทึกการเรียก API" path={PATH} search={{ placeholder: "ค้นหา path / OUT / TXN / IP / error...", params }}>
+    <ConsoleShell title="บันทึกการเรียก API" path={PATH} search={{ placeholder: "ค้นหา path / OUT / TXN / IP / error...", params, txn: true }}>
       <PageHeader title="บันทึกการเรียก API" subtitle="ทุกคำขอที่ร้านค้าเรียก API (/api/v1) และการกระทำของผู้ดูแลระบบ (อนุมัติ / ปฏิเสธ / admin ดำเนินการ ฯลฯ) — เวลา ผู้เรียก ผล และระยะเวลา · เก็บ 90 วัน · ไม่บันทึก key เต็ม secret ลายเซ็น หรือข้อมูลใน body" />
       <RangeBar sel={sel} label={range.label} />
       {typeof data === "string" ? (
         <Card className="flex items-start gap-3 p-5"><AlertTriangle className="mt-0.5 shrink-0 text-danger" size={20} /><div className="text-[13px] text-muted">{data}</div></Card>
       ) : (
         <>
-          <FilterCard
+          <FilterCard txn
             searchPlaceholder="ค้นหา path / OUT / TXN / IP / error..."
             filters={[
               { name: "merchantId", options: [{ value: "", label: "ทุกร้าน" }, ...[...data.merchants].sort((a, b) => a.name.localeCompare(b.name, "th")).map((m) => ({ value: String(m.id), label: m.name }))] },

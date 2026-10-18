@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
+import { reasonError } from "@/lib/delete-reason";
 
 export type AccountInput = { bankCode: string; accountNo: string; accountName: string; accountType: "receive" | "send" | "both"; promptpayId: string; merchantIds: number[] };
 
@@ -17,6 +18,11 @@ const okId = (id: number) => Number.isInteger(id) && id > 0;
 
 export const createAccount = async (b: AccountInput) => as("", b);
 export const updateAccount = async (id: number, b: AccountInput) => (okId(id) ? as(`/${id}/update`, b) : ({ ok: false, error: "บัญชีไม่ถูกต้อง" } as ActionResult));
-export const accountAction = async (id: number, action: "toggle" | "reset" | "delete") =>
-  okId(id) && ["toggle", "reset", "delete"].includes(action) ? as(`/${id}/${action}`, {}) : ({ ok: false, error: "บัญชีไม่ถูกต้อง" } as ActionResult);
+export const accountAction = async (id: number, action: "toggle" | "reset") =>
+  okId(id) && ["toggle", "reset"].includes(action) ? as(`/${id}/${action}`, {}) : ({ ok: false, error: "บัญชีไม่ถูกต้อง" } as ActionResult);
+export const deleteAccount = async (id: number, reason: string) => {
+  const err = reasonError(reason);
+  if (err) return { ok: false, error: err } as ActionResult;
+  return okId(id) ? as(`/${id}/delete`, { reason: reason.trim() }) : ({ ok: false, error: "บัญชีไม่ถูกต้อง" } as ActionResult);
+};
 export const resetAccounts = async (ids: number[]) => as("/reset", { ids: ids.filter(okId) });

@@ -9,8 +9,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 export const runtime = "nodejs";        // ใช้ node:crypto
 export const dynamic = "force-dynamic";
 
-// secret key (sk_live_…) ของร้านบังหนุ่ม ก๋วยเตี๋ยวหมูตุ๋น (ร้านแม่) — ตัวเดียวกับที่ใช้เซ็นคำขอ API และตัวเดียวกับที่ Option Pay ใช้เซ็น callback นี้
-// ร้านย่อย (เช่น Coffee9) ใช้ key ของร้านแม่ตัวนี้ด้วย เพราะ callback ส่งผ่าน webhook ของร้านแม่ · เก็บใน .env เท่านั้น ห้ามใส่ในโค้ด
+// secret key (sk_live_…) ของร้านคุณ — ตัวเดียวกับที่ใช้เซ็นคำขอ API และตัวเดียวกับที่ Option Pay ใช้เซ็น callback นี้
+// เก็บใน .env เท่านั้น ห้ามใส่ในโค้ด
 const SECRET_KEY = process.env.OPTIONPAY_SECRET_KEY ?? "";
 // path ของ webhook URL ที่ตั้งไว้กับ Option Pay — ต้องตรงทุกตัวอักษร (ไม่รวมโดเมนและ query)
 const CALLBACK_PATH = "${path}";

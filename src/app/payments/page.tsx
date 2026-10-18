@@ -217,7 +217,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
   }
 
   const shell = (body: React.ReactNode, actions?: React.ReactNode) => (
-    <ConsoleShell title="รายการชำระเงิน" path={PATH} search={{ placeholder: "ค้นหาเลขที่ / ลูกค้า...", params }}>
+    <ConsoleShell title="รายการชำระเงิน" path={PATH} search={{ placeholder: "ค้นหาเลขที่ / ลูกค้า...", params, txn: true }}>
       <PageHeader title="รายการชำระเงิน" subtitle="จัดการและตรวจสอบรายการชำระเงินในระบบ" actions={actions} />
       {body}
     </ConsoleShell>
@@ -252,7 +252,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
         <StatTile tone="rose" icon={<DollarSign size={24} />} label="รอชำระ" value={fmtMoney(amt("pending"))} note={`${n("pending")} รายการ · ยกเลิก/หมดอายุ ${n("expired") + n("rejected")}`} />
       </StatGrid>
 
-      <FilterCard
+      <FilterCard txn
         searchPlaceholder="ค้นหาเลขที่ / ลูกค้า..."
         filters={[
           { name: "status", options: STATUS_OPTIONS },

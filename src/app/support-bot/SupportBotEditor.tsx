@@ -5,6 +5,7 @@ import { MessageSquare, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { btn, field, fieldLabel, Modal } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { deleteFaq, saveFaq, saveSettings, testQuestion, type BotSettings, type FaqInput } from "./actions";
 
 export type Faq = FaqInput & { id: number; hits: number; lastHitAt: string | null; updatedAt: string; updatedBy: string | null };
@@ -25,9 +26,20 @@ export function SupportBotEditor({ faqs, settings }: { faqs: Faq[]; settings: Bo
   const [r, setR] = useState<ActionResult | null>(null);
   const [pending, start] = useTransition();
   const run = (fn: () => Promise<ActionResult>, after?: (x: ActionResult) => void) => start(async () => { const x = await fn(); setR(x); after?.(x); });
+  const [del, setDel] = useState<{ id: number; question: string } | null>(null);
 
   return (
     <div className="grid gap-5">
+      {del && (
+        <DeleteDialog
+          title="ยืนยันการลบคำถาม"
+          what={<>ลบคำถาม <strong>{del.question}</strong>? บอทจะไม่ตอบคำถามนี้อีก</>}
+          placeholder="เช่น คำตอบล้าสมัย / ซ้ำกับคำถามอื่น"
+          onConfirm={(reason) => deleteFaq(del.id, reason)}
+          onDone={setR}
+          onClose={() => setDel(null)}
+        />
+      )}
       <section className={card}>
         <div className={head}>
           <h2 className="text-lg font-semibold">คำถาม–คำตอบ ({faqs.length})</h2>
@@ -51,7 +63,7 @@ export function SupportBotEditor({ faqs, settings }: { faqs: Faq[]; settings: Bo
                   <div className="flex gap-1.5">
                     <button type="button" disabled={pending} className={B("ghost", "sm")} onClick={() => run(() => saveFaq(f.id, { ...f, enabled: !f.enabled }))}>{f.enabled ? "ปิด" : "เปิด"}</button>
                     <button type="button" className={B("ghost", "sm")} onClick={() => { setR(null); setEdit({ id: f.id, v: { question: f.question, keywords: f.keywords, answer: f.answer, enabled: f.enabled, sort: f.sort } }); }}><Pencil size={13} /> แก้ไข</button>
-                    <button type="button" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => { if (confirm(`ลบคำถาม “${f.question}”?`)) run(() => deleteFaq(f.id)); }}><Trash2 size={13} /> ลบ</button>
+                    <button type="button" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => setDel({ id: f.id, question: f.question })}><Trash2 size={13} /> ลบ</button>
                   </div>
                 </div>
               ))}

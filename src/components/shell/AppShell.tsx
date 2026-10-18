@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Menu, Search } from "lucide-react";
 import type { LogoBrand } from "../Logo";
 import type { SessionUser } from "@/lib/session";
 import { PayoutSound } from "./PayoutSound";
+import { TxnSuggest } from "../txn/TxnSuggest";
 import { Sidebar } from "./Sidebar";
 import { BellMenu, type BellItem } from "./BellMenu";
 import { ThemeButton, type ThemeOption } from "./ThemeButton";
@@ -20,7 +21,7 @@ export type ShellAlerts = {
   lowBalance: { names: string[]; count: number } | null;
 };
 
-export type ShellSearch = { placeholder: string; value: string; keep: [string, string][] };
+export type ShellSearch = { placeholder: string; value: string; keep: [string, string][]; txn?: boolean };
 export type ShellLook = { brand: LogoBrand; theme: { current: string; options: ThemeOption[]; allowUser: boolean }; sound: string[] | null };
 
 export function AppShell({
@@ -42,6 +43,7 @@ export function AppShell({
   // Mobile: drawer open/closed. Desktop: the × in the sidebar collapses it.
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const searchInput = useRef<HTMLInputElement>(null);
   const low = alerts?.lowBalance;
 
   return (
@@ -87,11 +89,13 @@ export function AppShell({
                 ))}
                 <Search size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-soft" />
                 <input
+                  ref={searchInput}
                   name="q"
                   defaultValue={search.value}
                   placeholder={search.placeholder}
                   className="w-[280px] rounded-full border border-line bg-surface-alt py-[9px] pr-3.5 pl-[38px] text-[13px] text-ink outline-none transition placeholder:text-soft focus:border-primary focus:bg-surface focus:shadow-ring"
                 />
+                {search.txn && <TxnSuggest inputRef={searchInput} align="right" />}
               </form>
             )}
             <BellMenu items={alerts?.bell ?? []} total={alerts?.pendingTotal ?? 0} />

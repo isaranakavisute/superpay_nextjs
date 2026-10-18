@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
+import { reasonError } from "@/lib/delete-reason";
 
 const TYPES = new Set(["telegram", "line", "facebook", "email", "sms"]);
 
@@ -27,7 +28,9 @@ export async function saveChannel(
   return as((actor) => consoleWrite("POST", `/api/console/channels/${id}/update`, actor, body));
 }
 
-export async function deleteChannel(id: number) {
+export async function deleteChannel(id: number, reason: string) {
   if (!Number.isInteger(id) || id <= 0) return { ok: false, error: "ช่องทางไม่ถูกต้อง" } as ActionResult;
-  return as((actor) => consoleWrite("DELETE", `/api/console/channels/${id}`, actor));
+  const err = reasonError(reason);
+  if (err) return { ok: false, error: err } as ActionResult;
+  return as((actor) => consoleWrite("DELETE", `/api/console/channels/${id}`, actor, { reason: reason.trim() }));
 }

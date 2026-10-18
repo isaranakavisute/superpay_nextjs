@@ -74,7 +74,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
   const merchantOpts = d ? [...d.merchants].sort((a, b) => a.name.localeCompare(b.name, "th")).map((m) => ({ id: m.id, label: m.name })) : [];
 
   return (
-    <ConsoleShell title="กล่องรับ Event" path="/events" search={{ placeholder: "ค้นหา TXN, orderId, ยอด, ชื่อผู้โอน, เลขบัญชี...", params }}>
+    <ConsoleShell title="กล่องรับ Event" path="/events" search={{ placeholder: "ค้นหา TXN, orderId, ยอด, ชื่อผู้โอน, เลขบัญชี...", params, txn: true }}>
       <PageHeader
         title="กล่องรับ Event"
         subtitle="รายการ event ที่เข้ามาจากทุกช่องทาง — slip / Telegram / LINE / Email / webhook"

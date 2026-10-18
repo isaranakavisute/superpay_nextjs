@@ -5,6 +5,7 @@ import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
 import { btn, field, fieldLabel, Modal } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { deleteAnnouncement, saveAnnouncement, type AnnouncementInput } from "./actions";
 
 export type Announcement = AnnouncementInput & {
@@ -47,6 +48,7 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
   const [edit, setEdit] = useState<Draft | null>(null);
   const [r, setR] = useState<ActionResult | null>(null);
   const [pending, start] = useTransition();
+  const [del, setDel] = useState<{ id: number; title: string } | null>(null);
   const run = (fn: () => Promise<ActionResult>, after?: (x: ActionResult) => void) => start(async () => { const x = await fn(); setR(x); after?.(x); });
   const active = chats.filter((c) => ACTIVE.has(c.status));
   const input = (d: Draft): AnnouncementInput => ({
@@ -58,6 +60,16 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
 
   return (
     <div className="grid gap-5">
+      {del && (
+        <DeleteDialog
+          title="ยืนยันการลบประชาสัมพันธ์"
+          what={<>ลบ <strong>{del.title}</strong>? ประกาศจะหยุดส่งทันที</>}
+          placeholder="เช่น ประกาศหมดอายุ / ข้อความผิด"
+          onConfirm={(reason) => deleteAnnouncement(del.id, reason)}
+          onDone={setR}
+          onClose={() => setDel(null)}
+        />
+      )}
       <section className={card}>
         <div className={head}>
           <h2 className="text-lg font-semibold">ข้อความประชาสัมพันธ์ ({announcements.length})</h2>
@@ -85,7 +97,7 @@ export function AnnouncementsEditor({ announcements, chats, slots }: { announcem
                   <div className="flex flex-wrap gap-1.5">
                     {a.mode !== "now" && <button type="button" disabled={pending} className={B("ghost", "sm")} onClick={() => run(() => saveAnnouncement(a.id, { ...a, enabled: !a.enabled }))}>{a.enabled ? "ปิด" : "เปิด"}</button>}
                     <button type="button" className={B("ghost", "sm")} onClick={() => { setR(null); setEdit(draftOf(a)); }}><Pencil size={13} /> แก้ไข</button>
-                    <button type="button" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => { if (confirm(`ลบ “${a.title}”?`)) run(() => deleteAnnouncement(a.id)); }}><Trash2 size={13} /> ลบ</button>
+                    <button type="button" disabled={pending} className={B("dangerGhost", "sm")} onClick={() => setDel({ id: a.id, title: a.title })}><Trash2 size={13} /> ลบ</button>
                   </div>
                 </div>
               ))}

@@ -186,7 +186,7 @@ export default async function WithdrawalsPage({ searchParams }: PageProps<"/with
     ) : (
       <>
         <RangeBar sel={sel} label={range.label} />
-        <FilterCard
+        <FilterCard txn
           searchPlaceholder="ค้นหาเลขที่ / ผู้รับ..."
           filters={[{ name: "merchantId", options: [{ value: "", label: "ทุกร้านค้า" }, ...[...data.merchants].sort((a, b) => a.name.localeCompare(b.name, "th")).map((m) => ({ value: String(m.id), label: m.name }))] }]}
         />
@@ -242,7 +242,7 @@ export default async function WithdrawalsPage({ searchParams }: PageProps<"/with
     );
 
   return (
-    <ConsoleShell title="คำขอถอนเงิน" path={PATH} search={{ placeholder: "ค้นหาเลขที่ / ผู้รับ...", params }}>
+    <ConsoleShell title="คำขอถอนเงิน" path={PATH} search={{ placeholder: "ค้นหาเลขที่ / ผู้รับ...", params, txn: true }}>
       <PageHeader
         title="คำขอถอนเงิน (Withdrawals)"
         subtitle={'คำขอถอนจาก merchant portal / API — อนุมัติแล้วระบบจะสร้างรายการเงินออก (pending) ให้ไปผูกบัญชีและอนุมัติต่อที่หน้า "รายการเงินออก"'}

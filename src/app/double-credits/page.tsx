@@ -86,7 +86,7 @@ export default async function DoubleCreditsPage({ searchParams }: PageProps<"/do
             ))}
           </div>
 
-          <FilterCard
+          <FilterCard txn
             searchPlaceholder="ค้นหาเลขที่ / อ้างอิง..."
             filters={[
               {

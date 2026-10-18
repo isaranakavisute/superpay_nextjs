@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import QR from "qrcode";
 import { Eye, EyeOff, Mail, MessageCircle, MessageSquare, Send, Smartphone, Trash2 } from "lucide-react";
-import { Modal, btn } from "@/components/interactive/Modal";
+import { btn } from "@/components/interactive/Modal";
 import { fmtDateTime } from "@/lib/format";
 import type { ChannelRow } from "@/lib/rows";
 import { deleteChannel, saveChannel } from "./actions";
@@ -228,24 +229,14 @@ export function ChannelCard({
       </div>
 
       {confirmDelete && (
-        <Modal
-          title={`ลบ ${c.name}`}
+        <DeleteDialog
+          title={`ยืนยันการลบช่องทาง ${c.name}`}
+          what={<>ลบช่องทาง <strong>{c.name}</strong>?</>}
+          warning="ช่องทางจะถูกปิดใช้งานทันที (ไม่รับข้อมูลเข้าอีก) — ประวัติ event ยังอยู่ครบ"
+          placeholder="เช่น ไม่ใช้ช่องทางนี้แล้ว / สร้างซ้ำ"
+          onConfirm={(reason) => deleteChannel(Number(c.id), reason)}
           onClose={() => setConfirmDelete(false)}
-          footer={
-            <>
-              <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={() => setConfirmDelete(false)}>ยกเลิก</button>
-              <button
-                className={`${btn.base} ${btn.md} ${btn.danger}`}
-                disabled={pending}
-                onClick={() => start(async () => { const r = await deleteChannel(Number(c.id)); setConfirmDelete(false); if (!r.ok) setMsg({ ok: false, text: r.error }); else if (r.disabled) setMsg({ ok: true, text: "ช่องทางนี้มีประวัติ event — ปิดใช้งานแทนการลบ" }); })}
-              >
-                ลบช่องทาง
-              </button>
-            </>
-          }
-        >
-          <p className="text-sm">ลบช่องทาง <strong>{c.name}</strong>? ถ้ามีประวัติ event อยู่ ระบบจะปิดใช้งานแทนการลบเพื่อเก็บประวัติไว้</p>
-        </Modal>
+        />
       )}
     </div>
   );

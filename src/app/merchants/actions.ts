@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { consoleHeaders, consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
+import { reasonError } from "@/lib/delete-reason";
 
 const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 const okId = (id: number) => Number.isInteger(id) && id > 0;
@@ -52,9 +53,11 @@ export async function updateMerchant(id: number, input: MerchantInput) {
   const body = { name, feePercent, feeFlat, outFeePercent, outFeeFlat, minBalance, status, kycStatus, contactEmail, contactPhone, parentId, allowSubMerchants };
   return as((actor) => consoleWrite("POST", `/api/console/merchants/${id}/update`, actor, body));
 }
-export async function deleteMerchant(id: number) {
+export async function deleteMerchant(id: number, reason: string) {
   if (!okId(id)) return bad("ร้านไม่ถูกต้อง");
-  return as((actor) => consoleWrite("DELETE", `/api/console/merchants/${id}`, actor));
+  const err = reasonError(reason);
+  if (err) return bad(err);
+  return as((actor) => consoleWrite("DELETE", `/api/console/merchants/${id}`, actor, { reason: reason.trim() }));
 }
 export async function getCredits(id: number) {
   return okId(id) ? read(`/api/console/merchants/${id}/credits`) : bad("ร้านไม่ถูกต้อง");

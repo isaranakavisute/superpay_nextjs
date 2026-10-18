@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
+import { reasonError } from "@/lib/delete-reason";
 
 const REF = /^TXN\d{1,12}$/;
 
@@ -45,9 +46,11 @@ export async function revivePayment(ref: string) {
   return as((actor) => consoleWrite("POST", `/api/console/payments/${ref}/revive`, actor));
 }
 
-export async function deletePayment(ref: string) {
+export async function deletePayment(ref: string, reason: string) {
   if (!REF.test(ref)) return bad("เลขที่รายการไม่ถูกต้อง");
-  return as((actor) => consoleWrite("DELETE", `/api/console/payments/${ref}`, actor));
+  const err = reasonError(reason);
+  if (err) return bad(err);
+  return as((actor) => consoleWrite("DELETE", `/api/console/payments/${ref}`, actor, { reason: reason.trim() }));
 }
 
 export async function bulkPayments(action: "approve" | "reject", refs: string[], reason?: string) {
