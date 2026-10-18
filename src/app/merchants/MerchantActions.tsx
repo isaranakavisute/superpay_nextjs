@@ -277,7 +277,13 @@ function WebhookDialog({ m, onClose }: { m: MerchantForActions; onClose: () => v
         <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending} onClick={() => act(() => setWebhookUrl(m.id, value))}>บันทึก</button>
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-3 text-[13px]">
-        <span className="text-muted">Webhook Secret (HMAC-SHA256):</span>
+        {endpoint?.signing !== "whsec" && (
+          <span className="w-full text-[12.5px]">
+            ลายเซ็น X-Signature: เซ็นด้วย <strong>secret key ของร้าน</strong>{" "}
+            {endpoint?.signingKeyPrefix ? <code>{`${endpoint.signingKeyPrefix as string}…`}</code> : <span className="text-warning">(ร้านไม่มี secret key ที่ใช้งานอยู่ — เซ็นด้วย webhook secret สำรองแทน)</span>} + body ที่ส่ง
+          </span>
+        )}
+        <span className="text-muted">{endpoint?.signing !== "whsec" ? "Webhook secret สำรอง:" : "Webhook Secret (HMAC-SHA256):"}</span>
         <code>{(endpoint?.secretPrefix as string) ?? "—"}</code>
         <button className={`${btn.base} ${btn.sm} border-line text-danger hover:bg-danger/10`} disabled={pending} onClick={() => act(() => rotateWebhookSecret(m.id), (r) => setFresh(String(r.secret)))}>หมุน Secret</button>
         {endpoint?.rotatedAt && <span className="text-[12px] text-muted">หมุนล่าสุด {fmtDateTime(endpoint.rotatedAt as string)}</span>}

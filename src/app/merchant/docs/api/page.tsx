@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { API_BASE, CURL_EXAMPLES, LIVE_RUN, NEXT_HELPER, SIGNATURE_ERRORS, SLIP_RETRY_HELPER } from "@/lib/api-curl-examples";
 import { MERCHANT_PERMISSIONS } from "@/lib/merchant-perms";
-import { requirePortal } from "@/lib/portal";
+import { portalCall, requirePortal } from "@/lib/portal";
 import { LOGIN, SECTIONS, SLIP_COMPARE, SLIP_SAME_SHAPE, type Ep } from "../../../api-docs/docs";
 import { PortalShell } from "../../PortalShell";
 import { CodeBlock } from "../CodeBlock";
 import { ValidationReportSection } from "./ValidationReportDocs";
+import { SignatureMatchExplained } from "./SignatureMatchExplained";
+import { CALLBACK_DEMO_PATH, CALLBACK_DEMO_SECRET, CALLBACK_EXAMPLES } from "@/lib/callback-examples";
+import { nextjsCallbackVerifier } from "@/lib/callback-nextjs-example";
 import { DocLayout, Note, Section, Table } from "../DocLayout";
 
 export const metadata: Metadata = { title: "คู่มือ API v1 — Merchant Portal" };
@@ -66,7 +69,15 @@ function Endpoint({ e }: { e: Ep }) {
 
 export default async function ApiGuidePage() {
   const user = await requirePortal("/merchant/docs/api");
-  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "slip-retry", label: "ส่งสลิป: timeout และการส่งซ้ำ" }, { id: "validation-report", label: "รายงานผลการตรวจสลิป" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
+  // This shop's own real callbacks (exact curl that was sent, signature-verified) — only its own, never another shop's.
+  const real = await portalCall<{ url: string | null; signing: string | null; path: string | null; examples: { event: string; sentAt: string; reply: string | null; cmd: string }[] }>(user, "GET", "/callback-examples");
+  const realExamples = real.ok && real.examples ? real.examples : [];
+  // Callbacks to this shop signed with its own sk_live_ secret key (Option B, agreed 18 Oct 2026) instead of a whsec_ secret.
+  // Every webhook is signed with its shop's own sk_live_ key by default (18 Oct 2026); "whsec" only if set so explicitly.
+  const derived = !(real.ok && real.signing === "whsec");
+  const cbPath = (real.ok && real.path) || CALLBACK_DEMO_PATH;
+  const ownPath = !!(real.ok && real.path);
+  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "slip-retry", label: "ส่งสลิป: timeout และการส่งซ้ำ" }, { id: "validation-report", label: "รายงานผลการตรวจสลิป" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, { id: "callbacks", label: "Callback ที่ระบบส่งถึงร้าน (curl)" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title }))];
   return (
     <PortalShell user={user} path="/merchant/docs">
       <DocLayout title="คู่มือ API v1" subtitle={`ตัวอย่างจริงทุก endpoint: curl + Next.js พร้อมการสร้างลายเซ็น และผลลัพธ์จริง · Base URL: ${API_BASE}`} pdf="api-v1.pdf" toc={toc}>
@@ -182,6 +193,10 @@ ${CURL_EXAMPLES["GET /transactions"].live.toSign}        ← GET ไม่มี
             ["409", <code key="c">DUPLICATE_ORDER_ID · ORDER_NOT_PENDING · SLIP_ALREADY_UPLOADED</code>, "ซ้ำ / สถานะไม่อนุญาต / หน้าชำระเงินแนบสลิปไปแล้ว"],
             ["429", <code key="c">RATE_LIMITED</code>, "login ถี่เกิน 10 ครั้งต่อนาที"],
           ]} />
+          {derived ? (
+            <Note>ตรวจลายเซ็น callback ของร้านคุณ: ใช้วิธีเซ็นด้วย secret key ของร้าน (<code>sk_live_…</code>) — ดูสูตรและโค้ดที่หัวข้อ <a href="#callbacks" className="text-primary hover:underline">Callback ที่ระบบส่งถึงร้าน (curl)</a></Note>
+          ) : (
+            <>
           <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตรวจลายเซ็น Webhook (Node.js)</div>
           <CodeBlock code={`import { createHmac, timingSafeEqual } from "node:crypto";
 function verify(rawBody, header, secret) {          // header = X-Signature: t=...,v1=...
@@ -190,6 +205,84 @@ function verify(rawBody, header, secret) {          // header = X-Signature: t=.
   const want = createHmac("sha256", secret).update(\`\${t}.\${rawBody}\`).digest("hex");
   return want.length === v1.length && timingSafeEqual(Buffer.from(want), Buffer.from(v1));
 }`} />
+            </>
+          )}
+        </Section>
+        <Section id="callbacks" title="Callback ที่ระบบส่งถึงร้าน — รูปแบบคำขอ (curl)">
+          <p>เมื่อสถานะรายการเปลี่ยน Option Pay ยิง <code>POST</code> ไปที่ URL webhook ของร้าน (ตั้งที่ <code>POST /webhooks</code>) — คำขอจริงเหมือนคำสั่ง curl ด้านล่าง<strong>ทุกตัวอักษร</strong>: header 4 ตัวนี้เท่านั้น (ชื่อตัวพิมพ์เล็ก) และ body เป็น JSON บรรทัดเดียว เรียงพารามิเตอร์ตามตัวอย่าง</p>
+          <Table head={["Header", "ค่า"]} rows={[
+            [<code key="h">content-type</code>, <code key="v">application/json</code>],
+            [<code key="h">user-agent</code>, <code key="v">OptionPay-Webhook/1.0</code>],
+            [<code key="h">x-webhook-event</code>, "ชื่อ event เช่น payment.approved"],
+            [<code key="h">x-signature</code>, derived
+              ? <><code key="v">{"t=<unix วินาที>,v1=<hex>"}</code> — เซ็นด้วย <strong>secret key ของร้าน</strong> (<code>sk_live_…</code>) 2 ขั้น: ดูกรอบด้านล่าง</>
+              : <><code key="v">{"t=<unix วินาที>,v1=<hex>"}</code> — v1 = HMAC-SHA256(webhook secret <code>whsec_…</code>, <code>{"t + \".\" + body"}</code>)</>],
+          ]} />
+          <Table head={["Event", "ส่งเมื่อ", "พารามิเตอร์ใน body (ตามลำดับ)"]} rows={[
+            [<code key="e">payment.approved · payment.rejected</code>, "ออเดอร์อนุมัติ / ปฏิเสธ", <code key="b">event, ref, orderId, amount, status, createdAt, resentAt</code>],
+            [<code key="e">payout.completed · payout.failed</code>, "โอน payout แล้ว / payout ถูกปฏิเสธ", <code key="b">event, ref, orderId, merchantRef, amount, status, failureReason, createdAt, completedAt</code>],
+          ]} />
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px]">
+            <li><code>amount</code> เป็นข้อความทศนิยม 2 ตำแหน่ง · เวลาเป็น ISO 8601 (UTC) · payment: <code>resentAt</code> = เวลาที่ส่งครั้งนั้น · payout: <code>orderId</code> = <code>merchantRef</code> ที่ร้านส่งตอนสร้าง, <code>failureReason</code> = เหตุผลเมื่อ failed (ไม่เช่นนั้น <code>null</code>)</li>
+            <li><strong>ส่งซ้ำ</strong> (ปลายทางไม่ตอบ 2xx — ลองใหม่สูงสุด 5 ครั้ง หรือเจ้าหน้าที่กดส่งซ้ำ) ใช้คำขอรูปแบบเดิม แต่ <code>t</code> และลายเซ็นใหม่ทุกครั้ง — ร้านควรรองรับ event เดิมซ้ำ (idempotent) และปฏิเสธ <code>t</code> ที่เก่าเกิน 5 นาที</li>
+            <li><code>payment.expired</code> / <code>payment.refunded</code> ใช้ body แบบ payment · <code>withdrawal.*</code> ใช้ body แบบ payout — ส่งเฉพาะ event ที่ร้านสมัครและเปิดไว้</li>
+            <li>ตอบกลับด้วย HTTP 2xx = รับแล้ว · Option Pay บันทึกทุกการส่งพร้อมคำตอบของร้าน และแจ้งในกลุ่ม Telegram ที่ตกลงกับร้าน (ถ้ามี) <strong>พร้อมคำสั่ง curl ที่ส่งจริง</strong> และคำตอบของร้าน — ใช้รันซ้ำเพื่อตรวจสอบได้</li>
+          </ul>
+          {derived && (
+            <>
+              {!ownPath && <Note>ร้านคุณยังไม่ได้ตั้ง webhook — สูตรและโค้ดด้านล่างใช้ path ตัวอย่าง <code>{CALLBACK_DEMO_PATH}</code> · เมื่อตั้ง webhook แล้ว ให้ใช้ path ของ webhook URL ของร้านแทน (หน้านี้จะแสดง path จริงให้อัตโนมัติ)</Note>}
+              <Note>ลายเซ็น callback ของร้านคุณ<strong>เซ็นด้วย secret key ของร้าน</strong> (<code>sk_live_…</code> ตัวเดียวกับที่ใช้เซ็นคำขอ API) ไม่ใช้ webhook secret <code>whsec_…</code> — คำนวณ 2 ขั้นต่อ callback (ค่า <code>key</code> เปลี่ยนทุกครั้งตาม <code>t</code> และ body) · ถ้าสร้าง secret key ใหม่ ต้องใช้ตัวใหม่ตรวจลายเซ็นทันที</Note>
+              <Note><strong>ทำไมลายเซ็นที่ร้านคำนวณจะตรงกับของ Option Pay:</strong> HMAC-SHA256 ให้ผลเดิมทุกครั้งเมื่อ input เหมือนกัน — และทั้งสองฝั่งใช้ input ชุดเดียวกันครบทุกตัว: (1) <strong>secret key เดียวกัน</strong> — <code>sk_live_…</code> ของร้านบังหนุ่ม (ร้านย่อยใช้ของร้านแม่) · (2) <strong>body เดียวกันทุกตัวอักษร</strong> — ร้านใช้ body ดิบที่ได้รับ ไม่แปลง JSON ก่อน · (3) <strong><code>t</code> เดียวกัน</strong> — อ่านจาก header <code>x-signature</code> · (4) <strong>path และสูตรเดียวกัน</strong> — <code>{cbPath}</code> และ 2 ขั้นด้านล่าง → จึงได้ <code>v1</code> เท่ากับที่ Option Pay ส่งมา · ถ้าต่างแม้แต่ตัวเดียว แปลว่า body ถูกแก้ระหว่างทาง ใช้ key ไม่ตรงกัน หรือคำขอไม่ได้มาจาก Option Pay — ให้ปฏิเสธ (401)</Note>
+              <SignatureMatchExplained path={cbPath} />
+              <Table head={["ขั้น", "สูตร"]} rows={[
+                ["1. key", <code key="k">{`key = HMAC-SHA256(sk_live_…, t + ".POST.${cbPath}." + body)`}</code>],
+                ["2. v1", <code key="v">{"v1 = HMAC-SHA256(key, t + \".\" + body)"}</code>],
+                ["header", <code key="x">{"x-signature: t=<t>,v1=<v1>"}</code>],
+              ]} />
+              <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">คำนวณ v1 ด้วย openssl</div>
+              <CodeBlock code={`KEY=$(printf '%s' "$T.POST.${cbPath}.$BODY" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $NF}')   # SECRET = sk_live_… ของร้าน
+V1=$(printf '%s' "$T.$BODY" | openssl dgst -sha256 -hmac "$KEY" | awk '{print $NF}')
+# เทียบกับ v1 ใน header x-signature: t=$T,v1=...`} />
+              <div className="mt-4 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">โค้ดจริง Next.js (App Router) — รับ callback และตรวจลายเซ็น</div>
+              <p className="mb-2 text-[13px] text-muted">วางเป็นไฟล์ <code>{`app${cbPath}/route.ts`}</code> แล้วตั้ง <code>OPTIONPAY_SECRET_KEY</code> = secret key (<code>sk_live_…</code>) ของร้านบังหนุ่ม ใน <code>.env</code> — key ตัวเดียวกับที่ Option Pay ใช้เซ็น callback นี้ (ร้านย่อยใช้ key ของร้านแม่) · ทดสอบกับลายเซ็นจริงแล้ว: callback จริงได้ 200 · แก้ body / ลายเซ็นเก่าเกิน 5 นาที / ไม่มี header ได้ 401</p>
+              <CodeBlock code={nextjsCallbackVerifier(cbPath)} />
+              <div className="mt-3 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">ตรวจลายเซ็น callback (Node.js)</div>
+              <CodeBlock code={`import { createHmac, timingSafeEqual } from "node:crypto";
+function verifyCallback(rawBody, header, skLive) {     // header = x-signature: t=...,v1=...
+  const { t, v1 } = Object.fromEntries(header.split(",").map((p) => p.split("=")));
+  if (Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+  const key = createHmac("sha256", skLive).update(\`\${t}.POST.${cbPath}.\${rawBody}\`).digest("hex");
+  const want = createHmac("sha256", key).update(\`\${t}.\${rawBody}\`).digest("hex");
+  return want.length === v1.length && timingSafeEqual(Buffer.from(want), Buffer.from(v1));
+}`} />
+            </>
+          )}
+          {realExamples.length > 0 && (
+            <>
+              <Note>ด้านล่างคือ<strong>คำขอจริงที่ Option Pay ส่งถึงร้านคุณล่าสุด</strong> แยกตาม event — คำสั่ง curl ตรงกับที่ส่งจริงทุกตัวอักษร (ตรวจแล้วว่าลายเซ็นตรงกับ body) ยกเว้น URL ปลายทางที่แสดงเป็น <code>{"<webhook-url goes here>"}</code> — แทนด้วย URL webhook ของร้านคุณ (ลายเซ็นไม่ได้รวม URL จึงยังใช้ได้) · ลายเซ็นยังใช้ได้จริง เก็บเป็นความลับ อย่าแชร์นอกทีม</Note>
+              {realExamples.map((x) => (
+                <div key={x.event}>
+                  <div className="mt-4 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">
+                    ตัวอย่างจริง: {x.event} — ส่งเมื่อ {new Date(x.sentAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "medium" })}
+                  </div>
+                  <CodeBlock code={x.cmd} />
+                  {x.reply && <div className="mt-1 text-[12px] text-muted">ปลายทางตอบ: <code>{x.reply}</code></div>}
+                </div>
+              ))}
+
+            </>
+          )}
+          {realExamples.length === 0 && (
+            <>
+          {CALLBACK_EXAMPLES.map((x) => (
+            <div key={x.event}>
+              <div className="mt-4 mb-1 text-[11px] font-semibold tracking-wider text-soft uppercase">{x.event} — {x.when}</div>
+              <CodeBlock code={x.cmd} />
+            </div>
+          ))}
+          <Note>ตัวอย่างใช้ค่าสมมติ (URL ร้าน, เลขรายการ) แต่<strong>ลายเซ็นคำนวณจริง</strong>ด้วยวิธีเดียวกับของจริง — secret key ทดสอบ <code>{CALLBACK_DEMO_SECRET}</code> และ path <code>{CALLBACK_DEMO_PATH}</code> — ใช้ทดสอบโค้ดตรวจลายเซ็นของร้านได้ทันที (ตอนทดสอบให้ข้ามการเช็คเวลา 5 นาทีชั่วคราว เพราะ <code>t</code> ในตัวอย่างเป็นเวลาในอดีต) · ของจริงใช้ <code>sk_live_…</code> ของร้านคุณ และ path ของ webhook URL ของร้านคุณ</Note>
+            </>
+          )}
         </Section>
         {GROUPS.map((g) => (
           <Section key={g.id} id={g.id} title={g.title}>

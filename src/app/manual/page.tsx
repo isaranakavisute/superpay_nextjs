@@ -48,7 +48,7 @@ export default function AdminManualPage() {
           <div className="mb-2 font-semibold">สารบัญ</div>
           <ol className="space-y-1.5">{CHAPTERS.map((c) => <li key={c.id}><a href={`#${c.id}`} className="text-muted hover:text-primary">{c.title}</a></li>)}</ol>
         </nav>
-        <article className="manual-body min-w-0 rounded-xl border border-line bg-surface px-6 py-5 text-[14px] leading-relaxed [&_.manual-html_code]:rounded [&_.manual-html_code]:bg-surface-alt [&_.manual-html_code]:px-1 [&_.manual-html_h3]:mt-5 [&_.manual-html_h3]:mb-1 [&_.manual-html_h3]:font-semibold [&_.manual-html_li]:my-0.5 [&_.manual-html_p]:my-2 [&_.manual-html_ul]:list-disc [&_.manual-html_ul]:pl-5 [&_td_code]:rounded [&_td_code]:bg-surface-alt [&_td_code]:px-1">
+        <article className="manual-body min-w-0 rounded-xl border border-line bg-surface px-6 py-5 text-[14px] leading-relaxed [&_.manual-html_code]:rounded [&_.manual-html_code]:bg-surface-alt [&_.manual-html_code]:px-1 [&_.manual-html_h3]:mt-5 [&_.manual-html_h3]:mb-1 [&_.manual-html_h3]:font-semibold [&_.manual-html_li]:my-0.5 [&_.manual-html_p]:my-2 [&_.manual-html_ul]:list-disc [&_.manual-html_ul]:pl-5 [&_td_code]:rounded [&_td_code]:bg-surface-alt [&_td_code]:px-1 [&_.manual-pre]:my-2 [&_.manual-pre]:overflow-x-auto [&_.manual-pre]:rounded-lg [&_.manual-pre]:bg-surface-alt [&_.manual-pre]:p-3 [&_.manual-pre]:font-mono [&_.manual-pre]:text-[12px] [&_.manual-pre]:leading-snug [&_.manual-pre]:whitespace-pre">
           {CHAPTERS.map((c) => (
             <section key={c.id} id={c.id} className="mb-10 scroll-mt-28">
               <h2 className="mb-3 border-b-2 border-primary pb-1.5 text-[19px] font-semibold">{c.title}</h2>

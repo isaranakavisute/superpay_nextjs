@@ -19,7 +19,7 @@ export default async function AlertsPage() {
         return (await r.json()) as { bots: Bot[]; kinds: string[]; thresholds: { repeatMinutes: number; slipFailCount: number; slipDownMinutes: number } };
       }),
       listResource<ChannelRow>("channels", { type: "telegram", limit: 50 }),
-      listResource<{ id: number; name: string }>("merchants", { limit: 500 }),
+      listResource<{ id: number; name: string }>("merchants", { limit: 200 }),
     ]);
     data = { ...cfg, channels: channels.data.map((c) => ({ id: c.id, name: c.name })), shops: shops.data.map((m) => ({ id: m.id, name: m.name })) };
   } catch (err) {

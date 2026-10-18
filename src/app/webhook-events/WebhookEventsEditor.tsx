@@ -9,7 +9,7 @@ import { saveWebhookEvents } from "./actions";
 export type EventDef = { code: string; group: string; label: string; when: string };
 export type Endpoint = {
   id: number; merchantId: number; merchantName: string; url: string; status: "active" | "disabled"; signed: boolean;
-  events: string[]; alertEvents: string[]; alertBots: { id: number; name: string }[];
+  events: string[]; alertEvents: string[]; alertBots: { id: number; name: string }[]; signing?: string;
 };
 
 const th = "border-b border-line bg-surface-alt px-4 py-2.5 text-left text-xs font-semibold text-muted";
@@ -45,15 +45,16 @@ export function WebhookEventsEditor({ events, endpoint }: { events: EventDef[]; 
           <div className="mt-0.5 break-all font-mono text-[12px] text-muted">{endpoint.url}</div>
           <div className="mt-1 text-[12px] text-muted">
             {endpoint.status === "active" ? "ปลายทางเปิดใช้งาน" : <span className="text-danger">ปลายทางปิดอยู่ — ไม่ส่งและไม่แจ้งเตือนจนกว่าจะเปิด</span>}
-            {" · "}{endpoint.signed ? "ลงลายเซ็น X-Signature" : "ไม่มี secret — ส่งโดยไม่มีลายเซ็น"}
+            {" · "}{endpoint.signing === "sk_live_derived" ? "ลงลายเซ็น X-Signature ด้วย secret key ของร้าน — ตรวจลายเซ็นซ้ำก่อนส่งทุกครั้ง (ไม่ผ่าน = ไม่ส่ง)" : endpoint.signed ? "ลงลายเซ็น X-Signature ด้วย webhook secret — ตรวจลายเซ็นซ้ำก่อนส่งทุกครั้ง" : "ไม่มี secret — ส่งโดยไม่มีลายเซ็น"}
           </div>
         </div>
         <div className="text-right text-[12px] text-muted">
-          แจ้ง Telegram ไปที่:{" "}
+          แจ้ง Telegram ไปที่กลุ่มของร้านนี้:{" "}
           {endpoint.alertBots.length
             ? endpoint.alertBots.map((b) => b.name).join(", ")
-            : <span className="text-warning">ยังไม่มี bot</span>}
-          <div><Link href="/alerts" className="text-primary hover:underline">ตั้งค่า bot ที่ แจ้งเตือน Telegram →</Link></div>
+            : <span className="text-warning">ยังไม่มีกลุ่มของร้านนี้</span>}
+          <div className="max-w-[300px] text-[11.5px]">ทุกร้านแม่ส่งแจ้งเตือน callback ไปกลุ่ม Telegram ของตัวเองเท่านั้น — ตั้งที่ แจ้งเตือน Telegram: เพิ่ม bot, ใส่ Chat ID ของกลุ่ม, เลือก “เฉพาะร้าน” = {endpoint.merchantName} และติ๊ก “ผลการส่ง webhook ไปยังร้าน”</div>
+          <div><Link href="/alerts" className="text-primary hover:underline">ตั้งกลุ่ม Telegram ของร้าน →</Link></div>
         </div>
       </header>
       <div className="overflow-x-auto">

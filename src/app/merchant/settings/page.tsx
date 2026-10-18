@@ -23,7 +23,7 @@ export default async function PortalSettings({ searchParams }: PageProps<"/merch
   const [shops, keys, hook, accts, secret] = await Promise.all([
     listResource<MerchantRow>("merchants").catch(() => null),
     portalCall<{ keys: [] }>(user, "GET", "/keys"),
-    portalCall<{ endpoint: { url: string; secretPrefix: string | null } | null }>(user, "GET", "/webhook"),
+    portalCall<{ endpoint: { url: string; secretPrefix: string | null; signing?: string | null; signingKeyPrefix?: string | null } | null }>(user, "GET", "/webhook"),
     portalCall<{ data: []; note: string | null }>(user, "GET", "/accounts"),
     portalCall<{ secretKey: KeyInfo | null; apiKey: KeyInfo | null }>(user, "GET", `/users/${user.id}/secret-key`),
   ]);
@@ -58,7 +58,7 @@ export default async function PortalSettings({ searchParams }: PageProps<"/merch
               </dl>
             ) : <div className="p-6 text-muted">โหลดข้อมูลร้านไม่สำเร็จ</div>}
           </Card>
-          {!user.viewing && <WebhookCard url={hook.ok ? hook.endpoint?.url ?? null : null} secretPrefix={hook.ok ? hook.endpoint?.secretPrefix ?? null : null} owner={can.has("manage_webhooks") && !locked} />}
+          {!user.viewing && <WebhookCard url={hook.ok ? hook.endpoint?.url ?? null : null} secretPrefix={hook.ok ? hook.endpoint?.secretPrefix ?? null : null} signing={hook.ok ? hook.endpoint?.signing ?? null : null} signingKeyPrefix={hook.ok ? hook.endpoint?.signingKeyPrefix ?? null : null} owner={can.has("manage_webhooks") && !locked} />}
           {!user.viewing && <SecretKeyCard secretKey={secret.ok ? secret.secretKey ?? null : null} apiKey={secret.ok ? secret.apiKey ?? null : null} apiBase={API_BASE} />}
           {!user.viewing && <PasswordCard />}
         </div>

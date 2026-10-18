@@ -154,7 +154,9 @@ export function KeysCard({ keys, owner }: { keys: Key[]; owner: boolean }) {
   );
 }
 
-export function WebhookCard({ url, secretPrefix, owner }: { url: string | null; secretPrefix: string | null; owner: boolean }) {
+export function WebhookCard({ url, secretPrefix, owner, signing = null, signingKeyPrefix = null }: { url: string | null; secretPrefix: string | null; owner: boolean; signing?: string | null; signingKeyPrefix?: string | null }) {
+  // Callbacks are signed with the shop's own sk_live_ key (default since 18 Oct 2026); the whsec_ secret is only the fallback.
+  const byShopKey = signing !== "whsec";
   const [v, setV] = useState(url ?? "");
   const [shown, setShown] = useState<string | null>(null);
   const { r, pending, run } = useRun();
@@ -171,8 +173,17 @@ export function WebhookCard({ url, secretPrefix, owner }: { url: string | null; 
             {owner && <button type="submit" disabled={pending} className={B("primary")}>บันทึก</button>}</div>
         </form>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12.5px] text-muted">
-          <span>Signing secret: <code className="font-mono">{secretPrefix ?? "ยังไม่ได้ออก"}</code> · ลายเซ็นใน header <code>X-Signature</code></span>
-          {owner && url && <button type="button" disabled={pending} className={B("ghost", "sm")} onClick={() => { if (confirm("ออก secret ใหม่? secret เดิมจะใช้ตรวจลายเซ็นไม่ได้อีก")) run(() => rotateSecret(), (x) => x.ok && setShown(String(x.secret))); }}>ออก secret ใหม่</button>}
+          {byShopKey ? (
+            <span>
+              ลายเซ็นใน header <code>X-Signature</code>: เซ็นด้วย <strong className="text-ink">secret key ของร้าน</strong>{" "}
+              {signingKeyPrefix ? <code className="font-mono">{signingKeyPrefix}…</code> : <span className="text-warning">(ร้านยังไม่มี secret key ที่ใช้งานอยู่ — ระบบเซ็นด้วย webhook secret สำรองแทน)</span>}{" "}
+              + body ที่ส่ง — ดูสูตรและโค้ดตรวจที่ <Link href="/merchant/docs/api#callbacks" className="text-primary hover:underline">คู่มือ API → Callback</Link>
+              <br />Webhook secret สำรอง (ใช้เมื่อร้านไม่มี secret key): <code className="font-mono">{secretPrefix ?? "ยังไม่ได้ออก"}</code>
+            </span>
+          ) : (
+            <span>Signing secret: <code className="font-mono">{secretPrefix ?? "ยังไม่ได้ออก"}</code> · ลายเซ็นใน header <code>X-Signature</code></span>
+          )}
+          {owner && url && <button type="button" disabled={pending} className={B("ghost", "sm")} onClick={() => { if (confirm(byShopKey ? "ออก webhook secret สำรองใหม่? ลายเซ็นปกติใช้ secret key ของร้าน ไม่เปลี่ยน — secret สำรองใช้เฉพาะตอนร้านไม่มี secret key" : "ออก secret ใหม่? secret เดิมจะใช้ตรวจลายเซ็นไม่ได้อีก")) run(() => rotateSecret(), (x) => x.ok && setShown(String(x.secret))); }}>{byShopKey ? "ออก secret สำรองใหม่" : "ออก secret ใหม่"}</button>}
         </div>
       </div>
     </section>
