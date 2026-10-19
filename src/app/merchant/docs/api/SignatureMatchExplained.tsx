@@ -45,7 +45,7 @@ export function SignatureMatchExplained() {
       <H>2. ทั้งสองฝั่งใช้ input ชุดเดียวกันครบทั้ง 4 ตัว</H>
       <p>ลายเซ็นของ callback คำนวณจาก input 4 ตัว ทั้ง Option Pay (ผู้ส่ง) และร้าน (ผู้รับ) มี input ชุดเดียวกันครบทุกตัว:</p>
       <Table head={["Input", "ฝั่ง Option Pay (ตอนส่ง)", "ฝั่งร้าน (ตอนรับ)"]} rows={[
-        [<strong key="a">1. secret key</strong>, <><code>sk_live_…</code> ของร้านคุณ (เก็บไว้แบบเข้ารหัส)</>, <><code>sk_live_…</code> ตัวเดียวกัน — ร้านได้จาก Merchant Portal → ตั้งค่า</>],
+        [<strong key="a">1. secret key</strong>, <><code>sk_live_…</code> ของร้านที่เป็นเจ้าของรายการ (เก็บไว้แบบเข้ารหัส)</>, <><code>sk_live_…</code> ตัวเดียวกัน — ของร้านเจ้าของรายการ (ร้านย่อย = key ของร้านย่อย) จาก Merchant Portal → ตั้งค่า</>],
         [<strong key="b">2. body</strong>, "ข้อความ JSON ที่ส่งไป", "ข้อความ JSON ที่ได้รับ — ต้องใช้แบบดิบ ทุกตัวอักษรเหมือนที่ได้รับ"],
         [<strong key="c">3. t (เวลา)</strong>, "เวลาตอนส่ง (unix วินาที) — ใส่ไว้ใน header x-signature", <>อ่านจาก header <code>x-signature: t=…</code> ที่ได้รับ</>],
         [<strong key="d">4. path + สูตร</strong>, <><code>{path}</code> + สูตร 2 ขั้น</>, <><code>{path}</code> + สูตร 2 ขั้นเดียวกัน (ในคู่มือนี้)</>],

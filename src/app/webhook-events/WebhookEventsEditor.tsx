@@ -45,7 +45,7 @@ export function WebhookEventsEditor({ events, endpoint }: { events: EventDef[]; 
           <div className="mt-0.5 break-all font-mono text-[12px] text-muted">{endpoint.url}</div>
           <div className="mt-1 text-[12px] text-muted">
             {endpoint.status === "active" ? "ปลายทางเปิดใช้งาน" : <span className="text-danger">ปลายทางปิดอยู่ — ไม่ส่งและไม่แจ้งเตือนจนกว่าจะเปิด</span>}
-            {" · "}{endpoint.signing === "sk_live_derived" ? "ลงลายเซ็น X-Signature ด้วย secret key ของร้าน — ตรวจลายเซ็นซ้ำก่อนส่งทุกครั้ง (ไม่ผ่าน = ไม่ส่ง)" : endpoint.signed ? "ลงลายเซ็น X-Signature ด้วย webhook secret — ตรวจลายเซ็นซ้ำก่อนส่งทุกครั้ง" : "ไม่มี secret — ส่งโดยไม่มีลายเซ็น"}
+            {" · "}{endpoint.signing !== "whsec" && endpoint.signing ? "ลงลายเซ็น X-Signature ด้วย secret key ของร้านเจ้าของรายการ (รายการของร้านย่อยใช้ key ของร้านย่อยนั้น) — ตรวจลายเซ็นซ้ำก่อนส่งทุกครั้ง (ไม่ผ่าน = ไม่ส่ง)" : endpoint.signed ? "ลงลายเซ็น X-Signature ด้วย webhook secret — ตรวจลายเซ็นซ้ำก่อนส่งทุกครั้ง" : "ไม่มี secret — ส่งโดยไม่มีลายเซ็น"}
           </div>
         </div>
         <div className="text-right text-[12px] text-muted">

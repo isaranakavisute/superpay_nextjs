@@ -189,7 +189,7 @@
   }
  ],
  "pay": {
-  "ref": "TXN172891",
+  "ref": "TXN100301",
   "amount": "10000.00",
   "fee": "300.00",
   "status": "approved"
@@ -213,7 +213,7 @@
   }
  ],
  "out": {
-  "ref": "OUT40197",
+  "ref": "OUT100301",
   "amount": "5000.00",
   "fee": "70.00",
   "status": "approved"
@@ -254,9 +254,9 @@
   "pendingWithdrawals": 3000
  },
  "example": {
-  "paymentRef": "TXN172891",
-  "withdrawalRef": "WDR90006",
-  "outflowRef": "OUT40197"
+  "paymentRef": "TXN100301",
+  "withdrawalRef": "WDR100301",
+  "outflowRef": "OUT100301"
  },
  "commissionBy": {
   "holding": [

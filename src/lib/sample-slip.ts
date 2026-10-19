@@ -29,7 +29,8 @@ const H = 1240;
 const FONT = '"Sukhumvit Set", "Thonburi", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif';
 const GOLD = "#d4af37";
 
-export async function renderSampleSlip(d: SampleSlip): Promise<HTMLCanvasElement> {
+/** `demoQr`: a DEMO slip of the demo page (optionpay.co/demo) — signed QR, "DEMO" watermark; approved there automatically. */
+export async function renderSampleSlip(d: SampleSlip, demoQr?: string): Promise<HTMLCanvasElement> {
   const cv = document.createElement("canvas");
   cv.width = W;
   cv.height = H;
@@ -81,11 +82,11 @@ export async function renderSampleSlip(d: SampleSlip): Promise<HTMLCanvasElement
   text(amount, 80, 752, 44, "#1f2430", 700);
   badge(1, W - 85, 728);
   text("ค่าธรรมเนียม 0.00 บาท", 80, 790, 20, "#6b7280");
-  text(`เลขที่รายการ: SAMPLE${now.getTime().toString().slice(-10)}`, 80, 830, 20, "#6b7280");
+  text(`เลขที่รายการ: ${demoQr ? "DEMO" : "SAMPLE"}${now.getTime().toString().slice(-10)}`, 80, 830, 20, "#6b7280");
 
   // 5 — QR (carries the sample marker)
   const qr = new Image();
-  qr.src = await QRCode.toDataURL(`${SAMPLE_SLIP_MARKER}|${d.ref}`, { margin: 1, width: 190 });
+  qr.src = await QRCode.toDataURL(demoQr ?? `${SAMPLE_SLIP_MARKER}|${d.ref}`, { margin: 1, width: 190 });
   await qr.decode();
   g.drawImage(qr, W - 260, 860, 190, 190);
   badge(5, W - 290, 880);
@@ -99,8 +100,14 @@ export async function renderSampleSlip(d: SampleSlip): Promise<HTMLCanvasElement
   // Watermark + footer: this image is a guide, not a slip.
   g.save();
   g.translate(W / 2, H / 2); g.rotate(-Math.PI / 6);
-  text("ตัวอย่าง · SAMPLE", 0, 0, 92, "rgba(220,38,38,0.20)", 800, "center");
+  text(demoQr ? "DEMO" : "ตัวอย่าง · SAMPLE", 0, 0, demoQr ? 170 : 92, demoQr ? "rgba(37,99,235,0.18)" : "rgba(220,38,38,0.20)", 800, "center");
   g.restore();
+  if (demoQr) {
+    g.fillStyle = "#eff6ff"; g.beginPath(); g.roundRect(60, 1110, W - 120, 74, 14); g.fill();
+    text("สลิป DEMO — ใช้ได้เฉพาะหน้า optionpay.co/demo", W / 2, 1142, 20, "#1d4ed8", 700, "center");
+    text(`แนบกับรายการ ${d.ref} แล้วระบบอนุมัติอัตโนมัติ · ไม่ใช่หลักฐานการโอนจริง`, W / 2, 1170, 18, "#1d4ed8", 400, "center");
+    return cv;
+  }
   g.fillStyle = "#fef2f2"; g.beginPath(); g.roundRect(60, 1110, W - 120, 74, 14); g.fill();
   text("ภาพตัวอย่าง — ไม่ใช่หลักฐานการโอน และอัปโหลดไม่ได้", W / 2, 1142, 20, "#b91c1c", 700, "center");
   text("ให้ลูกค้าแนบสลิปจริงจากแอปธนาคารที่มีข้อมูลตรงตามนี้", W / 2, 1170, 18, "#b91c1c", 400, "center");

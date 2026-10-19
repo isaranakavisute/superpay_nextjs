@@ -8,6 +8,7 @@ import { PortalShell } from "../../PortalShell";
 import { CodeBlock } from "../CodeBlock";
 import { ValidationReportSection } from "./ValidationReportDocs";
 import { SignatureMatchExplained } from "./SignatureMatchExplained";
+import { CallbackParams, CALLBACK_EVENT_TOC } from "./CallbackParams";
 import { CALLBACK_DEMO_PATH, CALLBACK_DEMO_SECRET, CALLBACK_EXAMPLES } from "@/lib/callback-examples";
 import { nextjsCallbackVerifier } from "@/lib/callback-nextjs-example";
 import { DocLayout, Note, Section, Table } from "../DocLayout";
@@ -75,7 +76,7 @@ export default async function ApiGuidePage() {
   // Every webhook is signed with its shop's own sk_live_ key by default (18 Oct 2026); "whsec" only if set so explicitly.
   const derived = !(real.ok && real.signing === "whsec");
   const cbPath = CALLBACK_DEMO_PATH;
-  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "slip-retry", label: "ส่งสลิป: timeout และการส่งซ้ำ" }, { id: "validation-report", label: "รายงานผลการตรวจสลิป" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, { id: "callbacks", label: "Callback ที่ระบบส่งถึงร้าน (curl)" }, ...GROUPS.map((g) => ({ id: g.id, label: g.title, children: g.eps.map((e: Ep) => ({ id: slug(e), label: e.p, method: e.m })) }))];
+  const toc = [{ id: "start", label: "เริ่มต้นใช้งาน" }, { id: "secret", label: "Secret key และ API key" }, { id: "sign", label: "การเซ็นคำขอ (X-Signature)" }, { id: "slip", label: "การตรวจสลิป" }, { id: "slip-retry", label: "ส่งสลิป: timeout และการส่งซ้ำ" }, { id: "validation-report", label: "รายงานผลการตรวจสลิป" }, { id: "perms", label: "สิทธิ์และข้อผิดพลาด" }, { id: "callbacks", label: "Callback ที่ระบบส่งถึงร้าน (curl)", children: CALLBACK_EVENT_TOC }, ...GROUPS.map((g) => ({ id: g.id, label: g.title, children: g.eps.map((e: Ep) => ({ id: slug(e), label: e.p, method: e.m })) }))];
   return (
     <PortalShell user={user} path="/merchant/docs">
       <DocLayout title="คู่มือ API v1" subtitle={`ตัวอย่างครบทุก endpoint: curl + Next.js พร้อมการสร้างลายเซ็น และผลลัพธ์ (ค่าตัวอย่าง) · Base URL: ${API_BASE}`} pdf="api-v1.pdf" toc={toc}>
@@ -212,13 +213,14 @@ function verify(rawBody, header, secret) {          // header = X-Signature: t=.
             [<code key="h">user-agent</code>, <code key="v">OptionPay-Webhook/1.0</code>],
             [<code key="h">x-webhook-event</code>, "ชื่อ event เช่น payment.approved"],
             [<code key="h">x-signature</code>, derived
-              ? <><code key="v">{"t=<unix วินาที>,v1=<hex>"}</code> — เซ็นด้วย <strong>secret key ของร้าน</strong> (<code>sk_live_…</code>) 2 ขั้น: ดูกรอบด้านล่าง</>
+              ? <><code key="v">{"t=<unix วินาที>,v1=<hex>"}</code> — เซ็นด้วย <strong>secret key ของร้านเจ้าของรายการ</strong> (<code>sk_live_…</code>) 2 ขั้น: ดูกรอบด้านล่าง</>
               : <><code key="v">{"t=<unix วินาที>,v1=<hex>"}</code> — v1 = HMAC-SHA256(webhook secret <code>whsec_…</code>, <code>{"t + \".\" + body"}</code>)</>],
           ]} />
           <Table head={["Event", "ส่งเมื่อ", "พารามิเตอร์ใน body (ตามลำดับ)"]} rows={[
             [<code key="e">payment.approved · payment.rejected</code>, "ออเดอร์อนุมัติ / ปฏิเสธ", <code key="b">event, ref, orderId, amount, status, createdAt, resentAt</code>],
             [<code key="e">payout.completed · payout.failed</code>, "โอน payout แล้ว / payout ถูกปฏิเสธ", <code key="b">event, ref, orderId, merchantRef, amount, status, failureReason, createdAt, completedAt</code>],
           ]} />
+          <CallbackParams />
           <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px]">
             <li><code>amount</code> เป็นข้อความทศนิยม 2 ตำแหน่ง · เวลาเป็น ISO 8601 (UTC) · payment: <code>resentAt</code> = เวลาที่ส่งครั้งนั้น · payout: <code>orderId</code> = <code>merchantRef</code> ที่ร้านส่งตอนสร้าง, <code>failureReason</code> = เหตุผลเมื่อ failed (ไม่เช่นนั้น <code>null</code>)</li>
             <li><strong>ส่งซ้ำ</strong> (ปลายทางไม่ตอบ 2xx — ลองใหม่สูงสุด 5 ครั้ง หรือเจ้าหน้าที่กดส่งซ้ำ) ใช้คำขอรูปแบบเดิม แต่ <code>t</code> และลายเซ็นใหม่ทุกครั้ง — ร้านควรรองรับ event เดิมซ้ำ (idempotent) และปฏิเสธ <code>t</code> ที่เก่าเกิน 5 นาที</li>
@@ -228,7 +230,7 @@ function verify(rawBody, header, secret) {          // header = X-Signature: t=.
           {derived && (
             <>
               <Note>สูตรและโค้ดด้านล่างใช้ path ตัวอย่าง <code>{CALLBACK_DEMO_PATH}</code> — แทนด้วย path ของ webhook URL ของร้านคุณ (ไม่รวมโดเมนและ query) ทุกตัวอักษร</Note>
-              <Note>ลายเซ็น callback ของร้านคุณ<strong>เซ็นด้วย secret key ของร้าน</strong> (<code>sk_live_…</code> ตัวเดียวกับที่ใช้เซ็นคำขอ API) ไม่ใช้ webhook secret <code>whsec_…</code> — คำนวณ 2 ขั้นต่อ callback (ค่า <code>key</code> เปลี่ยนทุกครั้งตาม <code>t</code> และ body) · ถ้าสร้าง secret key ใหม่ ต้องใช้ตัวใหม่ตรวจลายเซ็นทันที</Note>
+              <Note>ลายเซ็น callback <strong>เซ็นด้วย secret key ของร้านที่เป็นเจ้าของรายการนั้น</strong> (<code>sk_live_…</code> ตัวเดียวกับที่ร้านนั้นใช้เซ็นคำขอ API) — รายการของร้านย่อยเซ็นด้วย secret key ของร้านย่อยนั้น แม้ callback จะส่งผ่าน webhook ของร้านแม่ (ร้านย่อยที่ยังไม่มี secret key ใช้ของร้านแม่แทน) ไม่ใช้ webhook secret <code>whsec_…</code> — คำนวณ 2 ขั้นต่อ callback (ค่า <code>key</code> เปลี่ยนทุกครั้งตาม <code>t</code> และ body) · ถ้าสร้าง secret key ใหม่ ต้องใช้ตัวใหม่ตรวจลายเซ็นทันที</Note>
               <Note><strong>ทำไมลายเซ็นที่ร้านคำนวณจะตรงกับของ Option Pay:</strong> HMAC-SHA256 ให้ผลเดิมทุกครั้งเมื่อ input เหมือนกัน — และทั้งสองฝั่งใช้ input ชุดเดียวกันครบทุกตัว: (1) <strong>secret key เดียวกัน</strong> — <code>sk_live_…</code> ของร้านคุณ · (2) <strong>body เดียวกันทุกตัวอักษร</strong> — ร้านใช้ body ดิบที่ได้รับ ไม่แปลง JSON ก่อน · (3) <strong><code>t</code> เดียวกัน</strong> — อ่านจาก header <code>x-signature</code> · (4) <strong>path และสูตรเดียวกัน</strong> — <code>{cbPath}</code> และ 2 ขั้นด้านล่าง → จึงได้ <code>v1</code> เท่ากับที่ Option Pay ส่งมา · ถ้าต่างแม้แต่ตัวเดียว แปลว่า body ถูกแก้ระหว่างทาง ใช้ key ไม่ตรงกัน หรือคำขอไม่ได้มาจาก Option Pay — ให้ปฏิเสธ (401)</Note>
               <SignatureMatchExplained />
               <Table head={["ขั้น", "สูตร"]} rows={[

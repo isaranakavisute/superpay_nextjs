@@ -175,9 +175,9 @@ export function WebhookCard({ url, secretPrefix, owner, signing = null, signingK
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12.5px] text-muted">
           {byShopKey ? (
             <span>
-              ลายเซ็นใน header <code>X-Signature</code>: เซ็นด้วย <strong className="text-ink">secret key ของร้าน</strong>{" "}
+              ลายเซ็นใน header <code>X-Signature</code>: เซ็นด้วย <strong className="text-ink">secret key ของร้านเจ้าของรายการ</strong> + body ที่ส่ง — รายการของร้านคุณใช้{" "}
               {signingKeyPrefix ? <code className="font-mono">{signingKeyPrefix}…</code> : <span className="text-warning">(ร้านยังไม่มี secret key ที่ใช้งานอยู่ — ระบบเซ็นด้วย webhook secret สำรองแทน)</span>}{" "}
-              + body ที่ส่ง — ดูสูตรและโค้ดตรวจที่ <Link href="/merchant/docs/api#callbacks" className="text-primary hover:underline">คู่มือ API → Callback</Link>
+              · รายการของร้านย่อยใช้ secret key ของร้านย่อยนั้น — ดูสูตรและโค้ดตรวจที่ <Link href="/merchant/docs/api#callbacks" className="text-primary hover:underline">คู่มือ API → Callback</Link>
               <br />Webhook secret สำรอง (ใช้เมื่อร้านไม่มี secret key): <code className="font-mono">{secretPrefix ?? "ยังไม่ได้ออก"}</code>
             </span>
           ) : (

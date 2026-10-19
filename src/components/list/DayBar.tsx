@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { LoadingDialog } from "./LoadingDialog";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { RANGE_OPTIONS, rangeParams, type RangeSel } from "../dashboard/range";
 
@@ -33,6 +34,7 @@ export function DayBar({ sel, label, today }: { sel: RangeSel; label: string; to
 
   return (
     <div className={`mb-[18px] flex flex-wrap items-center gap-2.5 transition-opacity ${pending ? "opacity-60" : ""}`}>
+      <LoadingDialog open={pending} text="กำลังโหลดข้อมูลตามวันที่เลือก…" />
       <div className="flex flex-wrap gap-1">
         {RANGE_OPTIONS.map((o) => (
           <button

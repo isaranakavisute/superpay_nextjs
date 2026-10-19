@@ -280,8 +280,8 @@ function WebhookDialog({ m, onClose }: { m: MerchantForActions; onClose: () => v
       <div className="mb-4 flex flex-wrap items-center gap-3 text-[13px]">
         {endpoint?.signing !== "whsec" && (
           <span className="w-full text-[12.5px]">
-            ลายเซ็น X-Signature: เซ็นด้วย <strong>secret key ของร้าน</strong>{" "}
-            {endpoint?.signingKeyPrefix ? <code>{`${endpoint.signingKeyPrefix as string}…`}</code> : <span className="text-warning">(ร้านไม่มี secret key ที่ใช้งานอยู่ — เซ็นด้วย webhook secret สำรองแทน)</span>} + body ที่ส่ง
+            ลายเซ็น X-Signature: เซ็นด้วย <strong>secret key ของร้านเจ้าของรายการ</strong> + body ที่ส่ง — รายการของร้านนี้ใช้{" "}
+            {endpoint?.signingKeyPrefix ? <code>{`${endpoint.signingKeyPrefix as string}…`}</code> : <span className="text-warning">(ร้านไม่มี secret key ที่ใช้งานอยู่ — เซ็นด้วย webhook secret สำรองแทน)</span>} · รายการของร้านย่อยใช้ secret key ของร้านย่อยนั้น
           </span>
         )}
         <span className="text-muted">{endpoint?.signing !== "whsec" ? "Webhook secret สำรอง:" : "Webhook Secret (HMAC-SHA256):"}</span>
