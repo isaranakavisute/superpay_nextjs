@@ -86,6 +86,19 @@ export async function signedCall(method: "GET" | "POST" | "PATCH", path: string,
   return { ok: status >= 200 && status < 300, curl: lines(raw), curlShort: lines(short), status, ms: Date.now() - started, response, json };
 }
 
+/** Bulk create (สร้างหลายรายการ): at most `max` runs per `minutes` per visitor. */
+const bulkHits = new Map<string, number[]>();
+export async function bulkOverLimit(max = 3, minutes = 10) {
+  const { ip } = await site();
+  const now = Date.now();
+  const recent = (bulkHits.get(ip) ?? []).filter((t) => now - t < minutes * 60_000);
+  if (recent.length >= max) return true;
+  recent.push(now);
+  bulkHits.set(ip, recent);
+  if (bulkHits.size > 5000) bulkHits.clear();
+  return false;
+}
+
 /** Per-visitor limit so the public page can't be used to flood the shop. */
 const hits = new Map<string, { minute: number; n: number }>();
 export async function overLimit(perMinute = 20) {

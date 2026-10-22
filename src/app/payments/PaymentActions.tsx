@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Check, Eye, Link2, RotateCcw, Trash2, Undo2, Upload, X } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
@@ -9,6 +9,7 @@ import type { PaymentStatus } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
 import { ApproveDialog } from "./ApproveDialog";
 import { DeleteDialog } from "@/components/interactive/DeleteDialog";
+import { slipCheckDone, slipCheckStart } from "./SlipCheckHost";
 import {
   approvePayment,
   assignPayment,
@@ -20,7 +21,7 @@ import {
   uploadSlip,
 } from "./actions";
 
-type Dialog = null | "approve" | "reject" | "amount" | "refund" | "delete" | "assign" | "slip";
+type Dialog = null | "approve" | "reject" | "amount" | "refund" | "delete" | "assign" | "slip" | "attach";
 
 export type PaymentForActions = {
   ref: string;
@@ -82,13 +83,45 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
     setDialog(d);
   };
 
+  // แนบสลิป dialog: paste (Ctrl/⌘+V), drag & drop, or choose a file → preview → attach and check.
+  const [picked, setPicked] = useState<{ file: File; url: string } | null>(null);
+  const pick = (file: File | null | undefined) => {
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return setError("รองรับเฉพาะรูป JPG, PNG หรือ WebP");
+    if (file.size > 5 * 1024 * 1024) return setError("ไฟล์ใหญ่เกิน 5 MB");
+    setError(null);
+    setPicked({ file, url: URL.createObjectURL(file) });
+  };
+  useEffect(() => {
+    if (dialog !== "attach") return;
+    const onPaste = (e: ClipboardEvent) => {
+      const item = Array.from(e.clipboardData?.items ?? []).find((i) => i.kind === "file" && i.type.startsWith("image/"));
+      const f = item?.getAsFile();
+      if (!f) return;
+      e.preventDefault();
+      // Pasted screenshots have no useful name; keep the type.
+      pick(new File([f], `slip-${p.ref}.${f.type.split("/")[1] ?? "png"}`, { type: f.type }));
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [dialog]); // eslint-disable-line react-hooks/exhaustive-deps
+  const openAttach = () => { setPicked(null); open("attach"); };
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
+    pick(file);
+  };
+  const attach = () => {
+    const file = picked?.file;
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return setError("ไฟล์ใหญ่เกิน 5 MB");
+    setDialog(null);
+    setPicked(null);
+    // Outside the transition so the page's "กำลังตรวจสอบสลิป…" dialog shows at once (SlipCheckHost).
+    slipCheckStart(p.ref);
     run(async () => {
-      const r = await uploadSlip(p.ref, file.type, await toBase64(file));
+      // A passing slip approves the order and this row moves to another list — the result is shown by the page.
+      const r = await uploadSlip(p.ref, file.type, await toBase64(file)).catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) }));
+      slipCheckDone(r.ok ? { ref: p.ref, checked: false, ...(r as object) } : { ref: p.ref, checked: false, error: r.error });
       if (r.ok) setSlipVersion((v) => v + 1);
       return r;
     }, false);
@@ -108,7 +141,7 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
           <Eye size={14} />
         </button>
       )}
-      <button className={`${sm} ${btn.ghost}`} onClick={() => fileRef.current?.click()} disabled={pending} title={p.hasSlipImage ? "เปลี่ยนสลิป" : "แนบสลิป"} aria-label="แนบสลิป">
+      <button className={`${sm} ${btn.ghost}`} onClick={openAttach} disabled={pending} title={p.hasSlipImage ? "เปลี่ยนสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)" : "แนบสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)"} aria-label="แนบสลิป">
         <Upload size={14} />
       </button>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
@@ -149,6 +182,37 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
         </button>
       )}
       {error && !dialog && <span className="text-[11px] whitespace-normal text-danger">{error}</span>}
+
+      {dialog === "attach" && (
+        <Modal title={`${p.hasSlipImage ? "เปลี่ยนสลิป" : "แนบสลิป"} ${p.ref}`} onClose={() => { setDialog(null); setPicked(null); }} width={520}
+          footer={<>
+            <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={() => { setDialog(null); setPicked(null); }}>ยกเลิก</button>
+            <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={!picked || pending} onClick={attach}><Upload size={14} /> แนบและตรวจสลิป</button>
+          </>}>
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files?.[0]); }}
+            className="grid place-items-center gap-2 rounded-xl border-2 border-dashed border-line bg-surface-alt p-5 text-center"
+          >
+            {picked ? (
+              // eslint-disable-next-line @next/next/no-img-element -- local preview of the pasted / chosen slip
+              <img src={picked.url} alt="สลิปที่จะแนบ" className="max-h-[50vh] rounded-lg border border-line" />
+            ) : (
+              <>
+                <div className="text-[15px] font-semibold text-ink">วางรูปสลิปที่นี่ — กด Ctrl+V (Mac: ⌘+V)</div>
+                <div className="text-[13px] text-muted">หรือลากไฟล์มาวาง หรือเลือกไฟล์จากเครื่อง</div>
+              </>
+            )}
+            <button type="button" className={`${btn.base} ${btn.sm} ${btn.ghost}`} onClick={() => fileRef.current?.click()}>
+              {picked ? "เปลี่ยนรูป" : "เลือกไฟล์…"}
+            </button>
+          </div>
+          <p className="mt-3 text-[12.5px] text-muted">
+            ระบบจะตรวจสลิปกับธนาคารอัตโนมัติ (ยอด บัญชีรับเงิน เวลาโอน และสลิปซ้ำ) — <b className="text-ink">ผ่านแล้วอนุมัติรายการและแจ้งร้านค้าทันที</b>
+          </p>
+          {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
+        </Modal>
+      )}
 
       {dialog === "approve" && (
         <ApproveDialog

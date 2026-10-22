@@ -9,7 +9,7 @@ import { fmtDateTime, fmtMoney } from "@/lib/format";
 import { newId } from "@/lib/demo-ids";
 import { renderSampleSlip, type SampleSlip } from "@/lib/sample-slip";
 import type { DemoCall, DemoCallback, DemoCallbackLog, DemoFees, DemoPayment, DemoPayout } from "@/lib/demo-api";
-import { demoBalance, demoCallbacks, demoSetFees, demoShopFees, demoDelete, demoRejectPayout, demoSetAdminDone, demoCancelPayment, demoCheckPayment, demoCheckPayout, demoCreatePayment, demoCreatePayout, demoLists, demoSlipData, demoUploadSlip, type DemoResult } from "./actions";
+import { demoBalance, demoCallbacks, demoCreatePaymentsBulk, demoSlipDataMany, demoUploadSlipsBatch, demoSetFees, demoShopFees, demoDelete, demoRejectPayout, demoSetAdminDone, demoCancelPayment, demoCheckPayment, demoCheckPayout, demoCreatePayment, demoCreatePayout, demoLists, demoSlipData, demoUploadSlip, type DemoResult } from "./actions";
 
 type Shop = { name: string; slug: string } | null;
 type Balance = { balance: number; availableBalance: number; reserved: number } | null;
@@ -17,6 +17,8 @@ type StepKey = "payment" | "slip" | "payout" | "balance" | "row";
 
 const baht = (n: number | undefined) => (n ?? 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/** Wall-clock ms for timing a click's work (kept out of the component so it is never read during render). */
+const nowMs = () => Date.now();
 /** Fee of one transaction at the shop's rate (amount × % + flat), rounded to satang — as the backend charges it. */
 const feeOf = (amount: number, pct: string, flat: string) => Math.round((amount * Number(pct) / 100 + Number(flat)) * 100) / 100;
 const input = "w-full rounded-lg border border-line bg-surface-alt px-3 py-2 text-[14px] text-ink outline-none placeholder:text-soft focus:border-primary focus:shadow-(--shadow-ring)";
@@ -546,7 +548,8 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
   const [busy, setBusy] = useState<StepKey | null>(null);
   const [popup, setPopup] = useState<{ step: StepKey; title: string; call: DemoCall | null; error: string | null } | null>(null);
 
-  const [pay, setPay] = useState({ amount: "100", orderId: firstIds.orderId, description: "สินค้าทดลอง", memberName: "" });
+  const [pay, setPay] = useState<{ amount: string; orderId: string; description: string; memberName: string; api: "v1" | "v2"; redirectUrl: string }>(
+    { amount: "100", orderId: firstIds.orderId, description: "สินค้าทดลอง", memberName: "", api: "v1", redirectUrl: "https://example.com/deposit/done" });
   const [slipRef, setSlipRef] = useState("");
   const [slip, setSlip] = useState<File | null>(null);
   const [out, setOut] = useState({ amount: "10", bankCode: "SCB", accountNumber: "", accountName: "", merchantRef: firstIds.merchantRef, description: "ทดลองโอนออก" });
@@ -685,8 +688,86 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
     });
   };
 
+  // สร้างหลายรายการ: N orders in one click (amount + description from the card, a unique orderId each).
+  const [bulkN, setBulkN] = useState("10");
+  // The orders of the last สร้างหลายรายการ — step 2 can put a DEMO slip on all of them at once.
+  const [bulkRefs, setBulkRefs] = useState<string[]>([]);
+  const [slipTarget, setSlipTarget] = useState<"one" | "bulk">("one");
+  const [bulkSlips, setBulkSlips] = useState<{ ref: string; file: File }[]>([]);
+  const [bulkPrep, setBulkPrep] = useState<string | null>(null);
+  const createBulk = () => {
+    const n = Math.floor(Number(bulkN));
+    if (!(n >= 1 && n <= 100)) return setPopup({ step: "payment", title: "สร้างหลายรายการ", call: null, error: "ใส่จำนวน 1 – 100 รายการ" });
+    run("payment", `สร้างหลายรายการ (${n} รายการ)`, () => demoCreatePaymentsBulk(pay, n), (c) => {
+      setCheckout(null); setPayTo(null);
+      const refs = ((c.json?.refs as string[] | undefined) ?? []).map((x) => x.split(" ")[0]).filter((x) => /^TXN\d+$/.test(x));
+      if (refs.length) { setBulkRefs(refs); setSlipTarget("bulk"); setBulkSlips([]); setSlipRef(refs[0]); }
+    });
+  };
+
+  /** ใช้สลิป DEMO for every order of the last bulk create: a signed DEMO slip each (rendered here, like the single one). */
+  async function prepareBulkDemoSlips() {
+    setBulkPrep(`กำลังสร้างสลิป DEMO 0 / ${bulkRefs.length}…`);
+    const d = await demoSlipDataMany(bulkRefs).catch((err: unknown) => ({ ok: false as const, error: reloadIfStale(err) }));
+    if (!d.ok) { setBulkPrep(null); return setPopup({ step: "slip", title: "สร้างสลิป DEMO", call: null, error: d.error }); }
+    const out: { ref: string; file: File }[] = [];
+    for (const it of d.items) {
+      const cv = await renderSampleSlip({ ref: it.ref, amount: it.amount, customerName: it.customerName, bankName: it.bankCode ?? "", accountName: shop?.slug ?? null, accountNo: it.accountNo }, it.qr);
+      const blob = await new Promise<Blob | null>((res) => cv.toBlob(res, "image/png"));
+      if (blob) out.push({ ref: it.ref, file: new File([blob], `demo-slip-${it.ref}.png`, { type: "image/png" }) });
+      setBulkPrep(`กำลังสร้างสลิป DEMO ${out.length} / ${d.items.length}…`);
+    }
+    setBulkSlips(out);
+    setBulkPrep(d.skipped.length ? `ข้าม ${d.skipped.length} รายการ: ${d.skipped.map((x) => `${x.ref} (${x.why})`).join(", ")}` : null);
+  }
+
+  /** แนบสลิป for all prepared DEMO slips: 10 real, signed calls at a time; one combined terminal result + every curl. */
+  async function uploadBulkSlips() {
+    const list = bulkSlips;
+    if (!list.length) return setPopup({ step: "slip", title: "แนบสลิปหลายรายการ", call: null, error: "กด “ใช้สลิป DEMO” ก่อน เพื่อสร้างสลิปของทุกรายการ" });
+    const title = `แนบสลิปหลายรายการ (${list.length} รายการ)`;
+    setBusy("slip");
+    setPopup({ step: "slip", title, call: null, error: null });
+    const started = nowMs();
+    const all: { ref: string; call: DemoCall | null; error: string | null }[] = [];
+    for (let i = 0; i < list.length; i += 10) {
+      const part = await Promise.all(list.slice(i, i + 10).map(async (x) => ({ ref: x.ref, mime: x.file.type, data: await slipData(x.file) })));
+      const r = await demoUploadSlipsBatch(part).catch((err: unknown) => ({ ok: false as const, error: reloadIfStale(err) }));
+      if (!r.ok) { all.push(...part.map((x) => ({ ref: x.ref, call: null, error: r.error }))); continue; }
+      all.push(...r.results);
+    }
+    list.forEach((x) => remember(x.ref, x.file));
+    const result = (c: DemoCall | null) => (c?.json?.result as string | undefined) ?? null;
+    const approved = all.filter((x) => result(x.call) === "PAID");
+    const summary = {
+      success: approved.length === all.length,
+      requested: all.length,
+      approved: approved.length,
+      failed: all.length - approved.length,
+      totalMs: nowMs() - started,
+      results: all.map((x) => `${x.ref}: ${x.error ?? `${result(x.call) ?? "-"} (HTTP ${x.call?.status ?? 0})`}`),
+    };
+    const first = all.find((x) => x.call)?.call;
+    const call: DemoCall = {
+      ok: approved.length > 0,
+      status: approved.length === all.length ? 200 : approved.length ? 207 : first?.status ?? 0,
+      ms: summary.totalMs,
+      curl: all.map((x, i) => `# ${i + 1}/${all.length} · ${x.ref}\n${x.call?.curl ?? `# ส่งไม่ได้: ${x.error}`}`).join("\n\n"),
+      curlShort: `${first?.curlShort ?? ""}\n\n# … และอีก ${all.length - 1} คำสั่ง (ref ต่างกัน) — ส่งพร้อมกันครั้งละ 10 · คำสั่งทั้งหมดอยู่ในกล่องใต้ปุ่ม`,
+      response: JSON.stringify(summary, null, 2),
+      json: summary,
+    };
+    setBusy(null);
+    setCalls((c) => ({ ...c, slip: call }));
+    setFresh((f) => ({ ...f, slip: undefined }));
+    setPopup({ step: "slip", title, call, error: null });
+    setBulkSlips([]);
+    quietBalance(); loadLists(); setTab("in"); setTimeout(loadLists, 4000);
+  }
+
   const remember = (ref: string, f: File) => setLocalSlips((m) => ({ ...m, [ref.trim().toUpperCase()]: URL.createObjectURL(f) }));
   const uploadSlip = () => {
+    if (slipTarget === "bulk" && bulkRefs.length) return uploadBulkSlips();
     if (!slip) return noSlip();
     remember(slipRef, slip);
     run("slip", "แนบสลิป", async () => demoUploadSlip(slipRef, { mime: slip.type, data: await slipData(slip) }));
@@ -812,7 +893,7 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
           onPayment={onPayment} onPayout={onPayout} />
 
         <div className="mt-5 grid gap-5 2xl:grid-cols-2">
-          <StepCard n={1} icon={<CreditCard size={18} />} title="สร้างรายการรับเงิน" method="POST" path="/api/v1/payment/create"
+          <StepCard n={1} icon={<CreditCard size={18} />} title="สร้างรายการรับเงิน" method="POST" path={pay.api === "v2" ? "/api/v2/payment/create" : "/api/v1/payment/create"}
             desc="สร้างออเดอร์ให้ลูกค้าโอนเงิน — ได้เลขที่รายการ (ref) บัญชีรับเงิน และลิงก์หน้าชำระเงิน"
             button="สร้างรายการรับเงิน" busy={busy === "payment"} onRun={() => createPayment()}
             after={payTo && (
@@ -831,7 +912,19 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
                 </div>
               </div>
             )} call={calls.payment ?? null} fresh={fresh.payment ?? null} onFresh={() => signOnly("payment", () => demoCreatePayment(pay, true))}
-            extra={checkout && (
+            extra={<>
+              <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-line p-3">
+                <label className="block">
+                  <span className="mb-1 block text-[12.5px] font-semibold text-muted">สร้างหลายรายการพร้อมกัน (จำนวน)</span>
+                  <input className={`${input} w-28 tabular-nums`} inputMode="numeric" value={bulkN} onChange={(e) => setBulkN(e.target.value.replace(/\D/g, "").slice(0, 3))} aria-label="จำนวนรายการ" />
+                </label>
+                <button type="button" disabled={busy !== null} onClick={createBulk}
+                  className={`${btn.base} ${btn.md} border-primary bg-primary-50 text-ink hover:bg-primary/25`}>
+                  {busy === "payment" ? <Loader2 size={15} className="animate-spin" /> : <Terminal size={15} />} สร้างหลายรายการ
+                </button>
+                <span className="w-full text-[11.5px] text-soft">ใช้ยอดเงินและรายละเอียดจากช่องด้านบน · orderId ไม่ซ้ำกันทุกรายการ · ครั้งละ 1–100 รายการ (ไม่เกิน 3 ครั้ง / 10 นาที) · คำสั่ง curl ทั้งหมดอยู่ในกล่องด้านล่าง</span>
+              </div>
+              {checkout && (
               <div className="mt-3 rounded-lg border border-line bg-surface-alt p-3 text-[13px]">
                 <div><span className="text-muted">เลขที่รายการ:</span> <b className="font-mono">{slipRef}</b> <span className="text-soft">(ใส่ให้ในขั้นตอนที่ 2 แล้ว)</span></div>
                 {checkout.account && <div><span className="text-muted">โอนเข้าบัญชี:</span> {checkout.account}</div>}
@@ -846,7 +939,17 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
                   <span className="text-[11.5px] text-soft">สลิป DEMO ถูกใส่ในขั้นตอนที่ 2 แล้ว — กด “แนบสลิป” เพื่อส่ง · สลิปจริงตรวจกับธนาคารตามปกติ</span>
                 </div>
               </div>
-            )}>
+              )}
+            </>}>
+            <Field label="API endpoint" hint={pay.api === "v2" ? "v2 = เหมือน v1 + redirect_url (พาลูกค้ากลับหน้าร้านเมื่อชำระสำเร็จ / QR หมดอายุ)" : "v1 = endpoint เดิม (ไม่มี redirect_url)"}>
+              <select className={`${input} font-mono`} value={pay.api} onChange={(e) => setPay({ ...pay, api: e.target.value as "v1" | "v2" })} aria-label="API endpoint">
+                <option value="v1">POST /api/v1/payment/create</option>
+                <option value="v2">POST /api/v2/payment/create</option>
+              </select>
+            </Field>
+            <Field label="redirect_url (ไม่บังคับ · ต้องขึ้นต้นด้วย https://)" hint={pay.api === "v2" ? "ลูกค้าจะถูกพากลับมาที่ลิงก์นี้หลังชำระสำเร็จ หรือเมื่อ QR หมดอายุ (3 วินาที)" : "ใช้ได้กับ v2 เท่านั้น — เลือก POST /api/v2/payment/create ด้านบนเพื่อใส่ redirect_url"}>
+              <input className={`${input} font-mono disabled:opacity-50`} disabled={pay.api !== "v2"} value={pay.redirectUrl} placeholder="https://your-site.com/deposit/done" onChange={(e) => setPay({ ...pay, redirectUrl: e.target.value })} aria-label="redirect_url" />
+            </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="ยอดเงิน (บาท) *" hint={fees && Number(pay.amount) > 0 ? `ค่าธรรมเนียม ${Number(fees.feePercent)}% = ฿${baht(feeOf(Number(pay.amount), fees.feePercent, fees.feeFlat))} · ร้านได้ ฿${baht(Number(pay.amount) - feeOf(Number(pay.amount), fees.feePercent, fees.feeFlat))}` : undefined}>
                 <input className={input} inputMode="decimal" value={pay.amount} onChange={(e) => setPay({ ...pay, amount: e.target.value })} /></Field>
@@ -861,7 +964,24 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
           <StepCard n={2} icon={<Upload size={18} />} title="แนบสลิป" method="POST" path={`/api/v1/payment/${slipRef || ":ref"}/slip`}
             desc="ส่งรูปสลิปการโอนของรายการที่สร้างในขั้นตอนที่ 1 — ระบบตรวจสลิปและจับคู่ยอดอัตโนมัติ"
             button="แนบสลิป" busy={busy === "slip"} onRun={uploadSlip} call={calls.slip ?? null} fresh={fresh.slip ?? null} onFresh={() => (slip ? signOnly("slip", async () => demoUploadSlip(slipRef, { mime: slip.type, data: await slipData(slip) }, true)) : noSlip())}>
+            {bulkRefs.length > 0 && (
+              <div className="grid gap-1.5 rounded-lg border border-line bg-surface-alt p-3 text-[13px]">
+                <span className="font-semibold text-muted">แนบสลิปให้</span>
+                <label className="flex items-center gap-2"><input type="radio" checked={slipTarget === "one"} onChange={() => setSlipTarget("one")} /> รายการเดียว (ตามเลขที่รายการด้านล่าง)</label>
+                <label className="flex items-center gap-2"><input type="radio" checked={slipTarget === "bulk"} onChange={() => setSlipTarget("bulk")} />
+                  ทั้งหมดจาก “สร้างหลายรายการ” ล่าสุด — <b>{bulkRefs.length} รายการ</b> <span className="font-mono text-[12px] text-soft">({bulkRefs[0]} – {bulkRefs[bulkRefs.length - 1]})</span></label>
+              </div>
+            )}
+            {slipTarget === "bulk" && bulkRefs.length > 0 ? (
+              <div className="rounded-lg border border-[#3b82f6]/40 bg-[#3b82f6]/5 p-3 text-[13px]">
+                {bulkSlips.length
+                  ? <span className="font-semibold text-[#1d4ed8]">✔ เตรียมสลิป DEMO แล้ว {bulkSlips.length} ใบ — กด “แนบสลิป” เพื่อส่งทั้งหมด (อนุมัติอัตโนมัติทุกรายการ)</span>
+                  : <span className="text-muted">กด “ใช้สลิป DEMO” เพื่อสร้างสลิป DEMO ให้ทั้ง {bulkRefs.length} รายการ แล้วกด “แนบสลิป”</span>}
+                {bulkPrep && <div className="mt-1 text-[12px] text-soft">{bulkPrep}</div>}
+              </div>
+            ) : (
             <Field label="เลขที่รายการ (ref) *" hint="ได้จากขั้นตอนที่ 1 อัตโนมัติ หรือพิมพ์เอง"><input className={`${input} font-mono`} value={slipRef} placeholder="TXN100001" onChange={(e) => setSlipRef(e.target.value)} /></Field>
+            )}
             <Field label="รูปสลิป * (PNG / JPG / WEBP ไม่เกิน 8 MB)">
               <label className={`${input} flex cursor-pointer items-center gap-2`}>
                 <FileImage size={16} className="text-muted" />
@@ -870,12 +990,12 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
               </label>
             </Field>
             <div className="flex items-start gap-3">
-              <button type="button" onClick={() => demoSlipForStep(slipRef)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#3b82f6]/50 px-3 py-2 text-[13px] text-[#2563eb] hover:bg-[#3b82f6]/10">
-                <Sparkles size={14} /> ใช้สลิป DEMO
+              <button type="button" disabled={!!bulkPrep && bulkPrep.startsWith("กำลัง")} onClick={() => (slipTarget === "bulk" && bulkRefs.length ? prepareBulkDemoSlips() : demoSlipForStep(slipRef))} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#3b82f6]/50 px-3 py-2 text-[13px] text-[#2563eb] hover:bg-[#3b82f6]/10 disabled:opacity-50">
+                <Sparkles size={14} /> ใช้สลิป DEMO{slipTarget === "bulk" && bulkRefs.length ? ` (${bulkRefs.length} รายการ)` : ""}
               </button>
               <span className="text-[11.5px] leading-snug text-soft">สลิป DEMO → อนุมัติอัตโนมัติ (เฉพาะหน้านี้) · สลิปจริง → ตรวจกับธนาคารตามปกติ ผ่านแล้วอนุมัติอัตโนมัติเหมือนรายการจริง</span>
             </div>
-            {slipPreview && (
+            {slipTarget === "one" && slipPreview && (
               <div className="flex items-center gap-3 rounded-lg border border-line bg-surface-alt p-2">
                 {/* eslint-disable-next-line @next/next/no-img-element -- local preview (blob URL) */}
                 <img src={slipPreview} alt="สลิปที่เลือก" className="h-24 rounded border border-line object-contain" />

@@ -15,6 +15,9 @@ export type Checkout = {
   slipProblems?: string[] | null;
   /** An accepted / in-review slip is attached: the customer can't send another. */
   slipLocked?: boolean;
+  /** Orders made with POST /api/v2/payment/create + return_url: where to send the customer back (with our ref). */
+  returnUrl?: string;
+  ref?: string;
 };
 
 export const isToken = (t: unknown): t is string => typeof t === "string" && /^[a-f0-9]{32}$/.test(t);

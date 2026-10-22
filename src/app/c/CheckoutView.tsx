@@ -141,3 +141,40 @@ function SlipGuideline({ order }: { order: SampleSlip }) {
     </div>
   );
 }
+
+/**
+ * Back to the shop (orders made with POST /api/v2/payment/create + redirect_url / return_url). Paid or expired (QR หมดอายุ):
+ * goes there by itself after 3 seconds (shop's requirement, 21 Oct 2026); cancelled / refunded: a button only. The shop's page gets orderId, ref and status — it
+ * must still confirm the payment by our callback (payment.approved) or an order lookup, never by this redirect.
+ */
+export function ReturnToShop({ url, orderId, refNo, status }: { url: string; orderId: string; refNo?: string; status: string }) {
+  const target = (() => {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== "https:") return null;
+      u.searchParams.set("orderId", orderId);
+      if (refNo) u.searchParams.set("ref", refNo);
+      u.searchParams.set("status", status);
+      return u.toString();
+    } catch {
+      return null;
+    }
+  })();
+  const auto = status === "PAID" || status === "EXPIRED";
+  const [left, setLeft] = useState(3);
+  useEffect(() => {
+    if (!auto || !target) return;
+    if (left <= 0) { window.location.assign(target); return; }
+    const t = setTimeout(() => setLeft((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [auto, target, left]);
+  if (!target) return null;
+  return (
+    <div className="px-6 pb-8 text-center">
+      {auto && <div className="mb-3 text-[13px] text-muted">กำลังพาคุณกลับไปที่ร้านค้าใน {Math.max(left, 0)} วินาที…</div>}
+      <a href={target} className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-[14.5px] font-semibold text-primary-fg hover:bg-primary-600">
+        {auto ? "กลับไปที่ร้านค้าตอนนี้" : "กลับไปที่ร้านค้า"}
+      </a>
+    </div>
+  );
+}

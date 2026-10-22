@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { consoleWrite, type ActionResult } from "@/lib/api";
+import { consoleWrite, getRelation, type ActionResult, type Relation } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
 import { reasonError } from "@/lib/delete-reason";
 
@@ -85,4 +85,15 @@ export async function uploadSlip(ref: string, mime: string, data: string) {
   if (!MIMES.has(mime)) return bad("รองรับเฉพาะไฟล์ JPG, PNG หรือ WebP");
   if (data.length > 7_000_000) return bad("ไฟล์ใหญ่เกิน 5 MB");
   return as((actor) => consoleWrite("POST", `/api/console/payments/${ref}/slip`, actor, { mime, data }));
+}
+
+/** Read-only: an order and the order its สถานะ note points at (สถานะ cell → ดูความเกี่ยวข้อง). */
+export async function loadRelation(ref: string): Promise<({ ok: true } & Relation) | { ok: false; error: string }> {
+  if (!REF.test(ref)) return { ok: false, error: "เลขที่รายการไม่ถูกต้อง" };
+  if (!(await getSessionUser())) return { ok: false, error: "กรุณาเข้าสู่ระบบใหม่" };
+  try {
+    return { ok: true, ...(await getRelation(ref)) };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }

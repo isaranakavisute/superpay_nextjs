@@ -32,7 +32,7 @@ export function SoundCard({ sequence, customs }: { sequence: string[]; customs: 
   const move = (id: string, to: number) => { const rest = seq.filter((s) => s !== id); rest.splice(to, 0, id); save(rest); };
 
   return (
-    <SCard title="เสียงแจ้งเตือนรายการเงินออก" note="ดังทุก 10 วินาทีบนทุกหน้า ขณะที่ยังมีรายการเงินออกรอดำเนินการ จนกว่าจะหมด">
+    <SCard title="เสียงแจ้งเตือนรายการเงินออก" note="ดังภายใน 10 วินาทีเมื่อมีรายการเงินออกรอดำเนินการ แล้วดังซ้ำทุก 30 นาทีบนทุกหน้า จนกว่าจะหมด">
       {del && (
         <DeleteDialog
           title="ยืนยันการลบเสียง"
@@ -44,7 +44,7 @@ export function SoundCard({ sequence, customs }: { sequence: string[]; customs: 
         />
       )}
       <div className={`${hint} mt-0 mb-2.5`}>
-        ติ๊กเสียงที่จะใช้กี่เสียงก็ได้ แล้วเลือก<strong className="text-ink">ลำดับ</strong> — ดังทีละเสียงทุก 10 วินาทีตามลำดับ ครบแล้ววนกลับเสียงแรก · รายการหมดแล้วมีใหม่เข้ามา จะเล่น<strong className="text-ink">ต่อจากเสียงล่าสุด</strong> ไม่เริ่มใหม่
+        ติ๊กเสียงที่จะใช้กี่เสียงก็ได้ แล้วเลือก<strong className="text-ink">ลำดับ</strong> — ดังทีละเสียงทุก 30 นาทีตามลำดับ ครบแล้ววนกลับเสียงแรก · รายการหมดแล้วมีใหม่เข้ามา จะเล่น<strong className="text-ink">ต่อจากเสียงล่าสุด</strong> ไม่เริ่มใหม่
       </div>
       <Msg r={r && !r.ok ? r : null} />
       <div className="flex flex-col gap-2">
@@ -78,7 +78,7 @@ export function SoundCard({ sequence, customs }: { sequence: string[]; customs: 
             });
           }}>อัปโหลด</button>
         </div>
-        <div className={hint}>MP3 / WAV / OGG · ไม่เกิน 2 MB · ยาวไม่เกิน ~9 วินาที (เสียงถัดไปเริ่มทุก 10 วินาที ส่วนที่เกินจะถูกตัด) · อัปโหลดแล้วต่อท้ายลำดับให้อัตโนมัติ</div>
+        <div className={hint}>MP3 / WAV / OGG · ไม่เกิน 2 MB · ยาวไม่เกิน ~9 วินาที (ส่วนที่เกินจะถูกตัด) · อัปโหลดแล้วต่อท้ายลำดับให้อัตโนมัติ</div>
       </div>
       <div className={`${hint} mt-2.5`}>ดังเฉพาะผู้ใช้ที่มีสิทธิ์อนุมัติเงินออก · เบราว์เซอร์จะไม่ยอมเล่นเสียงจนกว่าจะคลิกบนหน้าอย่างน้อย 1 ครั้ง</div>
     </SCard>

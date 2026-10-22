@@ -6,6 +6,7 @@ import { AutoRefresh } from "@/components/interactive/AutoRefresh";
 import { Pager, pageState } from "@/components/list/Pager";
 import { param, type Params } from "@/components/list/query";
 import { RangeBar } from "@/components/list/RangeBar";
+import { SlipCheckHost } from "./SlipCheckHost";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
 import { Card, PageHeader, StatGrid, StatTile, StatusBadge } from "@/components/ui";
 import { listResource, type ListResult } from "@/lib/api";
@@ -18,6 +19,9 @@ import { bulkPayments } from "./actions";
 import { CreatePayment } from "./CreatePayment";
 import { FilterCard } from "./FilterCard";
 import { PaymentActions } from "./PaymentActions";
+import { QuotaLive } from "./QuotaLive";
+import { RelationLink, relationLink } from "./Relation";
+import { ServerBill } from "./ServerBill";
 
 export const metadata: Metadata = { title: "รายการชำระเงิน — Option Pay Admin" };
 
@@ -68,6 +72,7 @@ function Row({ p, selectable, merchants }: { p: PaymentRow; selectable?: boolean
         <StatusBadge status={p.status} />
         {p.slipReusedRef && <div className="mt-1 max-w-[220px] text-[11px] text-muted">สลิปนี้ใช้เติมเงิน {p.slipReusedRef} ไปแล้ว</div>}
         {p.reviewNote && <div className="mt-1 max-w-[220px] text-[11px] text-muted">{p.reviewNote}</div>}
+        {relationLink(p) && <RelationLink refNo={p.ref} label={relationLink(p)!} />}
         {p.status === "refunded" && <div className="mt-1 text-[11px] text-muted">คืนเงินแล้ว {fmtMoney(p.refundedAmount)}</div>}
       </td>
       <td className={`${td} whitespace-nowrap`}>
@@ -220,6 +225,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
     <ConsoleShell title="รายการชำระเงิน" path={PATH} search={{ placeholder: "ค้นหาเลขที่ / ลูกค้า...", params, txn: true }}>
       <PageHeader title="รายการชำระเงิน" subtitle="จัดการและตรวจสอบรายการชำระเงินในระบบ" actions={actions} />
       {body}
+      <SlipCheckHost />
     </ConsoleShell>
   );
 
@@ -306,9 +312,15 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
         <Pager path={PATH} params={params} bucket="c" page={cp.page} size={cp.size} total={data.closed.pagination.total} />
       </Folded>
     </>,
-    <CreatePayment
-      merchants={merchantsSorted.filter((m) => m.status === "active").map((m) => ({ id: m.id, label: m.name }))}
-      accounts={receiving.map((a) => ({ id: a.id, label: `${a.bankCode} · ${a.accountName ?? a.label} · ${a.accountNo ?? ""}` }))}
-    />,
+    <>
+      <ServerBill />
+      <QuotaLive />
+      <div className="self-start">
+        <CreatePayment
+          merchants={merchantsSorted.filter((m) => m.status === "active").map((m) => ({ id: m.id, label: m.name }))}
+          accounts={receiving.map((a) => ({ id: a.id, label: `${a.bankCode} · ${a.accountName ?? a.label} · ${a.accountNo ?? ""}` }))}
+        />
+      </div>
+    </>,
   );
 }

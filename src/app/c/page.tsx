@@ -6,7 +6,7 @@ import { brandView, getBranding } from "@/lib/branding";
 import { getCheckout, isToken, type Checkout } from "@/lib/checkout";
 import { BankChip } from "@/components/ui";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
-import { CheckoutLive, CopyButton } from "./CheckoutView";
+import { CheckoutLive, CopyButton, ReturnToShop } from "./CheckoutView";
 
 // Public customer checkout (no login; see proxy.ts). The 32-hex token in ?t= is the only key.
 export const metadata: Metadata = { title: "ชำระเงิน", robots: { index: false, follow: false } };
@@ -68,7 +68,15 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/c">) {
       CANCELLED: [<XCircle key="i" size={28} className="text-danger" />, "รายการถูกยกเลิก", "ร้านค้ายกเลิกรายการนี้แล้ว — อย่าโอนเงินเข้ารายการนี้"],
       REFUNDED: [<XCircle key="i" size={28} className="text-muted" />, "คืนเงินแล้ว", "รายการนี้ถูกคืนเงินแล้ว"],
     }[tx.status] as [React.ReactNode, string, string];
-    return <Shell brand={brand}>{head}<Final icon={final[0]} title={final[1]} text={final[2]} /></Shell>;
+    // v2 orders with return_url: "ปิดหน้านี้ได้เลย" is replaced by the way back to the shop.
+    const text = c.returnUrl && tx.status === "PAID" ? final[2].replace(" — ปิดหน้านี้ได้เลย", "") : final[2];
+    return (
+      <Shell brand={brand}>
+        {head}
+        <Final icon={final[0]} title={final[1]} text={text} />
+        {c.returnUrl && <ReturnToShop url={c.returnUrl} orderId={tx.orderId} refNo={c.ref} status={tx.status} />}
+      </Shell>
+    );
   }
 
   return (

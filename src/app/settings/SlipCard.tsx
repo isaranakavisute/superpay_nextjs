@@ -9,7 +9,7 @@ import { B, Check, Msg, Num, SCard, Secret, field, fieldLabel, hint, row, select
 export type Slip = {
   provider: string; thunderAccessToken: string; slipOkApiKey: string; slipOkBranchId: string; easySlipApiKey: string; slip2goApiUrl: string; slip2goSecretKey: string;
   fallbackProvider: string; failoverAfter: number; failoverMinutes: number; failoverTrustNotFound: boolean; autoMatchAmount: boolean; autoMatchTimeWindow: number;
-  requireApproval: boolean; slipAgeCheck: boolean; slipMaxAgeHours: number; uniqueAmount: boolean; uniqueAmountMaxSatang: number; orderTtlMinutes: number;
+  requireApproval: boolean; slipAgeCheck: boolean; slipMaxAgeHours: number; earlyTransferMinutes?: number; uniqueAmount: boolean; uniqueAmountMaxSatang: number; orderTtlMinutes: number;
   intentPurgeDays: number; smsStrictAllChannels: boolean; centralReceiving: boolean; centralDistribution: string; centralFixedAccountId: number | "";
   p2pMatching: boolean; p2pRepoolGraceMinutes: number; p2pStaleAfterMinutes: number; p2pAutoPayout: boolean; updatedAt?: string | null;
 };
@@ -63,6 +63,7 @@ export function SlipCard({ slip, accounts }: { slip: Slip; accounts: { id: numbe
           <Check id="rqa" checked={s.requireApproval} onChange={set("requireApproval")}>ต้องให้ผู้ดูแลยืนยันก่อน</Check>
           <Check id="slipage" checked={s.slipAgeCheck} onChange={set("slipAgeCheck")}><strong>ตรวจอายุสลิป</strong> — ปฏิเสธสลิปที่เก่ากว่าที่กำหนด</Check>
           {s.slipAgeCheck && <div className={row}><Num id="slipMaxAgeHours" label="ตรวจสลิปย้อนหลังได้ (ชั่วโมง) — 0 = ต้องเป็นวันเดียวกับออเดอร์" min={0} max={720} value={s.slipMaxAgeHours} onChange={set("slipMaxAgeHours")} /></div>}
+          <div className={row}><Num id="earlyTransferMinutes" label="รับสลิปที่โอนก่อนสร้างออเดอร์ได้ไม่เกิน (นาที) — ยอดและบัญชีต้องตรง · ค่าเริ่มต้น 15" min={0} max={360} value={s.earlyTransferMinutes ?? 15} onChange={set("earlyTransferMinutes")} /></div>
           <Check id="uamt" checked={s.uniqueAmount} onChange={set("uniqueAmount")}>ยอดไม่ซ้ำต่อออเดอร์ — เติมสตางค์อัตโนมัติเพื่อแยกผู้จ่ายเมื่อยอดเท่ากันเข้าพร้อมกัน</Check>
           {s.uniqueAmount && <p className="mt-1 rounded-lg border-l-[3px] border-[#f59e0b] bg-[#f59e0b]/10 px-3 py-2 text-[12.5px] leading-relaxed text-ink">⚠️ ยอดของออเดอร์จะ<strong>ไม่ตรงกับที่ร้านส่งมา</strong> (เช่น 500 → 500.03) — ร้านต้องแสดงยอดจาก response (<code>copy.amount</code>) ให้ลูกค้าโอนตรงทุกสตางค์ · ถ้าลูกค้าโอนยอดกลมตามที่ร้านสั่ง ระบบยังยอมรับได้เมื่อธนาคารยืนยันสลิป (ปรับยอดออเดอร์เป็นยอดที่ได้รับจริง) · เปิดเฉพาะเมื่อจำเป็นต้องจับคู่เงินเข้าโดยไม่มีสลิป (SMS / แจ้งเตือนธนาคาร)</p>}
           {s.uniqueAmount && <div className={row}><Num id="uniqueAmountMaxSatang" label="สตางค์สูงสุดที่เติมได้ต่อยอด (0–99)" min={0} max={99} value={s.uniqueAmountMaxSatang} onChange={set("uniqueAmountMaxSatang")} /></div>}

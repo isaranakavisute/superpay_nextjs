@@ -158,6 +158,23 @@ export type Alerts = {
 };
 
 export const getAlerts = () => get<Alerts>("/api/dashboard/alerts");
+export type DupOrder = {
+  ref: string; merchantOrderId: string | null; merchantName: string | null; customerName: string | null; senderBank: string | null; senderLast4: string | null;
+  amount: string; status: string; accountBank: string | null; accountLast4: string | null; createdAt: string; completedAt: string | null; reviewedBy: string | null;
+  reviewNote: string | null; hasSlip: boolean; slipUploadedAt: string | null; transferredAt: string | null; slipAmount: string | null;
+  transRef: string | null; imageId: string | null; slipProvider: string | null;
+  callbacks: { event: string; statusCode: number | null; state: string | null; at: string }[];
+};
+export type RelationKind = "duplicate" | "reused" | "carry";
+export type Relation = { kind: RelationKind; other: DupOrder | null; order: DupOrder; sameOrder: boolean };
+/** An order and the order its สถานะ note points at (23:00 duplicate rule, slip reused, carry-over). */
+export const getRelation = (ref: string) => get<Relation>(`/api/console/payments/${encodeURIComponent(ref)}/relation`);
+export type LiveQuota = {
+  checkedAt: string; threshold: number; provider: string | null; ok: boolean; message: string;
+  quota: { remaining: number | null; total: number | null; used: number | null; expiresAt: string | null } | null;
+};
+/** Slip provider quota right now (backend caches it 30 s; the provider's account call uses no quota). */
+export const getLiveQuota = () => get<{ quota: LiveQuota }>("/api/console/config/quota/live").then((r) => r.quota);
 
 // ---- Console write actions ----
 
