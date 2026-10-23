@@ -20,7 +20,8 @@ import { CreatePayment } from "./CreatePayment";
 import { FilterCard } from "./FilterCard";
 import { PaymentActions } from "./PaymentActions";
 import { QuotaLive } from "./QuotaLive";
-import { RelationLink, relationLink } from "./Relation";
+import { RelationLink } from "./Relation";
+import { relationLink } from "./relation-link";
 import { ServerBill } from "./ServerBill";
 
 export const metadata: Metadata = { title: "รายการชำระเงิน — Option Pay Admin" };

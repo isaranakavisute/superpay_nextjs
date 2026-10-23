@@ -5,6 +5,7 @@ import { Modal, btn } from "@/components/interactive/Modal";
 import type { DupOrder, Relation } from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
 import { loadRelation } from "./actions";
+import { REUSED_NOTE } from "./relation-link";
 
 /*
  * "ดูความเกี่ยวข้อง" in the สถานะ cell: an order whose note points at another order, side by side in Thai, with the
@@ -13,21 +14,6 @@ import { loadRelation } from "./actions";
  *  - reused: slip refused "สลิปนี้ถูกใช้กับรายการอื่นแล้ว — ใช้ซ้ำไม่ได้" → the order that transfer paid (or the same order, sent twice);
  *  - carry: this order's transfer paid a newer order of the same customer (carry-over).
  */
-export const REUSED_NOTE = "สลิปนี้ถูกใช้กับรายการอื่นแล้ว — ใช้ซ้ำไม่ได้";
-
-/** Which link (if any) a payments row gets, from its note. */
-export function relationLink(p: { ref: string; reviewedBy?: string | null; reviewNote?: string | null; slipReusedRef?: string | null }) {
-  const note = p.reviewNote ?? "";
-  const dup = /^ซ้ำกับ (TXN\d+) ที่ชำระแล้ว/.exec(note);
-  if (dup && p.reviewedBy === "system") return `ดูความเกี่ยวข้องกับ ${dup[1]}`;
-  if (note.includes(REUSED_NOTE)) {
-    const other = /^TXN\d+$/.test(p.slipReusedRef ?? "") ? p.slipReusedRef : null;
-    return other === p.ref ? "ดูรายละเอียด (ส่งสลิปซ้ำ)" : other ? `เทียบกับ ${other} ที่ใช้สลิปนี้แล้ว` : null;
-  }
-  const carry = /(?:ใช้ชำระ|ชำระผ่าน) (TXN\d+)/.exec(note);
-  return carry ? `เทียบกับ ${carry[1]} ที่ใช้เงินโอนนี้` : null;
-}
-
 const TZ = { timeZone: "Asia/Bangkok" } as const;
 const ms = (v: string) => new Date(v).getTime();
 const time = (v: string | null) => (v ? `${new Date(v).toLocaleTimeString("th-TH", { ...TZ, hour12: false })} น.` : "—");

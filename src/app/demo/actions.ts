@@ -6,8 +6,6 @@ import { addDemoRecord, adminCall, bulkOverLimit, demoCallbackLog, demoFees, dem
 
 export type DemoResult = { ok: true; call: DemoCall } | { ok: false; error: string };
 
-// Payouts are real requests on the demo shop's balance (the team still transfers them by hand) — keep them small.
-const MAX_PAYOUT = 100;
 
 /** `write`: counts toward the per-visitor limit — reads (balance, status, the page's own refresh) never do. */
 async function run(fn: () => Promise<DemoCall>, write = true): Promise<DemoResult> {
@@ -55,7 +53,6 @@ export async function demoUploadSlip(ref: string, file: { mime: string; data: st
 export async function demoCreatePayout(f: { amount: string; bankCode: string; accountNumber: string; accountName: string; merchantRef: string; description: string }, dry = false): Promise<DemoResult> {
   const amount = money(f.amount);
   if (!(amount > 0)) return { ok: false, error: "กรุณาใส่ยอดเงินมากกว่า 0" };
-  if (amount > MAX_PAYOUT) return { ok: false, error: `หน้า demo โอนออกได้ไม่เกิน ${MAX_PAYOUT} บาทต่อรายการ` };
   if (!/^\d[\d\s-]{5,24}$/.test(f.accountNumber.trim())) return { ok: false, error: "กรุณาใส่เลขบัญชีผู้รับ (ตัวเลข 6–20 หลัก)" };
   if (!f.accountName.trim()) return { ok: false, error: "กรุณาใส่ชื่อบัญชีผู้รับ" };
   const body = clean({

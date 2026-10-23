@@ -392,7 +392,7 @@ function DemoGuide() {
     ["สร้างรายการรับเงิน", <>ใส่ยอดเงิน แล้วกด <b>สร้างรายการรับเงิน</b> (ขั้นตอนที่ 1) — ได้เลขที่รายการ <code>TXN…</code> สถานะ <b>รอชำระ</b> (ยังไม่อนุมัติจนกว่าจะแนบสลิป)</>],
     ["แนบสลิป", <>ขั้นตอนที่ 2 ใส่เลขที่รายการให้อัตโนมัติ — เลือก <b>สลิปจริง</b> (ระบบตรวจกับธนาคาร ผ่านแล้วอนุมัติอัตโนมัติ) หรือกด <b>สร้างสลิป DEMO</b> (อนุมัติอัตโนมัติทันที) แล้วกด <b>แนบสลิป</b></>],
     ["ดูผลลัพธ์", <>เมื่ออนุมัติ ระบบส่ง callback <code>payment.approved</code> ไปยัง webhook ของร้าน และแจ้งเตือนในกลุ่ม Telegram — กดไอคอน <Link2 size={12} className="inline" /> ในรายการเงินเข้าเพื่อดูว่า webhook ตอบอะไรกลับมา</>],
-    ["โอนเงินออก", <>ขั้นตอนที่ 3 ใส่ธนาคาร เลขบัญชี และชื่อผู้รับ (ไม่เกิน 100 บาท) — สถานะ <b>รอตรวจสอบ</b> จนกว่าทีมงานจะโอนเสร็จ แล้วระบบส่ง <code>payout.completed</code> / <code>payout.failed</code></>],
+    ["โอนเงินออก", <>ขั้นตอนที่ 3 ใส่ธนาคาร เลขบัญชี และชื่อผู้รับ — สถานะ <b>รอตรวจสอบ</b> จนกว่าทีมงานจะโอนเสร็จ แล้วระบบส่ง <code>payout.completed</code> / <code>payout.failed</code></>],
     ["ตรวจยอด", <>กด <b>ตรวจยอดคงเหลือ</b> (ขั้นตอนที่ 4) หรือดูกล่องยอดคงเหลือด้านบน ซึ่งอัปเดตทุกครั้งหลังทำรายการ</>],
   ];
   return (
@@ -1005,7 +1005,7 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
           </StepCard>
 
           <StepCard n={3} icon={<Banknote size={18} />} title="สร้างรายการโอนออก" method="POST" path="/api/v1/payout/create"
-            desc="ขอโอนเงินจากยอดของร้านให้ผู้รับ — ยอด + ค่าธรรมเนียมถูกกันไว้จนทีมงานโอนเสร็จ (หน้า demo ไม่เกิน 100 บาท/รายการ)"
+            desc="ขอโอนเงินจากยอดของร้านให้ผู้รับ — ยอด + ค่าธรรมเนียมถูกกันไว้จนทีมงานโอนเสร็จ"
             button="สร้างรายการโอนออก" busy={busy === "payout"} onRun={() => createPayout()} call={calls.payout ?? null} fresh={fresh.payout ?? null} onFresh={() => signOnly("payout", () => demoCreatePayout(out, true))}>
             <div className="grid grid-cols-2 gap-3">
               <Field label="ยอดเงิน (บาท) *" hint={fees && Number(out.amount) > 0 ? `ค่าธรรมเนียม ${Number(fees.outFeePercent)}% = ฿${baht(feeOf(Number(out.amount), fees.outFeePercent, fees.outFeeFlat))} · หักยอดร้าน ฿${baht(Number(out.amount) + feeOf(Number(out.amount), fees.outFeePercent, fees.outFeeFlat))}` : undefined}>
