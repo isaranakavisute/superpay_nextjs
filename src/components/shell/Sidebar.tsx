@@ -9,6 +9,7 @@ import type { SessionUser } from "@/lib/session";
 import { initials } from "@/lib/format";
 import { Logo, type LogoBrand } from "../Logo";
 import { NAV_GROUPS, PROFILE_ITEM, TOP_ITEMS, type NavItem } from "./nav";
+import { canOpen } from "@/lib/page-perms";
 
 const OPEN_GROUPS_KEY = "superpay_nav_groups";
 const CHANGE_EVENT = "superpay:nav-groups";
@@ -84,6 +85,7 @@ export function Sidebar({
   user,
   brand,
   badges,
+  perms = null,
   open,
   collapsed,
   onClose,
@@ -91,6 +93,7 @@ export function Sidebar({
   user: SessionUser;
   brand: LogoBrand;
   badges: Record<string, number>;
+  perms?: string[] | null;
   open: boolean;
   collapsed: boolean;
   onClose: () => void;
@@ -133,7 +136,7 @@ export function Sidebar({
         {TOP_ITEMS.map((item) => (
           <NavLink key={item.key} item={item} active={isActive(item.href)} badge={badges[item.key]} />
         ))}
-        {NAV_GROUPS.map((group) => {
+        {NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => canOpen(perms, i.key)) })).filter((g) => g.items.length).map((group) => {
           const expanded = isOpen(group.id);
           return (
             <div key={group.id} className="mb-0.5">

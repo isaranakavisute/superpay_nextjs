@@ -50,7 +50,7 @@ export async function demoUploadSlip(ref: string, file: { mime: string; data: st
   return run(() => signedCall("POST", `/api/v1/payment/${r}/slip`, { mime: file.mime, image: file.data }, {}, dry));
 }
 
-export async function demoCreatePayout(f: { amount: string; bankCode: string; accountNumber: string; accountName: string; merchantRef: string; description: string }, dry = false): Promise<DemoResult> {
+export async function demoCreatePayout(f: { amount: string; bankCode: string; accountNumber: string; accountName: string; merchantRef: string; description: string; api?: "v1" | "v2" }, dry = false): Promise<DemoResult> {
   const amount = money(f.amount);
   if (!(amount > 0)) return { ok: false, error: "กรุณาใส่ยอดเงินมากกว่า 0" };
   if (!/^\d[\d\s-]{5,24}$/.test(f.accountNumber.trim())) return { ok: false, error: "กรุณาใส่เลขบัญชีผู้รับ (ตัวเลข 6–20 หลัก)" };
@@ -64,7 +64,8 @@ export async function demoCreatePayout(f: { amount: string; bankCode: string; ac
     description: `[DEMO] ${f.description.trim()}`.trim(),
   });
   return run(async () => {
-    const c = await signedCall("POST", "/api/v1/payout/create", body, body.merchantRef ? { "Idempotency-Key": body.merchantRef } : {}, dry);
+    // v2: status PENDING until the team transfers it, with a payout.pending callback (the v1 endpoint is unchanged).
+    const c = await signedCall("POST", f.api === "v2" ? "/api/v2/payout/create" : "/api/v1/payout/create", body, body.merchantRef ? { "Idempotency-Key": body.merchantRef } : {}, dry);
     const ref = (c.json?.payout as { id?: string } | undefined)?.id;
     if (c.ok && ref) await addDemoRecord("payout", ref);
     return c;

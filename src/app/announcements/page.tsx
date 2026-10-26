@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AlertTriangle } from "lucide-react";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
 import { Card, PageHeader } from "@/components/ui";
-import { consoleHeaders } from "@/lib/api";
+import { viewerHeaders } from "@/lib/api";
 import { AnnouncementsEditor, type Announcement, type BotChat } from "./AnnouncementsEditor";
 
 export const metadata: Metadata = { title: "ประชาสัมพันธ์ — Option Pay Admin" };
@@ -12,7 +12,7 @@ const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 export default async function AnnouncementsPage() {
   let data: { announcements: Announcement[]; chats: BotChat[]; slots: string[]; posting?: { canPost: boolean; faqEnabled: boolean } } | string;
   try {
-    const r = await fetch(`${BASE}/api/console/support-bot/announcements`, { headers: consoleHeaders(), cache: "no-store" });
+    const r = await fetch(`${BASE}/api/console/support-bot/announcements`, { headers: await viewerHeaders(), cache: "no-store" });
     if (!r.ok) throw new Error(`announcements → HTTP ${r.status}`);
     data = await r.json();
   } catch (err) {

@@ -23,6 +23,7 @@ import { QuotaLive } from "./QuotaLive";
 import { RelationLink } from "./Relation";
 import { relationLink } from "./relation-link";
 import { ServerBill } from "./ServerBill";
+import { Can } from "@/components/shell/perms-context";
 
 export const metadata: Metadata = { title: "รายการชำระเงิน — Option Pay Admin" };
 
@@ -275,7 +276,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
         badge={{ text: `${data.review.pagination.total} รายการ`, bg: "#fee2e2", fg: "#b91c1c" }}
         hint="ต้องมีคนดู — มีสลิป/แจ้งเตือนที่ระบบจับคู่เองไม่ได้, เงินเข้าโดยไม่มีออเดอร์, หรือ P2P ติด"
       >
-        <BulkSelect items={data.review.data.map((p) => ({ ref: p.ref, amount: p.amount, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount ?? null, slipDecision: p.slipDecision ?? null, slipTransferLeft: p.slipTransferLeft ?? null, slipTransferUsedBy: p.slipTransferUsedBy ?? null, customerLeftover: p.customerLeftover ?? null, reviewNote: p.reviewNote }))} bulk={bulkPayments} confirmApprove>
+        <BulkSelect perm="payment.approve" items={data.review.data.map((p) => ({ ref: p.ref, amount: p.amount, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount ?? null, slipDecision: p.slipDecision ?? null, slipTransferLeft: p.slipTransferLeft ?? null, slipTransferUsedBy: p.slipTransferUsedBy ?? null, customerLeftover: p.customerLeftover ?? null, reviewNote: p.reviewNote }))} bulk={bulkPayments} confirmApprove>
           <Table rows={data.review.data} selectable empty="ไม่มีรายการที่ต้องตรวจสอบ ✓" merchants={pickList} />
         </BulkSelect>
       </Bucket>
@@ -317,10 +318,10 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
       <ServerBill />
       <QuotaLive />
       <div className="self-start">
-        <CreatePayment
+        <Can perm="payment.create"><CreatePayment
           merchants={merchantsSorted.filter((m) => m.status === "active").map((m) => ({ id: m.id, label: m.name }))}
           accounts={receiving.map((a) => ({ id: a.id, label: `${a.bankCode} · ${a.accountName ?? a.label} · ${a.accountNo ?? ""}` }))}
-        />
+        /></Can>
       </div>
     </>,
   );

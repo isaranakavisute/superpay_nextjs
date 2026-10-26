@@ -10,6 +10,7 @@ import { fmtDateTime, fmtMoney } from "@/lib/format";
 import type { TransferLeftoverRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { RowActions } from "./RowActions";
+import { Can } from "@/components/shell/perms-context";
 
 export const metadata: Metadata = { title: "ยอดคงเหลือเงินโอน — Option Pay Admin" };
 
@@ -169,7 +170,7 @@ export default async function TransferLeftoversPage({ searchParams }: PageProps<
                           {t.note && <div className="mt-1 max-w-[200px] whitespace-normal text-[11px] text-muted">{t.note}</div>}
                         </td>
                         <td className={td}>
-                          {t.status !== "used" && <RowActions id={t.id} message={shopMessage(t)} canExtend />}
+                          {t.status !== "used" && <Can perm="payment.approve"><RowActions id={t.id} message={shopMessage(t)} canExtend /></Can>}
                         </td>
                       </tr>
                     ))

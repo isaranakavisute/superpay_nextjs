@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, GitBranch, LayoutDashboard } from "lucide-react";
-import { consoleHeaders } from "@/lib/api";
+import { viewerHeaders } from "@/lib/api";
 import { fmtMoney } from "@/lib/format";
 import { Card, CardHead } from "../ui";
 import { BreakdownButton } from "./BreakdownButton";
@@ -31,7 +31,7 @@ export async function MerchantTree({ merchantId, from, to, rangeLabel, link }: {
   if (to) q.set("to", to);
   let t: Tree;
   try {
-    const r = await fetch(`${BASE}/api/console/merchants/${merchantId}/breakdown/tree?${q}`, { headers: consoleHeaders(), cache: "no-store" });
+    const r = await fetch(`${BASE}/api/console/merchants/${merchantId}/breakdown/tree?${q}`, { headers: await viewerHeaders(), cache: "no-store" });
     if (!r.ok) return null;
     t = await r.json();
   } catch {

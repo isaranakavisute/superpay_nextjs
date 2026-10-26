@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useCan } from "@/components/shell/perms-context";
 import QR from "qrcode";
 import { Check, Copy, Eye, Pencil, Trash2, Upload, X } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
@@ -82,6 +83,7 @@ function TransferQr({ o }: { o: OutflowForActions }) {
 }
 
 export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts: { id: number; label: string }[] }) {
+  const canApprove = useCan()("outflow.approve");   // สิทธิ์การเข้าถึง: action buttons only for roles that may use them
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -133,18 +135,18 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
       {o.hasSlipImage && (
         <button className={`${sm} ${btn.ghost}`} onClick={() => open("slip")} title="ดูสลิป" aria-label="ดูสลิป"><Eye size={14} /></button>
       )}
-      <button className={`${sm} ${btn.ghost}`} onClick={() => fileRef.current?.click()} disabled={pending} title="แนบสลิป" aria-label="แนบสลิป"><Upload size={14} /></button>
+      {canApprove && <button className={`${sm} ${btn.ghost}`} onClick={() => fileRef.current?.click()} disabled={pending} title="แนบสลิป" aria-label="แนบสลิป"><Upload size={14} /></button>}
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
-      <button className={`${sm} ${btn.ghost}`} onClick={() => open("edit")} disabled={pending} title="จัดหมวดหมู่ / โอนจากบัญชี / ธนาคารปลายทาง" aria-label="จัดหมวดหมู่"><Pencil size={14} /></button>
+      {canApprove && <button className={`${sm} ${btn.ghost}`} onClick={() => open("edit")} disabled={pending} title="จัดหมวดหมู่ / โอนจากบัญชี / ธนาคารปลายทาง" aria-label="จัดหมวดหมู่"><Pencil size={14} /></button>}
       {o.status !== "rejected" && (
         <button className={`${sm} ${btn.ghost}`} onClick={() => open("qr")} title="QR โอนออก / คัดลอกเลขบัญชี">QR โอน</button>
       )}
-      {rejectableApproved && (
+      {rejectableApproved && canApprove && (
         <button className={`${sm} border-[#fecaca]/40 bg-transparent text-danger hover:bg-danger/10`} onClick={() => open("reject")} disabled={pending} title="ปฏิเสธรายการนี้ — คืนยอด + ค่าธรรมเนียมให้ร้าน">
           <X size={14} /> ปฏิเสธ
         </button>
       )}
-      {isPending && (
+      {isPending && canApprove && (
         <>
           <button className={`${sm} ${btn.success}`} onClick={() => open("approve")} disabled={pending} title="อนุมัติและโอนออก">
             <Check size={13} /> อนุมัติ
@@ -154,7 +156,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
           </button>
         </>
       )}
-      {o.status !== "approved" && (
+      {o.status !== "approved" && canApprove && (
         <button className={`${sm} border-line bg-transparent text-danger hover:bg-danger/10`} onClick={() => open("delete")} disabled={pending} title="ลบรายการ" aria-label="ลบรายการ">
           <Trash2 size={14} />
         </button>

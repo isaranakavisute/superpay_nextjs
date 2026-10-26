@@ -14,6 +14,7 @@ import { requestTime } from "@/lib/request-time";
 import type { MerchantRow, WithdrawalRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { WithdrawalActions } from "./WithdrawalActions";
+import { Can } from "@/components/shell/perms-context";
 
 export const metadata: Metadata = { title: "คำขอถอนเงิน — Option Pay Admin" };
 
@@ -89,7 +90,7 @@ function Row({ w, now }: { w: WithdrawalRow; now: number }) {
       </td>
       <td className={`${td} whitespace-nowrap text-muted`}>{fmtDateTime(w.createdAt)}</td>
       <td className={td}>
-        <WithdrawalActions
+        <Can perm="withdrawal.approve"><WithdrawalActions
           w={{
             ref: w.ref,
             status: w.status,
@@ -100,7 +101,7 @@ function Row({ w, now }: { w: WithdrawalRow; now: number }) {
             p2pStatus: w.p2pStatus,
             p2pRef: w.p2pRef,
           }}
-        />
+        /></Can>
       </td>
     </tr>
   );

@@ -16,6 +16,15 @@ export function consoleHeaders(actor?: string): Record<string, string> {
  * Console headers naming who is looking (x-console-user-id): private test records are shown only to their owner
  * (backend shared/private-records.js). Use for every read of lists / totals.
  */
+/**
+ * x-console-user-id for a write made as `actor`: the backend checks that operator's role (สิทธิ์การเข้าถึง). The id is
+ * needed because two console accounts may share a username (e.g. "admin" — one Admin, one Super Admin).
+ */
+async function operatorId(actor: string): Promise<Record<string, string>> {
+  const me = await (await import("./session")).getSessionUser().catch(() => null);
+  return me && me.username === actor ? { "x-console-user-id": String(me.id) } : {};
+}
+
 export async function viewerHeaders(): Promise<Record<string, string>> {
   const me = await (await import("./session")).getSessionUser().catch(() => null);
   return { ...consoleHeaders(me?.username), ...(me ? { "x-console-user-id": String(me.id) } : {}) };
@@ -186,7 +195,7 @@ export async function consoleWrite(method: "POST" | "DELETE", path: string, acto
     const res = await fetch(BASE + path, {
       method,
       cache: "no-store",
-      headers: { "content-type": "application/json", ...consoleHeaders(actor) },
+      headers: { "content-type": "application/json", ...consoleHeaders(actor), ...(await operatorId(actor)) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const json = await res.json().catch(() => null);

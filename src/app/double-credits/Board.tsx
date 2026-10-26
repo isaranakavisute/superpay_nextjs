@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useCan } from "@/components/shell/perms-context";
 import { DollarSign, Eye, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { Modal, btn } from "@/components/interactive/Modal";
 import { StatGrid, StatTile } from "@/components/ui";
@@ -20,6 +21,7 @@ const td = "px-[18px] py-[13px] align-top";
 const check = "size-4 accent-[var(--color-primary)]";
 
 export function Board({ rows }: { rows: DoubleCreditRow[] }) {
+  const canAct = useCan()("payment.double_credit");   // สิทธิ์การเข้าถึง
   const [selected, setSelected] = useState<Set<DoubleCreditRow["id"]>>(new Set());
   const [compare, setCompare] = useState<DoubleCreditRow | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export function Board({ rows }: { rows: DoubleCreditRow[] }) {
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-[18px] py-2.5">
         <label className="inline-flex cursor-pointer items-center gap-2 font-semibold">
-          <input type="checkbox" className={check} checked={rows.length > 0 && sel.size === rows.length} onChange={(e) => toggle(rows.map((r) => r.id), e.target.checked)} />
+          {canAct && <input type="checkbox" className={check} checked={rows.length > 0 && sel.size === rows.length} onChange={(e) => toggle(rows.map((r) => r.id), e.target.checked)} />}
           เลือกทั้งหมดทุกกลุ่ม ({rows.length} คู่)
         </label>
         <span className="text-[12.5px] text-muted">
@@ -70,9 +72,9 @@ export function Board({ rows }: { rows: DoubleCreditRow[] }) {
         </span>
         {error && <span className="text-[12.5px] text-danger">{error}</span>}
         <span className="flex-auto" />
-        <button className={`${btn.base} ${btn.sm} ${btn.danger}`} disabled={!sel.size || pending} onClick={() => run("clawback", [...sel])}>ดึงเงินคืนที่เลือก</button>
-        <button className={`${btn.base} ${btn.sm} ${btn.ghost}`} disabled={!sel.size || pending} onClick={() => run("dismiss", [...sel])}>ไม่ใช่ซ้ำที่เลือก</button>
-        <button className={`${btn.base} ${btn.sm} ${btn.ghost}`} disabled={!sel.size || pending} onClick={() => setSelected(new Set())}>ล้างที่เลือก</button>
+        {canAct && <button className={`${btn.base} ${btn.sm} ${btn.danger}`} disabled={!sel.size || pending} onClick={() => run("clawback", [...sel])}>ดึงเงินคืนที่เลือก</button>}
+        {canAct && <button className={`${btn.base} ${btn.sm} ${btn.ghost}`} disabled={!sel.size || pending} onClick={() => run("dismiss", [...sel])}>ไม่ใช่ซ้ำที่เลือก</button>}
+        {canAct && <button className={`${btn.base} ${btn.sm} ${btn.ghost}`} disabled={!sel.size || pending} onClick={() => setSelected(new Set())}>ล้างที่เลือก</button>}
       </div>
 
       {GROUPS.map((g) => {
@@ -93,7 +95,7 @@ export function Board({ rows }: { rows: DoubleCreditRow[] }) {
                 <thead>
                   <tr>
                     <th className={`${th} w-8 pr-0`} title={`เลือกทั้งหมดในกลุ่ม ${g.title}`}>
-                      <input type="checkbox" className={check} checked={ids.every((id) => sel.has(id))} onChange={(e) => toggle(ids, e.target.checked)} aria-label={`เลือกทั้งหมดในกลุ่ม ${g.title}`} />
+                      {canAct && <input type="checkbox" className={check} checked={ids.every((id) => sel.has(id))} onChange={(e) => toggle(ids, e.target.checked)} aria-label={`เลือกทั้งหมดในกลุ่ม ${g.title}`} />}
                     </th>
                     {["ร้าน", "ออเดอร์ที่ได้เงินซ้ำ", "ยอด", "อนุมัติเอง", "ออเดอร์ที่ถือสลิป", "เหตุผล", "จัดการ"].map((h) => (
                       <th key={h} className={`${th} ${h === "ยอด" || h === "จัดการ" ? "text-right" : ""}`}>{h}</th>
@@ -104,7 +106,7 @@ export function Board({ rows }: { rows: DoubleCreditRow[] }) {
                   {xs.map((d) => (
                     <tr key={d.id} className="hover:bg-surface-alt">
                       <td className={`${td} w-8 pr-0`}>
-                        <input type="checkbox" className={check} checked={sel.has(d.id)} onChange={(e) => toggle([d.id], e.target.checked)} title={`เลือก ${d.creditedRef}`} aria-label={`เลือก ${d.creditedRef}`} />
+                        {canAct && <input type="checkbox" className={check} checked={sel.has(d.id)} onChange={(e) => toggle([d.id], e.target.checked)} title={`เลือก ${d.creditedRef}`} aria-label={`เลือก ${d.creditedRef}`} />}
                       </td>
                       <td className={`${td} whitespace-nowrap`}>{d.merchantName ?? <span className="text-soft">house</span>}</td>
                       <td className={td}>
@@ -132,8 +134,8 @@ export function Board({ rows }: { rows: DoubleCreditRow[] }) {
                       <td className={td}>
                         <div className="flex flex-nowrap justify-end gap-1.5">
                           <button className={`${btn.base} ${btn.sm} ${btn.ghost}`} onClick={() => setCompare(d)} title="เปิดสลิปของทั้งสองออเดอร์เทียบกัน"><Eye size={13} /> เทียบสลิป</button>
-                          <button className={`${btn.base} ${btn.sm} ${btn.danger}`} disabled={pending} onClick={() => run("clawback", [d.id])}>ดึงเงินคืน</button>
-                          <button className={`${btn.base} ${btn.sm} ${btn.ghost}`} disabled={pending} onClick={() => run("dismiss", [d.id])}>ไม่ใช่ซ้ำ</button>
+                          {canAct && <button className={`${btn.base} ${btn.sm} ${btn.danger}`} disabled={pending} onClick={() => run("clawback", [d.id])}>ดึงเงินคืน</button>}
+                          {canAct && <button className={`${btn.base} ${btn.sm} ${btn.ghost}`} disabled={pending} onClick={() => run("dismiss", [d.id])}>ไม่ใช่ซ้ำ</button>}
                         </div>
                       </td>
                     </tr>

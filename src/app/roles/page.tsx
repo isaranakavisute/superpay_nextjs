@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AlertTriangle } from "lucide-react";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
 import { Card, PageHeader } from "@/components/ui";
-import { consoleHeaders, listResource } from "@/lib/api";
+import { listResource, viewerHeaders } from "@/lib/api";
 import { RoleMatrix, type Group, type Role } from "./RoleMatrix";
 
 export const metadata: Metadata = { title: "สิทธิ์การเข้าถึง — Option Pay Admin" };
@@ -14,7 +14,7 @@ export default async function RolesPage() {
   try {
     const [roles, cat] = await Promise.all([
       listResource<Role>("roles", { limit: 50 }),
-      fetch(`${BASE}/api/console/roles-admin/catalogue`, { headers: consoleHeaders(), cache: "no-store" }).then(async (r) => {
+      fetch(`${BASE}/api/console/roles-admin/catalogue`, { headers: await viewerHeaders(), cache: "no-store" }).then(async (r) => {
         if (!r.ok) throw new Error(`roles catalogue → HTTP ${r.status}`);
         return ((await r.json()) as { groups: Group[] }).groups;
       }),

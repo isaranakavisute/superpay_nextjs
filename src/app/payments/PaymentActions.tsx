@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useCan } from "@/components/shell/perms-context";
 import Link from "next/link";
 import { Check, Eye, Link2, RotateCcw, Trash2, Undo2, Upload, X } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
@@ -56,6 +57,10 @@ function toBase64(file: File) {
  */
 export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchants: { id: number; name: string }[] }) {
   const [dialog, setDialog] = useState<Dialog>(null);
+  // สิทธิ์การเข้าถึง: only the buttons this operator's role may use (the backend refuses the rest anyway).
+  const can = useCan();
+  const canApprove = can("payment.approve");
+  const canRefund = can("payment.refund");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [reason, setReason] = useState("");
@@ -141,27 +146,27 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
           <Eye size={14} />
         </button>
       )}
-      <button className={`${sm} ${btn.ghost}`} onClick={openAttach} disabled={pending} title={p.hasSlipImage ? "เปลี่ยนสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)" : "แนบสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)"} aria-label="แนบสลิป">
+      {canApprove && <button className={`${sm} ${btn.ghost}`} onClick={openAttach} disabled={pending} title={p.hasSlipImage ? "เปลี่ยนสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)" : "แนบสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)"} aria-label="แนบสลิป">
         <Upload size={14} />
-      </button>
+      </button>}
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
-      {p.merchantId != null && (
+      {p.merchantId != null && can("webhook.view") && (
         <Link href={`/webhooks?range=all&q=${p.ref}`} className={`${sm} ${btn.ghost}`} title="ดูว่าแจ้งร้านไปหรือยัง / ร้านตอบอะไรกลับมา" aria-label="Webhook ของรายการนี้">
           <Link2 size={14} />
         </Link>
       )}
-      {open_ && (
+      {open_ && canApprove && (
         <>
           <button className={`${sm} ${btn.ghost}`} onClick={() => open("amount")} disabled={pending} title="แก้ยอด (ลูกค้าโอนเศษไม่ตรง)">แก้ยอด</button>
           <button className={`${sm} ${btn.ghost}`} onClick={() => open("assign")} disabled={pending} title="เลือกว่าเงินก้อนนี้เข้าร้านไหน / ลูกค้าคนไหน · เติม Order ID ของร้านได้ถ้ายังไม่มี">ระบุร้าน</button>
         </>
       )}
-      {s === "expired" && (
+      {s === "expired" && canApprove && (
         <button className={`${sm} ${btn.ghost}`} onClick={() => run(() => revivePayment(p.ref))} disabled={pending} title="เปิดให้จ่ายได้อีกครั้ง">
           <RotateCcw size={13} /> ปลุกคืน
         </button>
       )}
-      {open_ && (
+      {open_ && canApprove && (
         <>
           <button className={`${sm} ${btn.success}`} onClick={() => open("approve")} disabled={pending} title="ยืนยันว่าเงินเข้าแล้ว">
             <Check size={13} /> อนุมัติ
@@ -171,12 +176,12 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
           </button>
         </>
       )}
-      {s === "approved" && (
+      {s === "approved" && canRefund && (
         <button className={`${sm} ${btn.ghost}`} onClick={() => open("refund")} disabled={pending} title="คืนเงินให้ลูกค้า">
           <Undo2 size={13} /> คืนเงิน
         </button>
       )}
-      {(open_ || s === "rejected") && Number(p.refundedAmount) === 0 && (
+      {(open_ || s === "rejected") && Number(p.refundedAmount) === 0 && canApprove && (
         <button className={`${sm} border-line bg-transparent text-danger hover:bg-danger/10`} onClick={() => open("delete")} disabled={pending} title="ปิดรายการนี้ทิ้ง (ลูกค้าไม่ได้โอน)" aria-label="ลบรายการ">
           <Trash2 size={14} />
         </button>

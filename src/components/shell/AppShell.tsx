@@ -8,6 +8,7 @@ import type { SessionUser } from "@/lib/session";
 import { PayoutSound } from "./PayoutSound";
 import { TxnSuggest } from "../txn/TxnSuggest";
 import { Sidebar } from "./Sidebar";
+import { PermsProvider } from "./perms-context";
 import { BellMenu, type BellItem } from "./BellMenu";
 import { ThemeButton, type ThemeOption } from "./ThemeButton";
 
@@ -30,10 +31,13 @@ export function AppShell({
   alerts,
   search,
   look,
+  perms = null,
   children,
 }: {
   title: string;
   look: ShellLook;
+  /** The operator's permissions (null = unknown): the sidebar shows only the pages they may open. */
+  perms?: string[] | null;
   user: SessionUser;
   alerts?: ShellAlerts | null;
   /** Top-bar search for list pages (hidden on the dashboard, as on the original). */
@@ -53,6 +57,7 @@ export function AppShell({
         user={user}
         brand={look.brand}
         badges={alerts?.badges ?? {}}
+        perms={perms}
         open={menuOpen}
         collapsed={collapsed}
         onClose={() => {
@@ -126,7 +131,7 @@ export function AppShell({
           </div>
         )}
 
-        <div className="p-4 sm:px-8 sm:py-7">{children}</div>
+        <div className="p-4 sm:px-8 sm:py-7"><PermsProvider perms={perms}>{children}</PermsProvider></div>
       </main>
     </div>
   );

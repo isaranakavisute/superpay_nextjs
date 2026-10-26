@@ -54,17 +54,20 @@ export async function MerchantView({ params, pickerPath, merchantId, portal = fa
   const wanted = merchantId ?? Number(param(params, "merchantId"));
   const m = sorted.find((x) => x.id === wanted) ?? sorted[0];
 
+  // A list the operator's role may not view (สิทธิ์การเข้าถึง, e.g. withdrawals for "User") shows as empty, not as an error.
+  const orEmpty = <T,>(q: Promise<ListResult<T>>): Promise<ListResult<T>> =>
+    q.catch(() => ({ data: [], pagination: { total: 0, limit: 0, offset: 0 }, summary: [] }));
   const [period, lifetime, recent, withdrawals, pendingW, trend, paidOut] = await Promise.all([
-    listResource<PaymentRow>("payments", { merchantId: m.id, ...win, limit: 1 }),
-    listResource<PaymentRow>("payments", { merchantId: m.id, limit: 1 }),
-    listResource<PaymentRow>("payments", { merchantId: m.id, ...win, limit: 10 }),
-    listResource<WithdrawalRow>("withdrawals", { merchantId: m.id, ...win, limit: 5 }),
-    listResource<WithdrawalRow>("withdrawals", { merchantId: m.id, status: "pending", limit: 1 }),
+    orEmpty(listResource<PaymentRow>("payments", { merchantId: m.id, ...win, limit: 1 })),
+    orEmpty(listResource<PaymentRow>("payments", { merchantId: m.id, limit: 1 })),
+    orEmpty(listResource<PaymentRow>("payments", { merchantId: m.id, ...win, limit: 10 })),
+    orEmpty(listResource<WithdrawalRow>("withdrawals", { merchantId: m.id, ...win, limit: 5 })),
+    orEmpty(listResource<WithdrawalRow>("withdrawals", { merchantId: m.id, status: "pending", limit: 1 })),
     getDashboardTrend(30, m.id),
-    listResource("outflows", { merchantId: m.id, status: "approved", limit: 1 }),
+    orEmpty(listResource("outflows", { merchantId: m.id, status: "approved", limit: 1 })),
   ]);
   // Admin view: payouts (amount + out-fee) in the selected period, for the flow cards.
-  const periodOut = portal ? null : by((await listResource("outflows", { merchantId: m.id, status: "approved", ...win, limit: 1 })).summary).approved;
+  const periodOut = portal ? null : by((await orEmpty(listResource("outflows", { merchantId: m.id, status: "approved", ...win, limit: 1 }))).summary).approved;
   const p = by(period.summary);
   const life = by(lifetime.summary);
   const wPend = by(pendingW.summary);

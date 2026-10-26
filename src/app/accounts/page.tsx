@@ -10,6 +10,7 @@ import { findBank } from "@/lib/domain";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
 import type { AccountRow, MerchantRow } from "@/lib/rows";
 import { AccountActions, AccountSwitch, NewAccountButton, ResetAllButton } from "./AccountControls";
+import { Can } from "@/components/shell/perms-context";
 
 type Account = AccountRow & { promptpayId: string | null; merchantIds: number[]; byShop: { merchantId: number | null; n: number; total: string }[] };
 type Shop = { id: number; name: string };
@@ -77,7 +78,7 @@ function AccountCard({ a, shops }: { a: Account; shops: Shop[] }) {
       </div>
 
       <div className="flex justify-end gap-2 border-t border-line px-5 py-3">
-        <AccountActions shops={shops} account={{ id: a.id, bankCode: a.bankCode, accountNo: a.accountNo, accountName: a.accountName, accountType: a.accountType, promptpayId: a.promptpayId, merchantIds: a.merchantIds ?? [], label: a.label }} />
+        <Can perm="account.edit"><AccountActions shops={shops} account={{ id: a.id, bankCode: a.bankCode, accountNo: a.accountNo, accountName: a.accountName, accountType: a.accountType, promptpayId: a.promptpayId, merchantIds: a.merchantIds ?? [], label: a.label }} /></Can>
       </div>
     </div>
   );
@@ -107,7 +108,7 @@ export default async function AccountsPage({ searchParams }: PageProps<"/account
       <PageHeader
         title="บัญชีธนาคาร"
         subtitle="บัญชีที่ใช้รับเงินจากลูกค้าและโอนเงินออก"
-        actions={<NewAccountButton shops={shops} />}
+        actions={<Can perm="account.edit"><NewAccountButton shops={shops} /></Can>}
       />
 
       <div className="mb-5 flex flex-wrap gap-1 border-b border-line">

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useTransition } from "react";
+import { useCan } from "@/components/shell/perms-context";
 import { Check, X } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import { fmtMoney } from "@/lib/format";
@@ -8,7 +9,7 @@ import type { ActionResult } from "@/lib/api";
 import { ApproveDialog } from "@/app/payments/ApproveDialog";
 import type { ApprovalInput } from "@/app/payments/approvalCheck";
 
-type Ctx = { selected: Set<string>; toggle: (ref: string) => void; setAll: (refs: string[], on: boolean) => void };
+type Ctx = { selected: Set<string>; toggle: (ref: string) => void; setAll: (refs: string[], on: boolean) => void; enabled: boolean };
 const SelectionContext = createContext<Ctx | null>(null);
 
 export type BulkAction = (action: "approve" | "reject", refs: string[], reason?: string, accountId?: number) => Promise<ActionResult>;
@@ -25,7 +26,9 @@ type BarOptions = {
 };
 
 /** Selection state for one bucket; the bar and the checkboxes share it. */
-export function BulkSelect({ items, children, ...bar }: { items: Item[]; children: React.ReactNode } & BarOptions) {
+/** `perm`: the permission bulk actions need (สิทธิ์การเข้าถึง) — without it there are no checkboxes and no bulk bar. */
+export function BulkSelect({ items, children, perm, ...bar }: { items: Item[]; children: React.ReactNode; perm?: string } & BarOptions) {
+  const enabled = useCan()(perm ?? "");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // Rows that left the bucket (approved elsewhere, auto-refresh) drop out of the selection.
   const live = new Set(items.map((i) => i.ref));
@@ -41,10 +44,11 @@ export function BulkSelect({ items, children, ...bar }: { items: Item[]; childre
         return next;
       }),
     setAll: (refs, on) => setSelected(on ? new Set(refs) : new Set()),
+    enabled: !perm || enabled,
   };
   return (
     <SelectionContext.Provider value={ctx}>
-      <BulkBar items={items} {...bar} />
+      {ctx.enabled && <BulkBar items={items} {...bar} />}
       {children}
     </SelectionContext.Provider>
   );
@@ -57,12 +61,14 @@ function useSelection() {
 }
 
 export function RowCheckbox({ refId }: { refId: string }) {
-  const { selected, toggle } = useSelection();
+  const { selected, toggle, enabled } = useSelection();
+  if (!enabled) return null;
   return <input type="checkbox" className="size-4 accent-[var(--color-primary)]" checked={selected.has(refId)} onChange={() => toggle(refId)} aria-label={`เลือก ${refId}`} />;
 }
 
 export function AllCheckbox({ refs }: { refs: string[] }) {
-  const { selected, setAll } = useSelection();
+  const { selected, setAll, enabled } = useSelection();
+  if (!enabled) return null;
   const all = refs.length > 0 && refs.every((r) => selected.has(r));
   return <input type="checkbox" className="size-4 accent-[var(--color-primary)]" checked={all} onChange={(e) => setAll(refs, e.target.checked)} aria-label="เลือกทั้งหมด" />;
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { consoleHeaders, consoleWrite, type ActionResult } from "@/lib/api";
+import { consoleWrite, type ActionResult, viewerHeaders } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
 import { reasonError } from "@/lib/delete-reason";
 
@@ -20,7 +20,7 @@ async function as(fn: (actor: string) => Promise<ActionResult>): Promise<ActionR
 /** Read helper for the dialogs (API keys, webhook, portal users, credit history). */
 async function read(path: string): Promise<ActionResult> {
   if (!(await getSessionUser())) return bad("กรุณาเข้าสู่ระบบใหม่");
-  const res = await fetch(BASE + path, { headers: consoleHeaders(), cache: "no-store" });
+  const res = await fetch(BASE + path, { headers: await viewerHeaders(), cache: "no-store" });
   const json = await res.json().catch(() => null);
   return res.ok ? { ok: true, ...json } : bad(json?.error?.message ?? `HTTP ${res.status}`);
 }

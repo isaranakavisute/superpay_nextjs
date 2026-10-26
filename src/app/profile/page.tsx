@@ -32,13 +32,14 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   let data;
   try {
     const [p, users, roles] = await Promise.all([
-      fetch(`${BASE}/api/console/profile/${me.id}`, { headers: consoleHeaders(me.username), cache: "no-store" }).then(async (r) => {
+      fetch(`${BASE}/api/console/profile/${me.id}`, { headers: { ...consoleHeaders(me.username), "x-console-user-id": String(me.id) }, cache: "no-store" }).then(async (r) => {
         if (r.status === 404) return null;
         if (!r.ok) throw new Error(`profile → HTTP ${r.status}`);
         return ((await r.json()) as { profile: Profile }).profile;
       }),
-      listResource<UserRow>("users", { q: me.username, limit: 50 }),
-      listResource<RoleRow>("roles", { limit: 50 }),
+      // Own last login / role name only: a role without user.view still sees its own profile (lists come back empty).
+      listResource<UserRow>("users", { q: me.username, limit: 50 }).catch(() => ({ data: [] as UserRow[] })),
+      listResource<RoleRow>("roles", { limit: 50 }).catch(() => ({ data: [] as RoleRow[] })),
     ]);
     data = { p, lastLoginAt: users.data.find((u) => u.id === me.id)?.lastLoginAt ?? null, roleName: (code: string) => roles.data.find((r) => r.code === code)?.name ?? code };
   } catch (err) {

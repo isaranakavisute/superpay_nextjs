@@ -549,10 +549,11 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
   const [popup, setPopup] = useState<{ step: StepKey; title: string; call: DemoCall | null; error: string | null } | null>(null);
 
   const [pay, setPay] = useState<{ amount: string; orderId: string; description: string; memberName: string; api: "v1" | "v2"; redirectUrl: string }>(
-    { amount: "100", orderId: firstIds.orderId, description: "สินค้าทดลอง", memberName: "", api: "v1", redirectUrl: "https://example.com/deposit/done" });
+    { amount: "100", orderId: firstIds.orderId, description: "สินค้าทดลอง", memberName: "", api: "v2", redirectUrl: "https://example.com/deposit/done" });
   const [slipRef, setSlipRef] = useState("");
   const [slip, setSlip] = useState<File | null>(null);
-  const [out, setOut] = useState({ amount: "10", bankCode: "SCB", accountNumber: "", accountName: "", merchantRef: firstIds.merchantRef, description: "ทดลองโอนออก" });
+  const [out, setOut] = useState<{ amount: string; bankCode: string; accountNumber: string; accountName: string; merchantRef: string; description: string; api: "v1" | "v2" }>(
+    { amount: "10", bankCode: "SCB", accountNumber: "", accountName: "", merchantRef: firstIds.merchantRef, description: "ทดลองโอนออก", api: "v2" });
   const [checkout, setCheckout] = useState<{ url: string; account: string } | null>(null);
   // Receiving account from the payment/create response (selectedAccount) — shown at the bottom of the step 1 card.
   const [payTo, setPayTo] = useState<{ ref: string; bankCode: string; bankName: string; accountNumber: string; accountName: string } | null>(null);
@@ -1004,9 +1005,15 @@ export function DemoConsole({ logo, shop, banks, firstIds }: { logo: React.React
             )}
           </StepCard>
 
-          <StepCard n={3} icon={<Banknote size={18} />} title="สร้างรายการโอนออก" method="POST" path="/api/v1/payout/create"
+          <StepCard n={3} icon={<Banknote size={18} />} title="สร้างรายการโอนออก" method="POST" path={out.api === "v2" ? "/api/v2/payout/create" : "/api/v1/payout/create"}
             desc="ขอโอนเงินจากยอดของร้านให้ผู้รับ — ยอด + ค่าธรรมเนียมถูกกันไว้จนทีมงานโอนเสร็จ"
             button="สร้างรายการโอนออก" busy={busy === "payout"} onRun={() => createPayout()} call={calls.payout ?? null} fresh={fresh.payout ?? null} onFresh={() => signOnly("payout", () => demoCreatePayout(out, true))}>
+            <Field label="API endpoint" hint={out.api === "v2" ? "v2 = สถานะ PENDING จนกว่าทีมงานจะโอนจริง (admin ดำเนินการ = yes → COMPLETED) · callback payout.pending / payout.completed / payout.failed" : "v1 = ตอบ COMPLETED ทันทีเมื่อรับรายการ · callback เมื่อโอนสำเร็จ / ไม่สำเร็จ"}>
+              <select className={`${input} font-mono`} value={out.api} onChange={(e) => setOut({ ...out, api: e.target.value as "v1" | "v2" })} aria-label="API endpoint ของการโอนออก">
+                <option value="v1">POST /api/v1/payout/create</option>
+                <option value="v2">POST /api/v2/payout/create</option>
+              </select>
+            </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="ยอดเงิน (บาท) *" hint={fees && Number(out.amount) > 0 ? `ค่าธรรมเนียม ${Number(fees.outFeePercent)}% = ฿${baht(feeOf(Number(out.amount), fees.outFeePercent, fees.outFeeFlat))} · หักยอดร้าน ฿${baht(Number(out.amount) + feeOf(Number(out.amount), fees.outFeePercent, fees.outFeeFlat))}` : undefined}>
                 <input className={input} inputMode="decimal" value={out.amount} onChange={(e) => setOut({ ...out, amount: e.target.value })} /></Field>

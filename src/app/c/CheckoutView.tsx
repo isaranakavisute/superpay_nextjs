@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, Copy, Download, Upload, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Copy, Download, ImagePlus, Upload, XCircle } from "lucide-react";
 import { renderSampleSlip, type SampleSlip } from "@/lib/sample-slip";
 import { uploadSlip } from "./actions";
 
@@ -12,8 +12,8 @@ const money = (n: number) => n.toLocaleString("th-TH", { minimumFractionDigits: 
 export function CopyButton({ text, label }: { text: string; label: string }) {
   const [done, setDone] = useState(false);
   return (
-    <button type="button" aria-label={`คัดลอก${label}`} onClick={() => { void navigator.clipboard?.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); }} className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-[11.5px] text-muted hover:text-ink">
-      <Copy size={12} /> {done ? "คัดลอกแล้ว" : "คัดลอก"}
+    <button type="button" aria-label={`คัดลอก${label}`} onClick={() => { void navigator.clipboard?.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); }} className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 py-2 text-[15px] font-bold transition ${done ? "border-emerald-400/70 text-emerald-200" : "border-primary text-primary hover:bg-primary/15"}`}>
+      {done ? <CheckCircle2 size={17} /> : <Copy size={17} />} {done ? "คัดลอกแล้ว" : "คัดลอก"}
     </button>
   );
 }
@@ -65,25 +65,29 @@ export function CheckoutLive({ token, status, amount, expiresAt, hasSlip, slipLo
       )}
       <div className="mt-5 rounded-xl border border-dashed border-line p-4 text-left">
         {locked ? (
-          <div role="status" className="flex items-start gap-2 text-[13px]">
-            <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-300" />
-            <div><div className="font-semibold text-emerald-300">ได้รับสลิปแล้ว — กำลังตรวจสอบ</div>
-              <div className="mt-0.5 text-[12px] text-muted">รายการนี้แนบสลิปได้ครั้งเดียว ไม่ต้องส่งซ้ำ · หน้านี้จะอัปเดตเองเมื่อยืนยันเสร็จ หากมีปัญหาโปรดติดต่อร้านค้า</div></div>
+          <div role="status" className="flex items-start gap-2 text-[16px]">
+            <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-300" />
+            <div><div className="font-bold text-emerald-300">ได้รับสลิปแล้ว — กำลังตรวจสอบ</div>
+              <div className="mt-1 text-[14px] text-muted">รายการนี้แนบสลิปได้ครั้งเดียว ไม่ต้องส่งซ้ำ · หน้านี้จะอัปเดตเองเมื่อยืนยันเสร็จ หากมีปัญหาโปรดติดต่อร้านค้า</div></div>
           </div>
         ) : (<>
-        <div className="mb-1 text-[13px] font-semibold">โอนแล้ว? แนบสลิปเพื่อยืนยัน</div>
-        <div className="mb-2.5 text-[12px] text-muted">ระบบตรวจสลิปกับธนาคารทันที — ข้อมูลตรงครบ ยืนยันการชำระอัตโนมัติ · ยอดในสลิปต้องเป็น ฿{money(amount)} · แนบได้ครั้งเดียว</div>
-        <div className="flex flex-wrap items-center gap-2">
-          <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="เลือกรูปสลิป" className="min-w-0 flex-1 text-[12.5px]" onChange={(e) => { setSlip(e.target.files?.[0] ?? null); setMsg(null); }} />
-          <button type="button" disabled={!slip || pending} onClick={send} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-[13px] font-medium text-primary-fg disabled:opacity-50"><Upload size={14} /> {pending ? "กำลังส่ง..." : "ส่งสลิป"}</button>
-        </div>
+        <div className="mb-1.5 text-[19px] leading-snug font-bold">📎 โอนแล้ว? <span className="text-amber-200">ต้องแนบสลิป</span>เพื่อยืนยัน</div>
+        <div className="mb-3.5 text-[15px] leading-relaxed text-muted">ระบบตรวจสลิปกับธนาคารทันที — ข้อมูลตรงครบ ยืนยันการชำระอัตโนมัติ · ยอดในสลิปต้องเป็น <b className="text-ink">฿{money(amount)}</b> · แนบได้ครั้งเดียว</div>
+        {/* A real button instead of the browser's small file picker — clear for older customers. */}
+        <label className={`flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border-2 px-4 py-3.5 text-[17px] font-bold transition ${slip ? "border-emerald-400/70 bg-emerald-400/10 text-emerald-200" : "border-primary bg-primary/10 text-primary hover:bg-primary/20"}`}>
+          <ImagePlus size={22} className="shrink-0" />
+          <span className="min-w-0 truncate">{slip ? `เลือกแล้ว: ${slip.name}` : "แตะที่นี่เพื่อเลือกรูปสลิป"}</span>
+          <input type="file" accept="image/png,image/jpeg,image/webp" aria-label="เลือกรูปสลิป" className="sr-only" onChange={(e) => { setSlip(e.target.files?.[0] ?? null); setMsg(null); }} />
+        </label>
+        {slip && <div className="mt-1.5 text-center text-[14px] text-muted">แตะอีกครั้งเพื่อเปลี่ยนรูป</div>}
+        <button type="button" disabled={!slip || pending} onClick={send} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-[17px] font-bold text-primary-fg disabled:opacity-40"><Upload size={20} /> {pending ? "กำลังส่ง..." : "ส่งสลิป"}</button>
         {msg && (
-          <div role="status" className={`mt-2.5 flex items-center gap-1.5 text-[12.5px] ${msg.ok ? "text-emerald-300" : "text-red-300"}`}>
-            {msg.ok ? <CheckCircle2 size={14} className="shrink-0" /> : <XCircle size={14} className="shrink-0" />} {msg.text}
+          <div role="status" className={`mt-3 flex items-start gap-2 text-[15px] font-semibold ${msg.ok ? "text-emerald-300" : "text-red-300"}`}>
+            {msg.ok ? <CheckCircle2 size={18} className="mt-0.5 shrink-0" /> : <XCircle size={18} className="mt-0.5 shrink-0" />} {msg.text}
           </div>
         )}
         {msg?.list && (
-          <ul className="mt-1.5 list-disc space-y-1 pl-9 text-[12.5px] text-red-300">{msg.list.map((x) => <li key={x}>{x}</li>)}</ul>
+          <ul className="mt-1.5 list-disc space-y-1 pl-9 text-[14.5px] text-red-300">{msg.list.map((x) => <li key={x}>{x}</li>)}</ul>
         )}
         <SlipGuideline order={order} />
         </>)}

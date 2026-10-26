@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AlertTriangle } from "lucide-react";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
 import { Card, PageHeader } from "@/components/ui";
-import { consoleHeaders } from "@/lib/api";
+import { viewerHeaders } from "@/lib/api";
 import { OtherShops, type Shop } from "./OtherShops";
 import { WebhookEventsEditor, type Endpoint, type EventDef } from "./WebhookEventsEditor";
 
@@ -13,7 +13,7 @@ const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 export default async function WebhookEventsPage() {
   let data: { events: EventDef[]; endpoints: Endpoint[]; shops: Shop[] } | string;
   try {
-    const r = await fetch(`${BASE}/api/console/webhooks/settings`, { headers: consoleHeaders(), cache: "no-store" });
+    const r = await fetch(`${BASE}/api/console/webhooks/settings`, { headers: await viewerHeaders(), cache: "no-store" });
     if (!r.ok) throw new Error(`webhooks/settings → HTTP ${r.status}`);
     data = await r.json();
   } catch (err) {

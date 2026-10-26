@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AlertTriangle } from "lucide-react";
 import { ConsoleShell } from "@/components/shell/ConsoleShell";
 import { Card, PageHeader } from "@/components/ui";
-import { consoleHeaders, listResource } from "@/lib/api";
+import { listResource, viewerHeaders } from "@/lib/api";
 import type { ChannelRow } from "@/lib/rows";
 import { AlertsEditor, type Bot } from "./AlertsEditor";
 
@@ -14,7 +14,7 @@ export default async function AlertsPage() {
   let data;
   try {
     const [cfg, channels, shops] = await Promise.all([
-      fetch(`${BASE}/api/console/alert-bots`, { headers: consoleHeaders(), cache: "no-store" }).then(async (r) => {
+      fetch(`${BASE}/api/console/alert-bots`, { headers: await viewerHeaders(), cache: "no-store" }).then(async (r) => {
         if (!r.ok) throw new Error(`alert-bots → HTTP ${r.status}`);
         return (await r.json()) as { bots: Bot[]; kinds: string[]; thresholds: { repeatMinutes: number; slipFailCount: number; slipDownMinutes: number } };
       }),

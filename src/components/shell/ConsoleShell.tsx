@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { consoleHeaders, getAlerts } from "@/lib/api";
 import { THEMES, THEME_COOKIE, brandView, getBranding, pickTheme } from "@/lib/branding";
 import { getSessionUser } from "@/lib/session";
+import { canOpen, pageKeyOf } from "@/lib/page-perms";
 import { AppShell, type ShellAlerts, type ShellLook, type ShellSearch } from "./AppShell";
 import type { Params } from "../list/query";
 
@@ -44,6 +45,11 @@ export async function ConsoleShell({
     sound: me?.canApprovePayouts && branding.sounds.sequence.length ? branding.sounds.sequence : null,
   };
 
+  // สิทธิ์การเข้าถึง: menu items, bell entries and the page itself follow the operator's role.
+  const perms = me?.perms ?? null;
+  const pageKey = pageKeyOf(path);
+  const allowedPage = canOpen(perms, pageKey);
+
   let alerts: ShellAlerts | null = null;
   try {
     const a = await getAlerts();
@@ -63,11 +69,12 @@ export async function ConsoleShell({
         { key: "withdrawals", label: "คำขอถอนรออนุมัติ", note: "ร้านค้าขอถอนเงิน", count: q.withdrawals, href: "/withdrawals" },
         { key: "double-credits", label: "ตรวจเติมเงินซ้ำ — รอตรวจ", note: "สลิปเดียวกันเติมให้หลายออเดอร์", count: q.doubleCredits, href: "/double-credits" },
         { key: "events", label: "กล่องรับ Event — ใหม่", note: "ข้อความ / สลิปที่ยังจับคู่ไม่ได้", count: q.events, href: "/events" },
-      ],
+      ].filter((b) => canOpen(perms, b.key)),
       lowBalance: a.lowBalanceMerchants.length
         ? { names: a.lowBalanceMerchants.map((m) => m.name), count: a.lowBalanceMerchants.length }
         : null,
     };
+    alerts.pendingTotal = alerts.bell.reduce((n, b) => n + b.count, 0);
   } catch {
     alerts = null;
   }
@@ -84,8 +91,8 @@ export async function ConsoleShell({
     : null;
 
   return (
-    <AppShell title={title} user={user} alerts={alerts} search={shellSearch} look={look}>
-      {children}
+    <AppShell title={title} user={user} alerts={alerts} search={shellSearch} look={look} perms={perms}>
+      {allowedPage ? children : <NoAccess />}
     </AppShell>
   );
 }
@@ -95,11 +102,23 @@ const BASE = process.env.BACKEND_URL ?? "http://localhost:3001";
 /** The signed-in user's 2FA state and payout permission (null if the backend is unreachable). */
 async function getMe(id: number, username: string) {
   try {
-    const r = await fetch(`${BASE}/api/console/profile/${id}`, { headers: consoleHeaders(username), cache: "no-store", signal: AbortSignal.timeout(4000) });
+    const r = await fetch(`${BASE}/api/console/profile/${id}`, { headers: { ...consoleHeaders(username), "x-console-user-id": String(id) }, cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (!r.ok) return null;
     const p = ((await r.json()) as { profile: { roleCode: string; permissions: string[]; twoFactorEnabledAt: string | null } }).profile;
-    return { twoFactor: !!p.twoFactorEnabledAt, canApprovePayouts: p.roleCode === "super_admin" || p.permissions.includes("outflow.approve") };
+    const perms = p.roleCode === "super_admin" ? ["*"] : p.permissions ?? [];
+    return { twoFactor: !!p.twoFactorEnabledAt, perms, canApprovePayouts: perms.includes("*") || perms.includes("outflow.approve") };
   } catch {
     return null;
   }
+}
+
+/** Shown instead of a page the operator's role may not open (the menu hides it too). */
+function NoAccess() {
+  return (
+    <div className="mx-auto mt-16 max-w-[480px] rounded-2xl border border-line bg-surface p-8 text-center">
+      <div className="mb-2 text-[40px]">🔒</div>
+      <h1 className="mb-2 text-lg font-bold">ไม่มีสิทธิ์เข้าถึงหน้านี้</h1>
+      <p className="text-[14px] text-muted">บทบาทของคุณไม่มีสิทธิ์ดูหน้านี้ — ติดต่อ Super Admin หากต้องการสิทธิ์เพิ่ม (หน้าสิทธิ์การเข้าถึง)</p>
+    </div>
+  );
 }

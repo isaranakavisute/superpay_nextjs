@@ -33,7 +33,7 @@ export default async function SettingsPage() {
   let data;
   try {
     const [config, accounts, users] = await Promise.all([
-      fetch(`${BASE}/api/console/config`, { headers: consoleHeaders(me.username), cache: "no-store" }).then(async (r) => {
+      fetch(`${BASE}/api/console/config`, { headers: { ...consoleHeaders(me.username), "x-console-user-id": String(me.id) }, cache: "no-store" }).then(async (r) => {
         if (!r.ok) throw new Error(`settings → HTTP ${r.status}`);
         return ((await r.json()) as { config: Config }).config;
       }),

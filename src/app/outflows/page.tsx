@@ -20,6 +20,7 @@ import { AdminDoneSelect } from "./AdminDoneSelect";
 import { CreateOutflow } from "./CreateOutflow";
 import { OUTFLOW_CATEGORIES } from "./categories";
 import { CopyButton, OutflowActions } from "./OutflowActions";
+import { Can } from "@/components/shell/perms-context";
 
 export const metadata: Metadata = { title: "รายการเงินออก — Option Pay Admin" };
 
@@ -132,9 +133,12 @@ function Row({ o, selectable, accounts, tone }: { o: OutflowRow; selectable?: bo
         <WhenDone o={o} />
       </td>
       <td className={`${td} max-w-[240px] text-muted`}>{o.description ?? <span className="text-soft">—</span>}</td>
-      <td className={td}><AdminDoneSelect refId={o.ref} done={o.adminDone} /></td>
+      <td className={td}>{tone === "done"
+        // "admin ดำเนินการเรียบร้อยแล้ว": read-only — once transferred, the answer is final here.
+        ? <span className="inline-block rounded-lg border border-success/40 bg-success/10 px-2.5 py-1.5 text-[12.5px] font-semibold text-success" title="ดำเนินการแล้ว — เปลี่ยนไม่ได้">yes</span>
+        : <Can perm="outflow.approve" fallback={<span className="text-[12px] text-muted">{o.adminDone ? "yes" : "no"}</span>}><AdminDoneSelect refId={o.ref} done={o.adminDone} /></Can>}</td>
       <td className={td}>
-        <OutflowActions
+        <Can perm="outflow.view"><OutflowActions
           accounts={accounts}
           o={{
             ref: o.ref,
@@ -149,7 +153,7 @@ function Row({ o, selectable, accounts, tone }: { o: OutflowRow; selectable?: bo
             hasSlipImage: o.hasSlipImage,
             adminDone: o.adminDone,
           }}
-        />
+        /></Can>
       </td>
     </tr>
   );
@@ -271,7 +275,7 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
               รอโอน/รออนุมัติ — คำขอถอน, payout API, รายการที่ระบบสร้างจากแจ้งเตือนหักเงิน
             </span>
           </div>
-          <BulkSelect items={data.pending.data.map((o) => ({ ref: o.ref, amount: o.amount }))} bulk={bulkOutflows} show="selected" accounts={accountOpts}>
+          <BulkSelect perm="outflow.approve" items={data.pending.data.map((o) => ({ ref: o.ref, amount: o.amount }))} bulk={bulkOutflows} show="selected" accounts={accountOpts}>
             <Table rows={data.pending.data} selectable empty="ไม่มีรายการรอดำเนินการ" accounts={accountOpts} />
           </BulkSelect>
         </section>
@@ -299,9 +303,9 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
         </div>
       </details>
     </>,
-    <CreateOutflow
+    <Can perm="outflow.approve"><CreateOutflow
       merchants={[...data.merchants].sort((a, b) => a.name.localeCompare(b.name, "th")).filter((m) => m.status === "active").map((m) => ({ id: m.id, label: m.name }))}
       accounts={accountOpts}
-    />,
+    /></Can>,
   );
 }

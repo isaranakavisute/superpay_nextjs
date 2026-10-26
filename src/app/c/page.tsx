@@ -96,17 +96,25 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/c">) {
             <div className="mt-2 text-[12.5px] text-muted">สแกนด้วยแอปธนาคารใดก็ได้ · PromptPay</div>
           </>
         ) : (
-          <div className="mt-4 rounded-lg bg-surface-alt p-3 text-[12.5px] text-muted">บัญชีนี้รับโอนผ่านเลขบัญชี — ไม่มี QR</div>
+          // Account-number only (no QR): said big and plainly — many customers are older (shop request, 25 Oct 2026).
+          <div className="mt-4 rounded-xl border-2 border-amber-400/70 bg-amber-400/10 p-4 text-left">
+            <div className="mb-2 text-[18px] leading-snug font-bold text-amber-200">⚠️ ฝากเงินได้ด้วยการโอนเข้าเลขบัญชีเท่านั้น</div>
+            <ol className="list-none space-y-1.5 text-[16px] leading-relaxed text-ink">
+              <li><b>1.</b> กด <b>“คัดลอก”</b> เลขบัญชีด้านล่าง</li>
+              <li><b>2.</b> โอนเงิน <b className="text-primary">ตรงยอดทุกสตางค์</b> ในแอปธนาคาร</li>
+              <li><b>3.</b> <b className="text-amber-200">ต้องแนบสลิปทุกครั้ง</b> ที่ช่องด้านล่าง — ไม่แนบสลิป ยอดจะไม่เข้า</li>
+            </ol>
+          </div>
         )}
 
-        <div className="mt-4 rounded-xl border border-line bg-surface-alt p-3.5 text-left text-[13px]">
-          <div className="mb-2 text-[12px] text-muted">หรือโอนเข้าบัญชี</div>
+        <div className="mt-4 rounded-xl border border-line bg-surface-alt p-4 text-left text-[15px]">
+          <div className="mb-2 text-[15px] font-semibold text-muted">{c.qrPayload ? "หรือโอนเข้าบัญชี" : "โอนเข้าบัญชีนี้"}</div>
           <div className="flex items-center gap-3">
             <BankChip code={c.account.bankCode} />
             <div className="min-w-0 flex-1">
-              <div className="font-medium">{c.account.bankName}</div>
-              {c.account.accountName && <div className="text-[12px] text-muted">{c.account.accountName}</div>}
-              {c.account.accountNumber && <div className="font-mono tabular-nums">{c.account.accountNumber}</div>}
+              <div className="text-[16px] font-semibold">{c.account.bankName}</div>
+              {c.account.accountName && <div className="text-[14px] text-muted">{c.account.accountName}</div>}
+              {c.account.accountNumber && <div className="font-mono text-[22px] font-bold tracking-wide tabular-nums">{c.account.accountNumber}</div>}
             </div>
             {c.account.accountNumber && <CopyButton text={c.account.accountNumber} label="เลขบัญชี" />}
           </div>

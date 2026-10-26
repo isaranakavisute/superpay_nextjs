@@ -9,6 +9,7 @@ import { listResource } from "@/lib/api";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
 import type { P2pRow } from "@/lib/rows";
 import { PairActions } from "./PairActions";
+import { Can } from "@/components/shell/perms-context";
 
 export const metadata: Metadata = { title: "จับคู่ P2P — Option Pay Admin" };
 
@@ -119,7 +120,7 @@ export default async function P2pPage({ searchParams }: PageProps<"/p2p">) {
                         {x.releasedAt && <div>ปล่อย {fmtDateTime(x.releasedAt)}</div>}
                       </td>
                       <td className={td}>
-                        <PairActions pair={{ ref: x.ref, status: x.status, amount: x.amount, paymentRef: x.paymentRef, withdrawalRef: x.withdrawalRef }} />
+                        <Can perm="p2p.manage"><PairActions pair={{ ref: x.ref, status: x.status, amount: x.amount, paymentRef: x.paymentRef, withdrawalRef: x.withdrawalRef }} /></Can>
                       </td>
                     </tr>
                   ))

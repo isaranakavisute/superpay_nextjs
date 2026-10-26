@@ -38,7 +38,7 @@ export async function GET(req: Request) {
   if (!Number.isInteger(id) || id <= 0) return Response.json({ error: "merchantId" }, { status: 400 });
   const q = new URLSearchParams();
   for (const k of ["from", "to"]) if (kind !== "balance" && u.get(k)) q.set(k, String(u.get(k)));
-  const r = await fetch(`${BASE}/api/console/merchants/${id}/breakdown/${kind}?${q}`, { headers: consoleHeaders(me.username), cache: "no-store" });
+  const r = await fetch(`${BASE}/api/console/merchants/${id}/breakdown/${kind}?${q}`, { headers: { ...consoleHeaders(me.username), "x-console-user-id": String(me.id) }, cache: "no-store" });
   const data = await r.json().catch(() => null);
   if (!r.ok || !data) return Response.json({ error: data?.error?.message ?? `HTTP ${r.status}` }, { status: r.status || 502 });
   if (u.get("format") !== "xlsx") return Response.json(data);

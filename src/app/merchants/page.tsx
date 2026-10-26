@@ -13,6 +13,7 @@ import { requestTime } from "@/lib/request-time";
 import type { MerchantRow } from "@/lib/rows";
 import { FilterCard } from "../payments/FilterCard";
 import { MerchantActions, NewMerchantButton, type ParentOption } from "./MerchantActions";
+import { Can } from "@/components/shell/perms-context";
 
 export const metadata: Metadata = { title: "Merchants — Option Pay Admin" };
 
@@ -151,10 +152,10 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
                             <td className={`${td} whitespace-nowrap`}>{m.apiKeysActive}/{m.apiKeysTotal}</td>
                             <td className={`${td} whitespace-nowrap text-muted`}>{fmtDate(m.createdAt)}</td>
                             <td className={td}>
-                              <MerchantActions
+                              <Can perm="merchant.manage"><MerchantActions
                                 m={{ id: m.id, name: m.name, slug: m.slug, feePercent: m.feePercent, feeFlat: m.feeFlat, outFeePercent: m.outFeePercent, outFeeFlat: m.outFeeFlat, minBalance: m.minBalance, status: m.status, kycStatus: m.kycStatus, contactEmail: m.contactEmail, contactPhone: m.contactPhone, parentId: m.parentId, allowSubMerchants: m.allowSubMerchants }}
                                 parents={parents}
-                              />
+                              /></Can>
                             </td>
                           </tr>
                         );
