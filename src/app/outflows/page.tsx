@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AlertTriangle, Eye, Inbox, Zap } from "lucide-react";
+import { AlertTriangle, Download, Eye, Inbox, Zap } from "lucide-react";
 import { BankChip } from "@/components/ui";
 import { rangeFromParams, rangeWindow, resolveRange } from "@/components/dashboard/range";
 import { AutoRefresh } from "@/components/interactive/AutoRefresh";
@@ -186,6 +186,10 @@ function Table({ rows, selectable, empty, accounts, tone }: { rows: OutflowRow[]
   );
 }
 
+/** The "admin ดำเนินการเรียบร้อยแล้ว" download: same date range and filters as the page (paging params dropped). */
+const doneCsvHref = (params: Params) =>
+  `/outflows/done-csv?${new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => typeof e[1] === "string" && !!e[1] && !/^[sr](p|s)$/.test(e[0])))}`;
+
 const shown = (page: number, size: number, total: number) =>
   total ? `แสดง ${((page - 1) * size + 1).toLocaleString()}–${Math.min(total, page * size).toLocaleString()} จาก ${total.toLocaleString()} รายการ` : "ไม่มีรายการ";
 
@@ -286,6 +290,12 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-[22px] py-[18px]">
           <h2 className="text-lg font-semibold whitespace-nowrap">admin ดำเนินการเรียบร้อยแล้ว</h2>
           <span className="text-[12.5px] text-muted">{shown(sp.page, sp.size, data.approved.pagination.total)}</span>
+          {data.approved.pagination.total > 0 && (
+            <a href={doneCsvHref(params)} download className="inline-flex items-center gap-1.5 rounded-lg border border-success/40 bg-success/10 px-3 py-1.5 text-[12.5px] font-semibold text-success hover:bg-success/20"
+              title="ดาวน์โหลดทุกรายการในส่วนนี้ (ตามช่วงวันที่และตัวกรองที่เลือก) เป็นไฟล์สำหรับ Excel">
+              <Download size={14} /> ดาวน์โหลด Excel ({data.approved.pagination.total.toLocaleString()} รายการ)
+            </a>
+          )}
         </div>
         <Table rows={data.approved.data} empty="ไม่พบรายการในระบบ" accounts={accountOpts} tone="done" />
         <Pager path={PATH} params={params} bucket="s" page={sp.page} size={sp.size} total={data.approved.pagination.total} />
