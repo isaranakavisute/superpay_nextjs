@@ -10,7 +10,7 @@ import { getSessionUser } from "@/lib/session";
 import type { MerchantPermMatrix } from "@/lib/merchant-perms";
 import { BrandCard, type Brand } from "./BrandCard";
 import { MerchantPermsCard } from "./MerchantPermsCard";
-import { BalanceCard, LimitsCard, OutboundCard, QuotaCard, SecurityCard, type QuotaStatus } from "./OtherCards";
+import { BalanceCard, DemoCard, LimitsCard, OutboundCard, QuotaCard, SecurityCard, type QuotaStatus } from "./OtherCards";
 import { SlipCard, type Slip } from "./SlipCard";
 import { SoundCard } from "./SoundCard";
 import { ThemeCard } from "./ThemeCard";
@@ -23,6 +23,7 @@ type Config = {
   quota: { threshold: number; status: QuotaStatus }; balance: { minMerchantBalance: number }; limits: { minDeposit: number; minWithdraw: number };
   security: { enforce2fa: boolean; ownerUserId: number | null };
   merchantPerms: MerchantPermMatrix;
+  demo: { enabled: boolean };
   outbound: { destinations: { id: string; name: string; url: string; secret: string; enabled: boolean }[] };
   customSounds: { id: string; name: string; bytes: number }[];
 };
@@ -64,6 +65,7 @@ export default async function SettingsPage() {
           <BalanceCard min={Number(data.config.balance.minMerchantBalance)} />
           <LimitsCard minDeposit={Number(data.config.limits.minDeposit)} minWithdraw={Number(data.config.limits.minWithdraw)} />
           <SecurityCard enforce2fa={data.config.security.enforce2fa} ownerUserId={data.config.security.ownerUserId} users={data.users} meId={me.id} />
+          <DemoCard enabled={data.config.demo?.enabled !== false} />
           <MerchantPermsCard key={JSON.stringify(data.config.merchantPerms)} matrix={data.config.merchantPerms} />
           <OutboundCard key={data.config.outbound.destinations.map((d) => d.id).join()} destinations={data.config.outbound.destinations} />
         </>

@@ -31,6 +31,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <Logo size={40} brand={{ ...brandView(branding), tagline: "" }} />
         </div>
 
+        {/* Settings → โลโก้และชื่อเว็บไซต์ → "แสดงข้อความแนะนำ": off (default) = logo only. */}
+        {brand.loginInfo && (<>
         <div className="relative">
           <h2 className="mb-3.5 text-[30px] leading-[1.25] font-semibold">
             {headline.map((line, i) => (
@@ -54,6 +56,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </div>
 
         <div className="relative text-xs opacity-70">© {brand.siteName} Console</div>
+        </>)}
       </aside>
 
       <main className="grid place-items-center px-8 py-12">

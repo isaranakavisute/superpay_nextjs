@@ -5,7 +5,7 @@ import { consoleWrite, type ActionResult } from "@/lib/api";
 import { getSessionUser } from "@/lib/session";
 import { reasonError } from "@/lib/delete-reason";
 
-const SECTIONS = ["brand", "theme", "sounds", "slip", "quota", "balance", "limits", "security", "merchantPerms", "outbound"] as const;
+const SECTIONS = ["brand", "theme", "sounds", "slip", "quota", "balance", "limits", "security", "merchantPerms", "outbound", "demo"] as const;
 export type Section = (typeof SECTIONS)[number];
 
 async function as(path: string, body: unknown): Promise<ActionResult> {

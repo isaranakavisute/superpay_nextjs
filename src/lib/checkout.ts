@@ -11,6 +11,8 @@ export type Checkout = {
   /** The payer's name the shop entered; the slip's sender must match it. */
   customerName?: string | null;
   hasSlip: boolean;
+  /** Cancelled by the system for no payment (midnight / 23:00 rule), within 24 h: a slip may still be attached and checked. */
+  lateSlip?: boolean;
   /** Why the last slip was refused (null when none was). */
   slipProblems?: string[] | null;
   /** An accepted / in-review slip is attached: the customer can't send another. */

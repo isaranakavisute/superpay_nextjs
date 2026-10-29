@@ -8,6 +8,7 @@ export const SUPER = "*";
 const PAGE_PERMS: Record<string, string | string[]> = {
   payments: "payment.view",
   outflows: "outflow.view",
+  "bank-statements": "outflow.view",
   withdrawals: "withdrawal.view",
   p2p: "withdrawal.view",
   "double-credits": ["payment.double_credit", "payment.view"],
@@ -31,6 +32,7 @@ const PAGE_PERMS: Record<string, string | string[]> = {
   "api-logs": "audit.view",
   deleted: SUPER,
   backups: SUPER,
+  "system-control": SUPER,
 };
 
 /** The page key of a console path: "/payments?x" → "payments". */

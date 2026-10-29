@@ -41,6 +41,8 @@ export function SlipCheckHost() {
               <p className="text-muted">{r.message ?? "แนบสลิปแล้ว"}</p>
             ) : r.verified ? (
               <p className="font-semibold text-success">✔ ตรวจสลิปผ่าน — อนุมัติรายการแล้ว และแจ้งร้านค้า (callback) แล้ว</p>
+            ) : r.result === "NOT_CONFIRMED" ? (
+              <p className="font-semibold text-warning">⏳ ธนาคารยังยืนยันรายการโอนนี้ไม่ได้ — รายการยังคงถูกยกเลิก (ไม่มีการเปลี่ยนแปลง) · แนบสลิปอีกครั้งในอีก 2–3 นาที</p>
             ) : r.result === "PENDING_REVIEW" ? (
               <p className="font-semibold text-warning">⏳ ยังยืนยันไม่ได้ — รอผู้ดูแลตรวจ / ระบบจะตรวจซ้ำอัตโนมัติ</p>
             ) : (

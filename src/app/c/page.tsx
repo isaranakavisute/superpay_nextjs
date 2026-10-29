@@ -61,6 +61,39 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/c">) {
       <div className="text-[12px] text-soft">ออเดอร์ {tx.orderId}{tx.description ? ` · ${tx.description}` : ""}</div>
     </div>
   );
+  // Rule "แนบสลิปหลังยกเลิกอัตโนมัติ": cancelled by the system for no payment (midnight / 23:00 rule) within 24 h —
+  // the customer who already paid can still attach the slip; it is checked as usual and approved only if it all passes.
+  if (tx.status === "CANCELLED" && c.lateSlip) {
+    return (
+      <Shell brand={brand}>
+        {head}
+        <div className="px-6 py-5 text-center">
+          <div className="text-[13px] text-muted">ยอดของรายการ</div>
+          <div className="mt-0.5 text-[32px] font-bold text-primary tabular-nums">{fmtMoney(tx.amount)}</div>
+          <div className="mt-4 rounded-xl border-2 border-amber-400/70 bg-amber-400/10 p-4 text-left">
+            <div className="mb-1.5 text-[17px] leading-snug font-bold text-amber-200">รายการนี้ถูกยกเลิกอัตโนมัติ เพราะยังไม่ได้แนบสลิป</div>
+            <div className="text-[15px] leading-relaxed text-ink">
+              <b>ถ้าโอนเงินแล้ว</b> แนบสลิปด้านล่าง — ระบบจะตรวจสลิปกับธนาคารใหม่ ถ้าตรงครบ รายการจะชำระสำเร็จทันที
+              <br /><b className="text-amber-200">ถ้ายังไม่ได้โอน — ห้ามโอนเข้ารายการนี้</b> กรุณาขอรายการใหม่จากร้านค้า
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-line bg-surface-alt p-4 text-left text-[15px]">
+            <div className="mb-2 text-[15px] font-semibold text-muted">บัญชีของรายการนี้ (ตรวจว่าสลิปโอนเข้าบัญชีนี้)</div>
+            <div className="flex items-center gap-3">
+              <BankChip code={c.account.bankCode} />
+              <div className="min-w-0 flex-1">
+                <div className="text-[16px] font-semibold">{c.account.bankName}</div>
+                {c.account.accountName && <div className="text-[14px] text-muted">{c.account.accountName}</div>}
+                {c.account.accountNumber && <div className="font-mono text-[20px] font-bold tracking-wide tabular-nums">{c.account.accountNumber}</div>}
+              </div>
+            </div>
+          </div>
+          <CheckoutLive token={tx.id} status={tx.status} amount={tx.amount} expiresAt={null} hasSlip={false} slipLocked={false} slipProblems={null}
+            order={{ ref: tx.orderId, amount: tx.amount, customerName: c.customerName ?? null, bankName: c.account.bankName, accountName: c.account.accountName, accountNo: c.account.accountNumber }} />
+        </div>
+      </Shell>
+    );
+  }
   if (tx.status !== "PENDING") {
     const final = {
       PAID: [<CheckCircle2 key="i" size={30} className="text-success" />, "ชำระเงินสำเร็จ", `ได้รับเงิน ${fmtMoney(tx.amount)} แล้ว${tx.paidAt ? ` เมื่อ ${fmtDateTime(tx.paidAt)}` : ""} — ปิดหน้านี้ได้เลย`],

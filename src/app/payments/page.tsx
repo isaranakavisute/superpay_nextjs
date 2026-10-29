@@ -12,6 +12,7 @@ import { Card, PageHeader, StatGrid, StatTile, StatusBadge } from "@/components/
 import { listResource, type ListResult } from "@/lib/api";
 import { BANKS, bkkDayStart } from "@/lib/domain";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
+import { lateSlipUntil } from "@/lib/late-slip";
 import { requestTime } from "@/lib/request-time";
 import type { AccountRow, MerchantRow, PaymentRow } from "@/lib/rows";
 import { AllCheckbox, BulkSelect, RowCheckbox } from "@/components/interactive/BulkSelect";
@@ -74,6 +75,15 @@ function Row({ p, selectable, merchants }: { p: PaymentRow; selectable?: boolean
         <StatusBadge status={p.status} />
         {p.slipReusedRef && <div className="mt-1 max-w-[220px] text-[11px] text-muted">สลิปนี้ใช้เติมเงิน {p.slipReusedRef} ไปแล้ว</div>}
         {p.reviewNote && <div className="mt-1 max-w-[220px] text-[11px] text-muted">{p.reviewNote}</div>}
+        {(() => {
+          // Rule "แนบสลิปหลังยกเลิกอัตโนมัติ": this cancelled order still takes a slip (checked again) until the time shown.
+          const until = lateSlipUntil(p, Date.now());
+          return until && (
+            <div className="mt-1 max-w-[220px] rounded-md border border-sky-400/40 bg-sky-400/10 px-2 py-1 text-[11px] text-sky-300">
+              แนบสลิปได้ — ระบบจะตรวจสลิปใหม่อีกครั้ง ถ้าผ่านครบจะอนุมัติอัตโนมัติและแจ้งร้านตามปกติ (ถึง {fmtDateTime(until.toISOString())})
+            </div>
+          );
+        })()}
         {relationLink(p) && <RelationLink refNo={p.ref} label={relationLink(p)!} />}
         {p.status === "refunded" && <div className="mt-1 text-[11px] text-muted">คืนเงินแล้ว {fmtMoney(p.refundedAmount)}</div>}
       </td>

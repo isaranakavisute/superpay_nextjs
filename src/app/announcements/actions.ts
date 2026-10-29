@@ -8,6 +8,10 @@ import { reasonError } from "@/lib/delete-reason";
 export type AnnouncementInput = {
   title: string; message: string; mode: "times" | "interval" | "now"; times: string[]; onDate: string | null;
   intervalSeconds: number | null; startAt: string | null; enabled: boolean;
+  /** Uploaded files in posting order: 1 = picture or video, 2–10 = album. */
+  mediaIds: number[];
+  /** Pin the post in each group (album: its first item). */
+  pin: boolean;
 };
 
 async function as(fn: (actor: string) => Promise<ActionResult>) {
@@ -19,7 +23,8 @@ async function as(fn: (actor: string) => Promise<ActionResult>) {
 }
 
 export async function saveAnnouncement(id: number | null, b: AnnouncementInput) {
-  if (!b.title.trim() || !b.message.trim()) return { ok: false, error: "กรุณาใส่หัวข้อและข้อความ" } as ActionResult;
+  if (!b.title.trim()) return { ok: false, error: "กรุณาใส่หัวข้อ" } as ActionResult;
+  if (!b.message.trim() && !b.mediaIds.length) return { ok: false, error: "ใส่ข้อความ หรือแนบรูป / วิดีโออย่างน้อย 1 ไฟล์" } as ActionResult;
   return as((actor) => consoleWrite("POST", id ? `/api/console/support-bot/announcements/${id}` : "/api/console/support-bot/announcements", actor, b));
 }
 export const deleteAnnouncement = async (id: number, reason: string) => {

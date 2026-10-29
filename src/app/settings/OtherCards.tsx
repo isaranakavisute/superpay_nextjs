@@ -105,6 +105,27 @@ export function LimitsCard({ minDeposit, minWithdraw }: { minDeposit: number; mi
   );
 }
 
+export function DemoCard({ enabled }: { enabled: boolean }) {
+  const router = useRouter();
+  const [on, setOn] = useState(enabled);
+  const { r, pending, run } = useRun();
+  const save = (next: boolean) => { setOn(next); run(() => saveSection("demo", { enabled: next }), (res) => (res.ok ? router.refresh() : setOn(!next))); };
+  return (
+    <SCard title="หน้า API Demo (optionpay.co/demo)" note="เปิด / ปิดการใช้งานหน้า demo สาธารณะ">
+      <div className="mb-4 text-[13px] leading-[1.7] text-muted">
+        หน้า <a href="/demo" target="_blank" rel="noreferrer" className="text-primary hover:underline">optionpay.co/demo</a> เปิดได้โดยไม่ต้องเข้าสู่ระบบ และเรียก API จริงของร้านทดลอง ·
+        เมื่อ<strong className="text-ink">ปิด</strong> ผู้เข้าชมจะเห็น<strong className="text-ink">ไม่พบหน้า (404)</strong> และระบบปฏิเสธทุกคำสั่งจากหน้า demo ทันที (ภายใน 5 วินาที) ·
+        API ของร้านค้าจริงไม่ได้รับผลกระทบ
+      </div>
+      <Msg r={r} />
+      <div className="flex items-center gap-2.5 text-[13px]">
+        <Switch on={on} label="เปิดใช้งานหน้า demo" disabled={pending} onChange={save} />
+        {on ? <span className="font-semibold text-success">เปิดใช้งาน — ทุกคนเข้าหน้า demo ได้</span> : <span className="font-semibold text-danger">ปิดใช้งาน — หน้า demo เข้าไม่ได้ (404)</span>}
+      </div>
+    </SCard>
+  );
+}
+
 export function SecurityCard({ enforce2fa, ownerUserId, users, meId }: { enforce2fa: boolean; ownerUserId: number | null; users: { id: number; label: string }[]; meId: number }) {
   const router = useRouter();
   const [v, setV] = useState({ enforce2fa, ownerUserId: ownerUserId ?? meId });

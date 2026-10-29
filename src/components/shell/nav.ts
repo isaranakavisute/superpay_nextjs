@@ -1,5 +1,6 @@
 import {
   ArchiveRestore,
+  Power,
   BookOpen,
   ArrowUp,
   Bell,
@@ -7,6 +8,7 @@ import {
   DatabaseBackup,
   CreditCard,
   Download,
+  FileSearch,
   FileText,
   Inbox,
   Landmark,
@@ -46,6 +48,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "double-credits", label: "ตรวจเติมเงินซ้ำ", href: "/double-credits", icon: Copy },
       { key: "transfer-leftovers", label: "ยอดคงเหลือเงินโอน", href: "/transfer-leftovers", icon: Wallet },
       { key: "accounts", label: "บัญชีธนาคาร", href: "/accounts", icon: Landmark },
+      { key: "bank-statements", label: "เปรียบเทียบกับ bank statement", href: "/bank-statements", icon: FileSearch },
     ],
   },
   {
@@ -82,6 +85,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "audit", label: "บันทึกการตรวจสอบ", href: "/audit", icon: FileText },
       { key: "deleted", label: "รายการที่ลบแล้ว", href: "/deleted", icon: ArchiveRestore },
       { key: "backups", label: "สำรองข้อมูล", href: "/backups", icon: DatabaseBackup },
+      { key: "system-control", label: "ปิดระบบ (shutdown)", href: "/system-control", icon: Power },
       { key: "api-logs", label: "บันทึกการเรียก API", href: "/api-logs", icon: FileText },
       { key: "manual", label: "คู่มือผู้ดูแลระบบ", href: "/manual", icon: BookOpen },
     ],

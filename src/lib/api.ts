@@ -118,6 +118,16 @@ export function getDashboardSummary(from: number | null, to: number | null) {
   return get<DashboardSummary>(`/api/dashboard/summary?${q}`);
 }
 
+/** "ทุกร้านค้า": in-fee + out-fee of every shop per Bangkok day (oldest first). */
+export type FeeTrendDay = { day: string; feeIn: string; feeOut: string; total: string };
+export async function getFeeTrend(days = 7) {
+  return (await get<{ data: FeeTrendDay[] }>(`/api/dashboard/fee-trend?days=${days}`)).data;
+}
+
+/** EasySlip calls per Bangkok day (quota card breakdown), from the backend's call log. */
+export type EasySlipDay = { day: string; calls: number; found: number; notFound: number; pending: number; errors: number; byPurpose: Record<string, number> };
+export type EasySlipDaily = { days: EasySlipDay[]; loggingSince: string | null; quota: LiveQuota | null };
+
 export async function getDashboardTrend(days: number, merchantId?: number) {
   return (await get<{ data: TrendPoint[] }>(`/api/dashboard/trend?days=${days}${merchantId ? `&merchantId=${merchantId}` : ""}`)).data;
 }

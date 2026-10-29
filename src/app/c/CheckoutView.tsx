@@ -50,7 +50,9 @@ export function CheckoutLive({ token, status, amount, expiresAt, hasSlip, slipLo
       if ("code" in r && r.code === "SLIP_ALREADY_UPLOADED") setLocked(true);
       return setMsg({ ok: false, text: r.error });
     }
-    if (r.result !== "INVALID_SLIP") setLocked(true);
+    // NOT_CONFIRMED (late slip on a cancelled order, bank not sure yet): nothing was kept — the customer may try again.
+    if (r.result !== "INVALID_SLIP" && r.result !== "NOT_CONFIRMED") setLocked(true);
+    if (r.result === "NOT_CONFIRMED") return setMsg({ ok: false, text: r.message ?? "ธนาคารยังยืนยันรายการโอนนี้ไม่ได้ — แนบสลิปอีกครั้งในอีก 2–3 นาที" });
     const invalid = r.result === "INVALID_SLIP";
     setMsg({ ok: !invalid, text: r.result === "PAID" ? "ชำระเงินสำเร็จ" : invalid ? (r.mismatches.length > 1 ? "สลิปไม่ผ่าน — ไม่ตรงกับรายการนี้:" : `สลิปไม่ผ่าน: ${r.mismatches[0] ?? r.message ?? ""}`) : "ได้รับสลิปแล้ว — รอเจ้าหน้าที่ตรวจสอบ", list: invalid && r.mismatches.length > 1 ? r.mismatches : undefined });
     if (r.result === "PAID") router.refresh();

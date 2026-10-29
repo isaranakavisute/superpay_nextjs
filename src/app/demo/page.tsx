@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { brandView, getBranding } from "@/lib/branding";
 import { demoKey } from "@/lib/demo-api";
@@ -10,7 +11,10 @@ export const metadata: Metadata = { title: "API Demo — Option Pay", robots: { 
 
 // Public (no login, see proxy.ts): runs the real merchant API, signed on this server, for the demo shop only.
 export default async function DemoPage() {
-  const [brand, key] = await Promise.all([getBranding(), demoKey().catch(() => null)]);
+  const brand = await getBranding();
+  // Switched off in Settings → no page at all (the backend refuses every demo call too).
+  if (!brand.demo.enabled) notFound();
+  const key = await demoKey().catch(() => null);
   return (
     <DemoConsole
       logo={<Logo size={34} brand={{ ...brandView(brand), tagline: "" }} />}

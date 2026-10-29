@@ -22,5 +22,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)"],
+  // announcements/media: picture / video uploads up to 50 MB — the proxy would buffer only 10 MB of the body
+  // (proxyClientMaxBodySize), so those routes skip it and check the session themselves.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|announcements/media|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)"],
 };

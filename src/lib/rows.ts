@@ -50,6 +50,8 @@ export type MerchantRow = {
   kycStatus: "pending" | "verified" | "rejected"; minBalance: Money; createdAt: When;
   depositTotal: Money; depositCount: number; feeTotal: Money; withdrawTotal: Money; withdrawCount: number;
   currentBalance: Money; pendingCount: number;
+  /** ค่าคอม from sub-shops in the selected window (merchants list with from/to). */
+  commissionPeriod?: Money;
   creditAdjustments: Money; apiKeysActive: number; apiKeysTotal: number; contactEmail: string | null; contactPhone: string | null; openingBalance: Money;
 };
 

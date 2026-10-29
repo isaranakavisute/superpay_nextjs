@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { LogoMark } from "@/components/Logo";
 import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { deleteAsset, saveSection, uploadAsset } from "./actions";
-import { B, Msg, SCard, field, fieldLabel, hint, readFile, row, useRun } from "./parts";
+import { B, Msg, SCard, Switch, field, fieldLabel, hint, readFile, row, useRun } from "./parts";
 
-export type Brand = { siteName: string; tagline: string; loginHeadline: string; loginSubtext: string; logoScale: number; logoAsset: string | null; faviconAsset: string | null };
+export type Brand = { siteName: string; tagline: string; loginHeadline: string; loginSubtext: string; loginInfo?: boolean; logoScale: number; logoAsset: string | null; faviconAsset: string | null };
 
 function ImagePick({ id, label, current, help, onPick, empty }: { id: string; label: string; current: string | null; help: string; onPick: (f: File | null) => void; empty: React.ReactNode }) {
   const input = useRef<HTMLInputElement>(null);
@@ -32,7 +32,7 @@ export function BrandCard({ brand }: { brand: Brand }) {
   const [logo, setLogo] = useState<{ file: File; url: string } | null>(null);
   const [fav, setFav] = useState<{ file: File; url: string } | null>(null);
   const [scale, setScale] = useState(brand.logoScale);
-  const [text, setText] = useState({ siteName: brand.siteName, tagline: brand.tagline, loginHeadline: brand.loginHeadline, loginSubtext: brand.loginSubtext });
+  const [text, setText] = useState({ siteName: brand.siteName, tagline: brand.tagline, loginHeadline: brand.loginHeadline, loginSubtext: brand.loginSubtext, loginInfo: !!brand.loginInfo });
   const img = useRun();
   const txt = useRun();
   const base = { ...text, logoScale: scale };
@@ -117,6 +117,10 @@ export function BrandCard({ brand }: { brand: Brand }) {
           <Msg r={txt.r} />
           <div className="mb-4"><label htmlFor="siteName" className={fieldLabel}>ชื่อเว็บไซต์</label><input id="siteName" className={field} maxLength={40} required value={text.siteName} onChange={(e) => setText({ ...text, siteName: e.target.value })} /><div className={hint}>ใช้ใน sidebar, ชื่อแท็บ และหน้าเข้าสู่ระบบ</div></div>
           <div className="mb-4"><label htmlFor="tagline" className={fieldLabel}>คำอธิบายใต้ชื่อ</label><input id="tagline" className={field} maxLength={60} value={text.tagline} onChange={(e) => setText({ ...text, tagline: e.target.value })} /></div>
+          <div className="mb-4 flex items-start gap-2.5 text-[13px]">
+            <Switch on={text.loginInfo} label="แสดงข้อความแนะนำในหน้าเข้าสู่ระบบ" onChange={(loginInfo) => setText({ ...text, loginInfo })} />
+            <div><div className="font-medium text-ink">แสดงข้อความแนะนำในหน้าเข้าสู่ระบบ</div><div className={hint}>หัวข้อ คำอธิบาย รายการจุดเด่น 4 ข้อ และ “© … Console” ด้านซ้ายของหน้าเข้าสู่ระบบ — ปิด = แสดงเฉพาะโลโก้ · กด บันทึกข้อความ เพื่อใช้งาน</div></div>
+          </div>
           <div className="mb-4"><label htmlFor="loginHeadline" className={fieldLabel}>หัวข้อหน้าเข้าสู่ระบบ</label><textarea id="loginHeadline" className={field} rows={2} maxLength={120} placeholder={"จัดการรับ–จ่ายเงิน\nครบในที่เดียว"} value={text.loginHeadline} onChange={(e) => setText({ ...text, loginHeadline: e.target.value })} /><div className={hint}>ขึ้นบรรทัดใหม่ได้ — หน้าเข้าสู่ระบบจะแสดงตามที่ขึ้นบรรทัดไว้</div></div>
           <div className="mb-4"><label htmlFor="loginSubtext" className={fieldLabel}>คำอธิบายหน้าเข้าสู่ระบบ</label><textarea id="loginSubtext" className={field} rows={2} maxLength={240} placeholder="เว้นว่างไว้เพื่อใช้ข้อความเริ่มต้น" value={text.loginSubtext} onChange={(e) => setText({ ...text, loginSubtext: e.target.value })} /></div>
           <div className="flex justify-end"><button type="submit" className={B("primary")} disabled={txt.pending}>บันทึกข้อความ</button></div>

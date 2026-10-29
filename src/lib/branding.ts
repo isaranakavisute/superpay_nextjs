@@ -13,19 +13,22 @@ export type ThemeId = (typeof THEMES)[number]["id"];
 export const THEME_COOKIE = "sp_theme";
 
 export type Branding = {
-  brand: { siteName: string; tagline: string; loginHeadline: string; loginSubtext: string; logoScale: number; logoAsset: string | null; faviconAsset: string | null };
+  brand: { siteName: string; tagline: string; loginHeadline: string; loginSubtext: string; loginInfo?: boolean; logoScale: number; logoAsset: string | null; faviconAsset: string | null };
   theme: { default: ThemeId; allowUser: boolean; enabled: ThemeId[] };
   security: { enforce2fa: boolean; ownerUserId: number | null };
   sounds: { sequence: string[] };
   merchantPerms: MerchantPermMatrix;
+  /** Public API demo page (optionpay.co/demo) switched on in Settings. */
+  demo: { enabled: boolean };
 };
 
 export const DEFAULT_BRANDING: Branding = {
-  brand: { siteName: "Option Pay", tagline: "Payment Console", loginHeadline: "", loginSubtext: "", logoScale: 100, logoAsset: null, faviconAsset: null },
+  brand: { siteName: "Option Pay", tagline: "Payment Console", loginHeadline: "", loginSubtext: "", loginInfo: false, logoScale: 100, logoAsset: null, faviconAsset: null },
   theme: { default: "royal-gold", allowUser: true, enabled: ["royal-gold", "midnight"] },
   security: { enforce2fa: false, ownerUserId: null },
   sounds: { sequence: ["builtin:chime"] },
   merchantPerms: DEFAULT_MERCHANT_PERMS,
+  demo: { enabled: true },
 };
 
 /** Public settings for this request (deduped). A backend outage falls back to the defaults. */
@@ -34,7 +37,7 @@ export const getBranding = cache(async (): Promise<Branding> => {
     const r = await fetch(`${BASE}/api/console/config/public`, { headers: consoleHeaders(), cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (!r.ok) return DEFAULT_BRANDING;
     const j = (await r.json()) as Branding;
-    return { brand: j.brand, theme: j.theme, security: j.security, sounds: j.sounds, merchantPerms: j.merchantPerms ?? DEFAULT_MERCHANT_PERMS };
+    return { brand: j.brand, theme: j.theme, security: j.security, sounds: j.sounds, merchantPerms: j.merchantPerms ?? DEFAULT_MERCHANT_PERMS, demo: { enabled: j.demo?.enabled !== false } };
   } catch {
     return DEFAULT_BRANDING;
   }

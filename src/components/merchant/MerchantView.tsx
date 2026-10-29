@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cache } from "react";
 import { AlertTriangle, ArrowUp, Clock, DollarSign, Landmark, TrendingUp } from "lucide-react";
 import { BankCell, PayerCell } from "../cells";
 import { TrendChart } from "../dashboard/TrendChart";
@@ -7,12 +8,13 @@ import { DayBar } from "../list/DayBar";
 import { DataTable } from "../list/ListParts";
 import { param, type Params } from "../list/query";
 import { Card, CardHead, GhostLink, SectionLabel, StatCard, StatGrid, StatusBadge } from "../ui";
-import { getDashboardTrend, listResource, type ListResult } from "@/lib/api";
+import { getDashboardTrend, getFeeTrend, listResource, type ListResult } from "@/lib/api";
 import { bkkDayStart, type PaymentStatus } from "@/lib/domain";
 import { fmtDateTime, fmtMoney } from "@/lib/format";
 import { requestTime } from "@/lib/request-time";
 import type { MerchantRow, PaymentRow, WithdrawalRow } from "@/lib/rows";
 import { BreakdownButton } from "./BreakdownButton";
+import { FeeBarChart } from "./FeeBarChart";
 import { CarryArrow, FlowArrow } from "./FlowArrow";
 import { MerchantTree } from "./MerchantTree";
 import { MerchantSelect } from "./MerchantSelect";
@@ -21,6 +23,65 @@ type Sum = ListResult["summary"][number] & { fee?: string; commission?: string }
 const by = (s: ListResult["summary"]) => Object.fromEntries(s.map((x) => [x.key, x as Sum])) as Record<string, Sum | undefined>;
 const n = (v: string | number | null | undefined) => Number(v ?? 0);
 const STATUSES: PaymentStatus[] = ["pending", "approved", "rejected", "refunded", "expired"];
+const ALL_SHOPS = "ทุกร้านค้า";
+/** Shops with their totals for a window — loaded once per request (the header cards and the table share it). */
+const merchantsIn = cache((from: string | null, to: string | null) => listResource<MerchantRow>("merchants", { from, to }));
+const totalsOf = (rows: MerchantRow[]) => rows.reduce((a, x) => ({ inN: a.inN + n(x.depositCount), inAmt: a.inAmt + n(x.depositTotal), inFee: a.inFee + n(x.feeTotal), outN: a.outN + n(x.withdrawCount), outAmt: a.outAmt + n(x.withdrawTotal), outFee: a.outFee + n(x.outFeeTotal),
+  commission: a.commission + n(x.commissionPeriod), balance: a.balance + n(x.currentBalance) }),
+  { inN: 0, inAmt: 0, inFee: 0, outN: 0, outAmt: 0, outFee: 0, commission: 0, balance: 0 });
+
+/** "ทุกร้านค้า": the two fee totals for the page header's top-right corner (same data as the table's total row). */
+export async function AllShopsFees({ params }: { params: Params }) {
+  const today = bkkDayStart(await requestTime());
+  const range = resolveRange(rangeFromParams(params, today), today);
+  const win = rangeWindow(range);
+  const rows = await merchantsIn(win.from, win.to).then((r) => r.data).catch(() => null);
+  if (!rows) return null;
+  const t = totalsOf(rows);
+  const box = "min-w-[230px] rounded-xl border border-line bg-surface px-4 py-3";
+  return (
+    <div>
+      <div className="mb-1.5 text-right text-[11.5px] font-semibold tracking-[0.3px] text-muted">รวมค่าธรรมเนียมทุกร้านค้า — {range.label}</div>
+      <div className="flex flex-wrap justify-end gap-2.5">
+        <Link href={`/payments?status=approved${allRange(params)}`} className={`${box} hover:border-primary`}>
+          <div className="flex items-center gap-1.5 text-[12px] text-muted"><DollarSign size={14} className="text-warning" /> ค่าธรรมเนียมเข้า (รวมทุกร้าน)</div>
+          <div className="text-[22px] font-bold tabular-nums text-warning">{fmtMoney(t.inFee)}</div>
+          <div className="text-[11px] text-muted">{t.inN.toLocaleString()} รายการชำระ · ยอดรับ {fmtMoney(t.inAmt)}</div>
+        </Link>
+        <Link href={`/outflows${allRange(params, "?")}`} className={`${box} hover:border-primary`}>
+          <div className="flex items-center gap-1.5 text-[12px] text-muted"><ArrowUp size={14} className="text-danger" /> ค่าธรรมเนียมออก (รวมทุกร้าน)</div>
+          <div className="text-[22px] font-bold tabular-nums text-warning">{fmtMoney(t.outFee)}</div>
+          <div className="text-[11px] text-muted">{t.outN.toLocaleString()} รายการเงินออก · ยอดโอนออก {fmtMoney(t.outAmt)}</div>
+        </Link>
+        <div className={box}>
+          <div className="flex items-center gap-1.5 text-[12px] text-muted"><TrendingUp size={14} className="text-success" /> ค่าคอม (รวมทุกร้าน)</div>
+          <div className="text-[22px] font-bold tabular-nums text-success">{fmtMoney(t.commission)}</div>
+          <div className="text-[11px] text-muted">ค่าคอมจากร้านย่อยที่ร้านแม่ได้รับ ในช่วงที่เลือก</div>
+        </div>
+        <div className={box}>
+          <div className="flex items-center gap-1.5 text-[12px] text-muted"><Landmark size={14} className="text-sky-300" /> ยอดคงเหลือ (รวมทุกร้าน · ตอนนี้)</div>
+          <div className="text-[22px] font-bold tabular-nums">{fmtMoney(t.balance)}</div>
+          <div className="text-[11px] text-muted">ยอดคงเหลือถอนได้ของทุกร้าน ณ ตอนนี้</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+/** Parents first, each followed by its sub-shops (depth-first, by name) — shops whose parent is not listed start a branch. */
+const treeOrder = (list: MerchantRow[]) => {
+  const ids = new Set(list.map((x) => x.id));
+  const kids = new Map<number | null, MerchantRow[]>();
+  for (const x of list) { const k = x.parentId != null && ids.has(x.parentId) ? x.parentId : null; kids.set(k, [...(kids.get(k) ?? []), x]); }
+  const out: MerchantRow[] = [];
+  const walk = (k: number | null) => { for (const x of kids.get(k) ?? []) { out.push(x); walk(x.id); } };
+  walk(null);
+  return out;
+};
+/** The selected period as query params for a linked list page ("" = none). */
+const allRange = (params: Params, lead = "&") => {
+  const q = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => typeof e[1] === "string" && ["range", "from", "to", "day"].includes(e[0])));
+  return q.size ? `${lead}${q}` : "";
+};
 const FLOW = "mb-6 grid gap-[18px] sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_168px_minmax(0,1fr)_168px_minmax(0,1fr)] xl:gap-x-2";
 
 /**
@@ -39,7 +100,7 @@ export async function MerchantView({ params, pickerPath, merchantId, portal = fa
 
   let merchants: MerchantRow[];
   try {
-    merchants = (await listResource<MerchantRow>("merchants", win)).data;
+    merchants = (await merchantsIn(win.from, win.to)).data;
   } catch (err) {
     return (
       <Card className="flex items-start gap-3 p-5">
@@ -51,6 +112,84 @@ export async function MerchantView({ params, pickerPath, merchantId, portal = fa
   if (merchants.length === 0) return <Card className="px-5 py-[60px] text-center text-muted">ยังไม่มี merchant ในระบบ</Card>;
 
   const sorted = [...merchants].sort((a, b) => a.name.localeCompare(b.name, "th"));
+  const options = sorted.map((x) => ({ id: x.id, label: x.status === "active" ? x.name : `${x.name} (${x.status})` }));
+  // Admin view only: "ทุกร้านค้า" — the fees of every shop together for the selected period.
+  // "ทุกร้านค้า" is the default on the admin page (no merchantId chosen yet).
+  if (pickerPath && merchantId == null && (param(params, "merchantId") ?? "all") === "all") {
+    // Every shop's approved payments / payouts in the period (merchants list, same window) — parents with their sub-shops under them.
+    const rows = treeOrder(sorted);
+    const t = totalsOf(rows);
+    const th = "border-b border-line bg-surface-alt px-3.5 py-2.5 text-left text-[11.5px] font-semibold tracking-[0.3px] text-muted whitespace-nowrap";
+    const td = "border-b border-line px-3.5 py-2.5 text-[13px] whitespace-nowrap tabular-nums";
+    const num = (v: number, tone = "") => <span className={v ? tone : "text-soft"}>{fmtMoney(v)}</span>;
+    const feeDays = await getFeeTrend(7).catch(() => null);
+    return (
+      <>
+        {feeDays && <FeeBarChart days={feeDays} />}
+        <div className="mb-4 flex flex-wrap items-center gap-2.5">
+          <MerchantSelect value="all" allLabel={ALL_SHOPS} options={options} />
+          <span className="text-xs text-muted">ทุกร้าน {rows.length} ร้าน (ร้านแม่และร้านย่อย) — ยอดที่อนุมัติแล้วในช่วงที่เลือก</span>
+        </div>
+        <DayBar sel={sel} label={range.label} today={toDayKey(today)} />
+        <SectionLabel>รายละเอียดทุกร้านค้า — {range.label}</SectionLabel>
+        <Card className="mb-6 overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={th}>ร้านค้า</th>
+                <th className={`${th} text-right`}>อัตรา เข้า / ออก</th>
+                <th className={`${th} text-right`}>รายการชำระ</th>
+                <th className={`${th} text-right`}>ยอดรับชำระ</th>
+                <th className={`${th} text-right`}>ค่าธรรมเนียมเข้า</th>
+                <th className={`${th} text-right`}>รายการเงินออก</th>
+                <th className={`${th} text-right`}>ยอดโอนออก</th>
+                <th className={`${th} text-right`}>ค่าธรรมเนียมออก</th>
+                <th className={`${th} text-right`}>ค่าคอม</th>
+                <th className={`${th} text-right`}>ยอดคงเหลือ (ตอนนี้)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((x) => (
+                <tr key={x.id} className="hover:bg-surface-alt">
+                  <td className={td}>
+                    <Link href={`${pickerPath}?${new URLSearchParams({ ...Object.fromEntries(Object.entries(params).filter((e): e is [string, string] => typeof e[1] === "string")), merchantId: String(x.id) })}`} className="hover:text-primary" style={{ paddingLeft: n(x.depth) * 18 }}>
+                      {n(x.depth) > 0 && <span className="mr-1 text-soft">└</span>}
+                      <span className={n(x.depth) > 0 ? "" : "font-semibold"}>{x.name}</span>
+                    </Link>
+                    {n(x.depth) > 0 && <span className="ml-1.5 text-[11px] text-muted">ร้านย่อย</span>}
+                    {x.status !== "active" && <span className="ml-1.5 text-[11px] text-warning">({x.status})</span>}
+                  </td>
+                  <td className={`${td} text-right text-[12px] text-muted`}>{n(x.feePercent)}% · {n(x.outFeePercent)}%{n(x.outFeeFlat) ? ` + ${fmtMoney(x.outFeeFlat)}` : ""}</td>
+                  <td className={`${td} text-right`}>{n(x.depositCount).toLocaleString()}</td>
+                  <td className={`${td} text-right`}>{num(n(x.depositTotal))}</td>
+                  <td className={`${td} text-right`}>{num(n(x.feeTotal), "font-semibold text-warning")}</td>
+                  <td className={`${td} text-right`}>{n(x.withdrawCount).toLocaleString()}</td>
+                  <td className={`${td} text-right`}>{num(n(x.withdrawTotal))}</td>
+                  <td className={`${td} text-right`}>{num(n(x.outFeeTotal), "font-semibold text-warning")}</td>
+                  <td className={`${td} text-right`}>{num(n(x.commissionPeriod), "font-semibold text-success")}</td>
+                  <td className={`${td} text-right`}><span className={n(x.currentBalance) < 0 ? "text-danger" : ""}>{fmtMoney(x.currentBalance)}</span></td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-surface-alt font-bold">
+                <td className={td}>รวมทุกร้าน ({rows.length} ร้าน)</td>
+                <td className={td} />
+                <td className={`${td} text-right`}>{t.inN.toLocaleString()}</td>
+                <td className={`${td} text-right`}>{fmtMoney(t.inAmt)}</td>
+                <td className={`${td} text-right text-warning`}>{fmtMoney(t.inFee)}</td>
+                <td className={`${td} text-right`}>{t.outN.toLocaleString()}</td>
+                <td className={`${td} text-right`}>{fmtMoney(t.outAmt)}</td>
+                <td className={`${td} text-right text-warning`}>{fmtMoney(t.outFee)}</td>
+                <td className={`${td} text-right text-success`}>{fmtMoney(t.commission)}</td>
+                <td className={`${td} text-right`}>{fmtMoney(t.balance)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </Card>
+      </>
+    );
+  }
   const wanted = merchantId ?? Number(param(params, "merchantId"));
   const m = sorted.find((x) => x.id === wanted) ?? sorted[0];
 
@@ -94,7 +233,7 @@ export async function MerchantView({ params, pickerPath, merchantId, portal = fa
     <>
       {pickerPath && (
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <MerchantSelect value={m.id} options={sorted.map((x) => ({ id: x.id, label: x.status === "active" ? x.name : `${x.name} (${x.status})` }))} />
+          <MerchantSelect value={m.id} allLabel={ALL_SHOPS} options={options} />
           <span className="text-xs text-muted">
             <code className="text-[11px]">{m.slug}</code> · fee เข้า {n(m.feePercent)}% + {fmtMoney(m.feeFlat)} · ออก {n(m.outFeePercent)}% + {fmtMoney(m.outFeeFlat)} · {m.apiKeysActive}/{m.apiKeysTotal} API key
           </span>
