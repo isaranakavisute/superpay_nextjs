@@ -33,6 +33,10 @@ export type MerchantForActions = {
   outFeePercent: string;
   outFeeFlat: string;
   minBalance: string;
+  minDeposit?: string | null;
+  minWithdraw?: string | null;
+  /** What applies when the field is left empty (nearest parent shop, else Settings) — shown as the hint. */
+  inheritMinDeposit?: number; inheritMinDepositSrc?: string; inheritMinWithdraw?: number; inheritMinWithdrawSrc?: string;
   status: "active" | "suspended" | "pending";
   kycStatus: "pending" | "verified" | "rejected";
   contactEmail: string | null;
@@ -72,6 +76,12 @@ function OneTimeSecret({ title, value }: { title: string; value: string }) {
   );
 }
 
+/** "500.00 บาท (จากร้านแม่)" / "300.00 บาท (ค่ากลางในหน้าตั้งค่า)" / "ไม่มีขั้นต่ำ". */
+export function limitHint(v?: number, src?: string) {
+  const where = src === "parent" ? "จากร้านแม่" : src === "own" ? "ร้านนี้" : "ค่ากลางในหน้าตั้งค่า";
+  return !v ? `ไม่มีขั้นต่ำ (${where})` : `${Number(v).toLocaleString("th-TH", { minimumFractionDigits: 2 })} บาท (${where})`;
+}
+
 /** Create / edit form shared by "+ เพิ่ม Merchant" and the row's แก้ไข. */
 export function MerchantForm({ initial, onDone, parents = [] }: { initial?: MerchantForActions; onDone: () => void; parents?: ParentOption[] }) {
   const [f, setF] = useState({
@@ -82,6 +92,8 @@ export function MerchantForm({ initial, onDone, parents = [] }: { initial?: Merc
     outFeePercent: initial?.outFeePercent ? String(Number(initial.outFeePercent)) : "0",
     outFeeFlat: initial?.outFeeFlat ? String(Number(initial.outFeeFlat)) : "0",
     minBalance: initial?.minBalance ? String(Number(initial.minBalance)) : "0",
+    minDeposit: initial?.minDeposit != null ? String(Number(initial.minDeposit)) : "",
+    minWithdraw: initial?.minWithdraw != null ? String(Number(initial.minWithdraw)) : "",
     openingBalance: "0",
     status: initial?.status ?? "active",
     kycStatus: initial?.kycStatus ?? "pending",
@@ -107,6 +119,7 @@ export function MerchantForm({ initial, onDone, parents = [] }: { initial?: Merc
         outFeePercent: Number(f.outFeePercent),
         outFeeFlat: Number(f.outFeeFlat),
         minBalance: Number(f.minBalance),
+        ...(initial ? { minDeposit: f.minDeposit.trim() === "" ? null : Number(f.minDeposit), minWithdraw: f.minWithdraw.trim() === "" ? null : Number(f.minWithdraw) } : {}),
         openingBalance: Number(f.openingBalance),
         status: f.status as MerchantInput["status"],
         kycStatus: f.kycStatus as MerchantInput["kycStatus"],
@@ -139,6 +152,12 @@ export function MerchantForm({ initial, onDone, parents = [] }: { initial?: Merc
         <div><label className={fieldLabel} htmlFor="mf-off">ค่าธรรมเนียมเงินออกคงที่ (บาท/รายการ)</label><input id="mf-off" className={field} type="number" min="0" step="0.01" value={f.outFeeFlat} onChange={set("outFeeFlat")} /></div>
         <p className="-mt-2 text-[11.5px] text-muted sm:col-span-2">เงินเข้า: หักจากยอดที่ลูกค้าโอน · เงินออก (ถอน / payout ที่ร้านสั่ง): บวกเพิ่มจากยอดโอน — ผู้รับได้เต็มยอด ร้านถูกหัก ยอด + ค่าธรรมเนียม</p>
         <div><label className={fieldLabel} htmlFor="mf-mb">ยอดคงเหลือขั้นต่ำ (บาท)</label><input id="mf-mb" className={field} type="number" min="0" step="0.01" value={f.minBalance} onChange={set("minBalance")} /></div>
+        {initial && <>
+          <div><label className={fieldLabel} htmlFor="mf-mind">ยอดฝากขั้นต่ำ (บาท)</label><input id="mf-mind" className={field} type="number" min="0" step="0.01" value={f.minDeposit} onChange={set("minDeposit")} placeholder="ว่าง = ใช้ค่าจากร้านแม่ / ค่ากลาง" />
+            <p className="mt-1 text-[11px] text-muted">{f.minDeposit.trim() === "" ? `ว่าง = ใช้ ${limitHint(initial.inheritMinDeposit, initial.inheritMinDepositSrc)}` : "ร้านนี้ (และร้านลูกที่ไม่ได้ตั้งเอง) ใช้ค่านี้"}</p></div>
+          <div><label className={fieldLabel} htmlFor="mf-minw">ยอดถอนขั้นต่ำ (บาท)</label><input id="mf-minw" className={field} type="number" min="0" step="0.01" value={f.minWithdraw} onChange={set("minWithdraw")} placeholder="ว่าง = ใช้ค่าจากร้านแม่ / ค่ากลาง" />
+            <p className="mt-1 text-[11px] text-muted">{f.minWithdraw.trim() === "" ? `ว่าง = ใช้ ${limitHint(initial.inheritMinWithdraw, initial.inheritMinWithdrawSrc)}` : "ร้านนี้ (และร้านลูกที่ไม่ได้ตั้งเอง) ใช้ค่านี้"}</p></div>
+        </>}
         {!initial && <div><label className={fieldLabel} htmlFor="mf-ob">ยอดเริ่มต้น (บาท)</label><input id="mf-ob" className={field} type="number" min="0" step="0.01" value={f.openingBalance} onChange={set("openingBalance")} /></div>}
         <div>
           <label className={fieldLabel} htmlFor="mf-st">สถานะ</label>

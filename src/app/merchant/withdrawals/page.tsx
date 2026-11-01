@@ -30,7 +30,7 @@ export default async function PortalWithdrawals({ searchParams }: PageProps<"/me
       {user.viewing ? null : (await portalPerms(user)).has("request_withdrawal") ? (
         <Card className="mb-5">
           <CardHead title="ขอถอนเงิน">{shop && <span className="text-[13px] text-muted">ยอดคงเหลือ {fmtMoney(shop.currentBalance)}</span>}</CardHead>
-          <WithdrawForm available={Number(shop?.currentBalance ?? 0)} minBalance={Number(shop?.minBalance ?? 0)} outFeePercent={Number(shop?.outFeePercent ?? 0)} outFeeFlat={Number(shop?.outFeeFlat ?? 0)} />
+          <WithdrawForm available={Number(shop?.currentBalance ?? 0)} minBalance={Number(shop?.minBalance ?? 0)} minWithdraw={Number(shop?.effMinWithdraw ?? 0)} outFeePercent={Number(shop?.outFeePercent ?? 0)} outFeeFlat={Number(shop?.outFeeFlat ?? 0)} />
         </Card>
       ) : (
         <Card className="mb-5 p-5 text-[13px] text-muted">ระดับผู้ใช้ของคุณไม่มีสิทธิ์ขอถอนเงิน — ติดต่อเจ้าของร้านหรือผู้ดูแลระบบ</Card>

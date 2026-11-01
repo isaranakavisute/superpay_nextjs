@@ -68,11 +68,13 @@ export function reportWorkbook(r: Result, payouts: Payout[]): Blob {
   s2.rows.push([c(NOTE, { b: true, color: "9A6700" })]);
   s2.rows.push(["ลำดับรายการ", "ธนาคาร", "วันที่", "เวลา", "ยอด (บาท)", "ปลายทาง", "ชื่อผู้รับ (สเตทเมนต์)", "เลขที่รายการเงินออก", "ร้านค้า", "กดเสร็จเมื่อ", "ธนาคารผู้รับ", "เลขบัญชีผู้รับ", "ชื่อผู้รับ (ในระบบ)", "แอดมินผู้กดเสร็จ", "ข้อมูลที่ตรงกัน", "หมายเหตุ"].map((h) => c(h, { b: true, fill: HEAD, wrap: true })));
   const bankRow = new Map<BankKey, number>();
+  let lastAccount = "";
   r.matched.forEach((x, i) => {
-    if (!bankRow.has(x.bank)) {
-      const sel = r.matched.filter((y) => y.bank === x.bank);
-      s2.rows.push([c(`${BANK_NAME[x.bank]} · บัญชี ${r.info[x.bank]?.accountNo ?? ""} · จับคู่ได้ ${sel.length} รายการ · ${money(sel.reduce((s, y) => s + y.amount, 0))} บาท`, { b: true, color: "FFFFFF", fill: DARK })]);
-      bankRow.set(x.bank, s2.rows.length);
+    if (x.account !== lastAccount) {
+      lastAccount = x.account;
+      const sel = r.matched.filter((y) => y.bank === x.bank && y.account === x.account);
+      s2.rows.push([c(`${BANK_NAME[x.bank]} · บัญชี ${x.account} · จับคู่ได้ ${sel.length} รายการ · ${money(sel.reduce((s, y) => s + y.amount, 0))} บาท`, { b: true, color: "FFFFFF", fill: DARK })]);
+      if (!bankRow.has(x.bank)) bankRow.set(x.bank, s2.rows.length);
     }
     const m = r.match.get(x.no)!; const p = m.payout; const { chk, note } = checklist(x, m); const f = i % 2 ? GREEN2 : GREEN;
     s2.rows.push([c(x.no, { fill: f }), c(BANK_NAME[x.bank], { fill: f }), c(dmy(x.date), { fill: f }), c(x.time || "—", { fill: f }), c(x.amount, { fill: f, money: true }), c(dest(x), { fill: f }),

@@ -5,21 +5,44 @@ import { Plus } from "lucide-react";
 import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import { BANKS } from "@/lib/domain";
 import { createPayment } from "./actions";
+import { precheckPayment, type PrecheckSuggestion, type PrecheckWarning } from "./precheck";
+import { PrecheckPanel } from "./PrecheckPanel";
 
 type Opt = { id: number; label: string };
 
-/** "+ สร้างรายการใหม่": a pending payment for a shop (or house) into a receiving account. */
+/**
+ * "+ สร้างรายการใหม่": a pending payment for a shop (or house) into a receiving account. Checked first (precheck.ts):
+ * any warning is shown before the order is made, and every red one must be ticked (1 Nov 2026).
+ */
 export function CreatePayment({ merchants, accounts }: { merchants: Opt[]; accounts: Opt[] }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [form, setForm] = useState({ merchantId: "", customerName: "", payerBankCode: "KBANK", bankAccountId: String(accounts[0]?.id ?? ""), amount: "", merchantOrderId: "" });
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
+  const [check, setCheck] = useState<{ warnings: PrecheckWarning[]; suggestions: PrecheckSuggestion[] } | null>(null);
+  const [acks, setAcks] = useState<boolean[]>([]);
+  // the check runs outside the transition: the payments page refreshes itself every 10 s, and a transition's result is
+  // only shown once that refresh is done too — the warnings appeared up to a minute late (test, 1 Nov 2026)
+  const [checking, setChecking] = useState(false);
+  // any change → the checks must run again
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { setForm({ ...form, [k]: e.target.value }); setCheck(null); };
+  const allAcked = !check || check.warnings.every((w, i) => w.level !== "red" || acks[i]);
 
-  const submit = () =>
+  const input = () => ({
+    merchantId: form.merchantId ? Number(form.merchantId) : null, merchantOrderId: form.merchantOrderId || undefined,
+    customerName: form.customerName, amount: Number(form.amount), bankAccountId: Number(form.bankAccountId),
+  });
+  const submit = async () => {
+    setError(null);
+    if (!check) {
+      setChecking(true);
+      const c = await precheckPayment(input()).catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) }));
+      setChecking(false);
+      if (!c.ok) { setError(`ตรวจข้อมูลไม่สำเร็จ: ${c.error}`); return; }
+      if (c.warnings.length) { setCheck({ warnings: c.warnings, suggestions: c.suggestions }); setAcks([]); return; }
+    }
     start(async () => {
-      setError(null);
       const r = await createPayment({
         merchantId: form.merchantId ? Number(form.merchantId) : null,
         customerName: form.customerName,
@@ -32,8 +55,10 @@ export function CreatePayment({ merchants, accounts }: { merchants: Opt[]; accou
         setCreated(String(r.ref));
         setOpen(false);
         setForm({ ...form, customerName: "", amount: "", merchantOrderId: "" });
+        setCheck(null);
       } else setError(r.error);
     });
+  };
 
   return (
     <>
@@ -44,12 +69,12 @@ export function CreatePayment({ merchants, accounts }: { merchants: Opt[]; accou
       {open && (
         <Modal
           title="สร้างรายการชำระเงิน"
-          onClose={() => setOpen(false)}
+          onClose={() => { setOpen(false); setCheck(null); }}
           footer={
             <>
               <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={() => setOpen(false)}>ยกเลิก</button>
-              <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || !form.customerName.trim() || !(Number(form.amount) > 0)} onClick={submit}>
-                สร้างรายการ
+              <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || checking || !form.customerName.trim() || !(Number(form.amount) > 0) || !allAcked} onClick={submit}>
+                {checking ? "กำลังตรวจ…" : pending ? "กำลังสร้าง…" : check ? (allAcked ? "ยืนยันสร้างรายการ" : "ติ๊กยืนยันทุกข้อสีแดงก่อน") : "สร้างรายการ"}
               </button>
             </>
           }
@@ -87,6 +112,7 @@ export function CreatePayment({ merchants, accounts }: { merchants: Opt[]; accou
               <input id="cp-amount" className={field} type="number" min="0.01" step="0.01" value={form.amount} onChange={set("amount")} />
             </div>
           </div>
+          {check && <PrecheckPanel warnings={check.warnings} suggestions={check.suggestions} acks={acks} setAck={(i, v) => setAcks((a) => { const n = [...a]; n[i] = v; return n; })} />}
           {error && <p className="mt-4 text-[13px] text-danger">{error}</p>}
         </Modal>
       )}

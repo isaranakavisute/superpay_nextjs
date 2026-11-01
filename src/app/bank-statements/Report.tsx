@@ -17,7 +17,7 @@ export function Report({ r, payouts, generatedAt }: { r: Result; payouts: Payout
   return (
     <div className="rdoc" id="recon-report">
       <h1>เปรียบเทียบกับ bank statement · {dmy(r.from)} – {dmy(r.to)}</h1>
-      <p className="lead">สเตทเมนต์ {BANKS.filter((b) => r.info[b]).map((b) => BANK_NAME[b].replace("ธนาคาร", "")).join(" ")} — เฉพาะรายการโอนเงินออก เทียบกับรายการเงินออก (payout) ในระบบที่อนุมัติแล้ว ของวันเดียวกับในสเตทเมนต์ · สร้างเมื่อ {generatedAt}</p>
+      <p className="lead">สเตทเมนต์ {BANKS.filter((b) => r.info[b]).map((b) => { const n = r.statements.filter((x) => x.bank === b).length; return BANK_NAME[b].replace("ธนาคาร", "") + (n > 1 ? ` (${n} บัญชี)` : ""); }).join(" ")} — เฉพาะรายการโอนเงินออก เทียบกับรายการเงินออก (payout) ในระบบที่อนุมัติแล้ว ของวันเดียวกับในสเตทเมนต์ · สร้างเมื่อ {generatedAt}</p>
       <div className="note">หมายเหตุ: ระบบเริ่มบันทึกรายการเงินออก (payout) ตั้งแต่วันที่ {dmy(PAYOUTS_SINCE)} — จึงเทียบรายการในสเตทเมนต์ตั้งแต่วันที่ {dmy(r.from)} เป็นต้นไป (รายการก่อนหน้านั้นไม่มีรายการเงินออกในระบบให้เทียบ) · แสดงเฉพาะรายการโอนเงินออก</div>
 
       <div className="kpis">
@@ -45,7 +45,7 @@ export function Report({ r, payouts, generatedAt }: { r: Result; payouts: Payout
           <table className="t1">
             <thead><tr><th>ลำดับรายการ</th><th>บัญชีต้นทาง</th><th>วันที่/เวลาโอน</th><th className="num">ยอด (บาท)</th><th>ปลายทาง</th><th>ชื่อผู้รับ (ตามสเตทเมนต์)</th><th>กลุ่ม</th><th>เหตุผล</th></tr></thead>
             <tbody>{bad.map((x, i) => { const c = caseOf.get(x.no); return (
-              <tr key={x.no} className="bad"><td className="id"><a href={`#case-${i + 1}`} style={{ color: "inherit" }}>{x.no}</a></td><td>{BANK_NAME[x.bank]}<br /><span className="mut">{r.info[x.bank]?.accountNo}</span></td>
+              <tr key={x.no} className="bad"><td className="id"><a href={`#case-${i + 1}`} style={{ color: "inherit" }}>{x.no}</a></td><td>{BANK_NAME[x.bank]}<br /><span className="mut">{x.account}</span></td>
                 <td>{dmy(x.date)}<br />{x.time ? `${x.time} น.` : "—"}</td><td className="num"><b>{money(x.amount)}</b></td><td>{dest(x)}</td><td>{x.name || rawText(x)}</td>
                 <td>{c && <span className={`cat cat-${c.cat}`}>{CAT_TH[c.cat]}</span>}</td><td className="why">{unmatchedReason(x, c, payouts)}</td></tr>); })}</tbody>
           </table>
@@ -103,16 +103,19 @@ export function Report({ r, payouts, generatedAt }: { r: Result; payouts: Payout
             <tr><th colSpan={5} className="hs">รายการในสเตทเมนต์ธนาคาร</th><th colSpan={4} className="hp">รายการเงินออก (payout) ในระบบที่จับคู่ได้</th><th colSpan={2} className="hf">ข้อมูลที่ตรงกัน</th></tr>
             <tr><th>ลำดับรายการ</th><th>เวลา</th><th className="num">ยอด (บาท)</th><th>ปลายทาง</th><th>ชื่อผู้รับ (สเตทเมนต์)</th><th>เลขที่รายการเงินออก</th><th>ร้านค้า</th><th>กดเสร็จ</th><th>ชื่อผู้รับ (ในระบบ)</th><th>ตรวจแล้วตรงกัน</th><th>หมายเหตุ</th></tr>
           </thead>
-          <tbody>{BANKS.map((b) => { const sel = good.filter((x) => x.bank === b); if (!sel.length) return null; let cur = "";
-            return (<Fragment key={b}>
-              <tr className="bankh" id={`s2-${b}`}><td colSpan={11}>{BANK_NAME[b]} · บัญชี {r.info[b]?.accountNo} · จับคู่ได้ {sel.length} รายการ · {money(sum(sel))} บาท{b === "BBL" ? " — สเตทเมนต์ธนาคารกรุงเทพไม่มีเวลา เลขบัญชี และชื่อ: จับคู่จากยอดเงิน + ประเภทปลายทาง + ลำดับ" : ""}</td></tr>
-              {sel.map((x) => { const m = r.match.get(x.no)!; const p = m.payout; const { chk, note } = checklist(x, m); const head = x.date !== cur; cur = x.date;
+          <tbody>{BANKS.map((b) => { const sel = good.filter((x) => x.bank === b); if (!sel.length) return null;
+            const accounts = [...new Set(sel.map((x) => x.account))];
+            return (<Fragment key={b}>{accounts.map((acct, ai) => { const rowsA = sel.filter((x) => x.account === acct); let cur = "";
+              return (<Fragment key={acct}>
+              <tr className="bankh" id={ai === 0 ? `s2-${b}` : undefined}><td colSpan={11}>{BANK_NAME[b]} · บัญชี {acct} · จับคู่ได้ {rowsA.length} รายการ · {money(sum(rowsA))} บาท{b === "BBL" ? " — สเตทเมนต์ธนาคารกรุงเทพไม่มีเวลา เลขบัญชี และชื่อ: จับคู่จากยอดเงิน + ประเภทปลายทาง + ลำดับ" : ""}</td></tr>
+              {rowsA.map((x) => { const m = r.match.get(x.no)!; const p = m.payout; const { chk, note } = checklist(x, m); const head = x.date !== cur; cur = x.date;
                 return (<Fragment key={x.no}>
-                  {head && <tr className="day"><td colSpan={11}>วันที่ {dmy(x.date)} · {sel.filter((y) => y.date === x.date).length} รายการ</td></tr>}
+                  {head && <tr className="day"><td colSpan={11}>วันที่ {dmy(x.date)} · {rowsA.filter((y) => y.date === x.date).length} รายการ</td></tr>}
                   <tr className="ok"><td className="id">{x.no}</td><td>{x.time || "—"}</td><td className="num">{money(x.amount)}</td><td>{dest(x)}</td><td className="nm">{x.name || rawText(x)}</td>
                     <td className="id">{p.ref}</td><td className="nm">{p.merchant}</td><td>{p.done.slice(0, 10) === x.date ? p.done.slice(11, 16) : dt(p.done).slice(0, 5) + " " + p.done.slice(11, 16)}</td>
                     <td className="nm">{p.receiverName}</td><td className="chk">{chk}</td><td className="note2">{note}</td></tr>
                 </Fragment>); })}
+              </Fragment>); })}
             </Fragment>); })}</tbody>
         </table>
       </section>

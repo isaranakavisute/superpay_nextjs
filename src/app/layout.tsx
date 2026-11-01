@@ -9,6 +9,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${brand.siteName} Admin`,
     description: "ระบบจัดการรับชำระเงิน",
+    // Not listed by search engines (user, 31 Oct 2026). The same goes out as an X-Robots-Tag header (next.config.ts).
+    robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false, noimageindex: true } },
     ...(custom ? { icons: { icon: `/branding/favicon?v=${custom}` } } : {}),
   };
 }

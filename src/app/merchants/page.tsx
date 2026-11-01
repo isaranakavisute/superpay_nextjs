@@ -46,6 +46,9 @@ const KYC: Record<string, [string, string]> = {
   rejected: ["ไม่ผ่าน", "bg-[#fee2e2] text-[#b91c1c]"],
 };
 
+/** Where a shop's minimum deposit / withdrawal comes from. */
+const SRC: Record<string, string> = { own: "ร้านนี้", parent: "ร้านแม่", global: "ค่ากลาง" };
+
 export default async function MerchantsPage({ searchParams }: PageProps<"/merchants">) {
   const params: Params = await searchParams;
   const today = bkkDayStart(await requestTime());
@@ -120,6 +123,7 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
                             <td className={`${td} whitespace-nowrap`} style={{ paddingLeft: `${18 + (m.depth ?? 0) * 22}px` }}>
                               <Link href={`/merchant-dashboard?merchantId=${m.id}`}>{m.depth > 0 && <span className="mr-1 text-soft">└</span>}<strong className="hover:text-primary">{m.name}</strong></Link>
                               <div className="text-[11px] text-muted"><code>{m.slug}</code>{m.parentId != null && <> · ร้านแม่ {byId.get(m.parentId)?.name ?? `#${m.parentId}`}</>}{!m.allowSubMerchants && " · ห้ามสร้างร้านย่อย"}</div>
+                              <div className="text-[11px] text-muted" title="ที่มา: ร้านนี้ / ร้านแม่ / ค่ากลางในหน้าตั้งค่า">ฝากขั้นต่ำ {m.effMinDeposit ? fmtMoney(m.effMinDeposit) : "—"}<span className="text-soft"> ({SRC[m.effMinDepositSrc]})</span> · ถอนขั้นต่ำ {m.effMinWithdraw ? fmtMoney(m.effMinWithdraw) : "—"}<span className="text-soft"> ({SRC[m.effMinWithdrawSrc]})</span></div>
                             </td>
                             <td className={td}><Badge className={(STATUS[m.status] ?? STATUS.active)[1]}>{(STATUS[m.status] ?? [m.status])[0]}</Badge></td>
                             <td className={td}><Badge className={KYC[m.kycStatus][1]}>{KYC[m.kycStatus][0]}</Badge></td>
@@ -153,7 +157,7 @@ export default async function MerchantsPage({ searchParams }: PageProps<"/mercha
                             <td className={`${td} whitespace-nowrap text-muted`}>{fmtDate(m.createdAt)}</td>
                             <td className={td}>
                               <Can perm="merchant.manage"><MerchantActions
-                                m={{ id: m.id, name: m.name, slug: m.slug, feePercent: m.feePercent, feeFlat: m.feeFlat, outFeePercent: m.outFeePercent, outFeeFlat: m.outFeeFlat, minBalance: m.minBalance, status: m.status, kycStatus: m.kycStatus, contactEmail: m.contactEmail, contactPhone: m.contactPhone, parentId: m.parentId, allowSubMerchants: m.allowSubMerchants }}
+                                m={{ id: m.id, name: m.name, slug: m.slug, feePercent: m.feePercent, feeFlat: m.feeFlat, outFeePercent: m.outFeePercent, outFeeFlat: m.outFeeFlat, minBalance: m.minBalance, minDeposit: m.minDeposit, minWithdraw: m.minWithdraw, inheritMinDeposit: m.inheritMinDeposit, inheritMinDepositSrc: m.inheritMinDepositSrc, inheritMinWithdraw: m.inheritMinWithdraw, inheritMinWithdrawSrc: m.inheritMinWithdrawSrc, status: m.status, kycStatus: m.kycStatus, contactEmail: m.contactEmail, contactPhone: m.contactPhone, parentId: m.parentId, allowSubMerchants: m.allowSubMerchants }}
                                 parents={parents}
                               /></Can>
                             </td>

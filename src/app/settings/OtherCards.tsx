@@ -96,6 +96,7 @@ export function LimitsCard({ minDeposit, minWithdraw }: { minDeposit: number; mi
       <Msg r={r} />
       <form onSubmit={(e) => { e.preventDefault(); run(() => saveSection("limits", v), (res) => res.ok && router.refresh()); }}>
         <div className={row}>
+          <p className="text-[12px] text-muted sm:col-span-2">ค่ากลาง: ใช้กับร้านที่ไม่ได้ตั้งเอง และไม่มีร้านแม่ที่ตั้งไว้ (ตั้งรายร้านได้ที่ Merchants → แก้ไข)</p>
           <Num id="minDepositAmount" label="ยอดฝากขั้นต่ำ (บาท)" min={0} max={10_000_000} step={0.01} value={v.minDeposit} onChange={(minDeposit) => setV({ ...v, minDeposit })} help="0 = ไม่จำกัด" />
           <Num id="minWithdrawAmount" label="ยอดถอนขั้นต่ำ (บาท)" min={0} max={10_000_000} step={0.01} value={v.minWithdraw} onChange={(minWithdraw) => setV({ ...v, minWithdraw })} help="0 = ไม่จำกัด" />
         </div>

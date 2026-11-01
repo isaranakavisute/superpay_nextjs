@@ -10,7 +10,8 @@ export type Payout = {
   ref: string; merchant: string; amount: number; receiverName: string; bank: string; account: string;
   status: string; created: string; done: string; doneBy: string;   // Bangkok "YYYY-MM-DD HH:MM:SS"
 };
-export type Row = StmtRow & { no: string };
+/** stmt = which uploaded statement it came from (several accounts per bank, 31 Oct 2026); account = that statement's account. */
+export type Row = StmtRow & { no: string; stmt: number; account: string };
 export type Finding = { ok: boolean | null; text: string };
 export type Match = { payout: Payout; how: "detail" | "order" | "amount"; acct?: boolean; bank?: boolean; name?: boolean; gap?: number; offday?: boolean };
 export type CaseCat = "own" | "date" | "dup" | "known" | "none";
@@ -21,7 +22,7 @@ export type Case = {
 };
 export type Result = {
   from: string; to: string; rows: Row[]; matched: Row[]; unmatched: Row[]; match: Map<string, Match>;
-  cases: Case[]; info: Partial<Record<BankKey, StmtInfo>>; payoutsInPeriod: number;
+  cases: Case[]; statements: StmtInfo[]; info: Partial<Record<BankKey, StmtInfo>>; payoutsInPeriod: number; duplicates: number;
 };
 
 export const PAYOUTS_SINCE = "2026-10-15";   // the system keeps payouts from this day on
@@ -64,16 +65,27 @@ export function dest(r: StmtRow) {
 }
 
 export function reconcile(parsed: { info: StmtInfo; rows: StmtRow[] }[], payoutsAll: Payout[], from: string, to: string, ourAccounts: { label: string; bank: string; account: string }[] = []): Result {
+  // Any number of statements (accounts) per bank. The same statement uploaded twice counts once.
+  const order: BankKey[] = ["SCB", "KBANK", "BBL"];
+  const seen = new Set<string>(); let duplicates = 0;
+  const stmts = parsed.filter((p) => {
+    const key = `${p.info.bank}|${p.info.accountNo}|${p.info.periodFrom}|${p.info.periodTo}|${p.rows.length}|${p.rows.at(-1)?.balance}`;
+    if (seen.has(key)) { duplicates++; return false; }
+    seen.add(key); return true;
+  }).sort((a, b) => order.indexOf(a.info.bank) - order.indexOf(b.info.bank) || a.info.accountNo.localeCompare(b.info.accountNo));
   const info: Partial<Record<BankKey, StmtInfo>> = {};
+  const perBank = (b: BankKey) => stmts.filter((p) => p.info.bank === b).length;
   const rows: Row[] = [];
-  for (const b of ["SCB", "KBANK", "BBL"] as BankKey[]) {
-    const p = parsed.find((x) => x.info.bank === b); if (!p) continue;
-    info[b] = p.info; let n = 0;
+  stmts.forEach((p, si) => {
+    const b = p.info.bank; info[b] ??= p.info;
+    // one account per bank: ไทยพาณิชย์-001 (as before); several: ไทยพาณิชย์·1728-001 (last 4 digits of the account)
+    const tag = perBank(b) > 1 ? `${PFX[b]}·${p.info.accountNo.replace(/\D/g, "").slice(-4)}` : PFX[b];
+    let n = 0;
     for (const r of p.rows) {
       if (r.dir !== "out" || r.kind === "other" || r.date < from || r.date > to) continue;
-      rows.push({ ...r, no: `${PFX[b]}-${String(++n).padStart(3, "0")}` });
+      rows.push({ ...r, no: `${tag}-${String(++n).padStart(3, "0")}`, stmt: si, account: p.info.accountNo });
     }
-  }
+  });
   const payouts = payoutsAll.filter((p) => p.status === "approved");
   const byDay = new Map<string, number[]>();
   payouts.forEach((p, i) => { const d = p.done.slice(0, 10); byDay.set(d, [...(byDay.get(d) ?? []), i]); });
@@ -120,8 +132,9 @@ export function reconcile(parsed: { info: StmtInfo; rows: StmtRow[] }[], payouts
     }
     return out;
   };
-  for (const d of [...new Set(rows.filter((r) => r.bank === "BBL").map((r) => r.date))]) {
-    const R = rows.filter((r) => r.bank === "BBL" && r.date === d);
+  for (const sd of [...new Set(rows.filter((r) => r.bank === "BBL").map((r) => `${r.stmt}|${r.date}`))]) {
+    const [si, d] = [Number(sd.split("|")[0]), sd.split("|")[1]];
+    const R = rows.filter((r) => r.bank === "BBL" && r.stmt === si && r.date === d);
     const rest = day(d).filter((i) => !used.has(i)).sort((x, y) => payouts[x].done.localeCompare(payouts[y].done));
     if (!R.length || !rest.length) continue;
     const admins = [...new Set(rest.map((i) => payouts[i].doneBy))];
@@ -136,10 +149,11 @@ export function reconcile(parsed: { info: StmtInfo; rows: StmtRow[] }[], payouts
 
   const matched = rows.filter((r) => match.has(r.no)), unmatched = rows.filter((r) => !match.has(r.no));
   const stmtOf = new Map([...match].map(([no, m]) => [m.payout.ref, no]));
-  const inReport = new Set(rows.map((r) => `${r.bank}|${r.date}|${r.time}|${r.amount}|${r.balance}`));
-  const noOf = new Map(rows.map((r) => [`${r.bank}|${r.date}|${r.time}|${r.amount}|${r.balance}`, r.no]));
+  const keyOf = (si: number, x: StmtRow) => `${si}|${x.date}|${x.time}|${x.amount}|${x.balance}`;
+  const inReport = new Set(rows.map((r) => keyOf(r.stmt, r)));
+  const noOf = new Map(rows.map((r) => [keyOf(r.stmt, r), r.no]));
   const cases: Case[] = unmatched.map((r) => {
-    const src = info[r.bank]!; const all = parsed.find((x) => x.info.bank === r.bank)!.rows;
+    const src = stmts[r.stmt].info; const all = stmts[r.stmt].rows;
     const k = all.findIndex((x) => x.date === r.date && x.time === r.time && x.amount === r.amount && x.balance === r.balance);
     const t = toMin(`${r.date} ${r.time || "12:00"}`);
     const withStmt = (p: Payout) => ({ ...p, stmt: stmtOf.get(p.ref) ?? "" });
@@ -163,13 +177,13 @@ export function reconcile(parsed: { info: StmtInfo; rows: StmtRow[] }[], payouts
     } as Record<CaseCat, string[]>)[cat];
     const near = r.time ? payouts.filter((p) => p.done.slice(0, 10) === r.date && Math.abs(toMin(p.done) - t) <= 15).sort((a, b) => a.done.localeCompare(b.done)) : [];
     const neighbours = all.slice(Math.max(0, k - 3), k + 4).map((x) => {
-      const key = `${x.bank}|${x.date}|${x.time}|${x.amount}|${x.balance}`; const no = noOf.get(key);
+      const key = keyOf(r.stmt, x); const no = noOf.get(key);
       return { row: x, me: x === all[k], label: inReport.has(key) && no ? `${match.has(no) ? "✓ จับคู่ได้" : "✗"} ${no}` : x.dir === "in" ? "เงินเข้า" : x.kind === "other" ? "ไม่ใช่การโอน" : `ก่อน ${dmy(from).slice(0, 5)}` };
     });
     const ourAccount = ourAccounts.filter((a) => r.last4 && digits(a.account).endsWith(r.last4) && (!r.destBank || a.bank === r.destBank)).map((a) => a.label);
     return { row: r, cat, verdict, next, src, ownerSame, before: k > 0 ? all[k - 1].balance : null, sameAccount, sameName, ourAccount, near, neighbours };
   });
-  return { from, to, rows, matched, unmatched, match, cases, info, payoutsInPeriod: payouts.filter((p) => p.done.slice(0, 10) >= from && p.done.slice(0, 10) <= to).length };
+  return { from, to, rows, matched, unmatched, match, cases, statements: stmts.map((p) => p.info), info, duplicates, payoutsInPeriod: payouts.filter((p) => p.done.slice(0, 10) >= from && p.done.slice(0, 10) <= to).length };
 }
 
 export const CAT_TH: Record<CaseCat, string> = { own: "โอนเข้าบัญชีชื่อเจ้าของบัญชีเอง", date: "มีรายการเงินออกตรงกัน แต่ต่างวัน", dup: "อาจเป็นการโอนซ้ำ", known: "ผู้รับเคยได้รับเงิน แต่ไม่มีรายการยอดนี้", none: "ไม่มีรายการเงินออกไปบัญชีนี้เลย" };

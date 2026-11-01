@@ -8,7 +8,6 @@ import { Card, CardHead } from "../ui";
 const W = 1200;
 const H = 220;
 const PAD = { top: 22, right: 12, bottom: 30, left: 70 };
-const GAP = 2;
 
 /** Round up to a "nice" axis maximum (1, 2, 2.5, 5 × 10ⁿ). */
 function niceMax(v: number) {
@@ -17,11 +16,14 @@ function niceMax(v: number) {
   return ([1, 2, 2.5, 5, 10].find((m) => m * p >= v) ?? 10) * p;
 }
 const compact = new Intl.NumberFormat("th-TH", { notation: "compact", maximumFractionDigits: 1 });
+// the value written at each point: the full amount, not "66.1K" (user, 2 Nov 2026)
+const full = (v: number) => v.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dayDate = (key: string) => new Date(`${key}T00:00:00+07:00`);
 
 /**
  * "ทุกร้านค้า": total fees (in + out, every shop) per day for the last 7 days — one series, one hue (brand gold),
- * so no legend; per-bar hover tooltip; values in text ink, not the bar colour.
+ * so no legend. A line (2 Nov 2026, was bars) with a marker per day and the full amount beside it; hover a day for the
+ * crosshair + in/out tooltip; values in text ink, not the line colour.
  */
 export function FeeBarChart({ days }: { days: FeeTrendDay[] }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -30,8 +32,8 @@ export function FeeBarChart({ days }: { days: FeeTrendDay[] }) {
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
   const slot = innerW / Math.max(1, rows.length);
-  const barW = Math.min(96, slot * 0.62);
   const y = (v: number) => PAD.top + innerH - (v / max) * innerH;
+  const cx = (i: number) => PAD.left + slot * i + slot / 2;
   const sum = rows.reduce((a, r) => a + r.total, 0);
   const h = hover != null ? rows[hover] : null;
   return (
@@ -48,22 +50,18 @@ export function FeeBarChart({ days }: { days: FeeTrendDay[] }) {
               <text x={PAD.left - 10} y={y(max * f) + 4} textAnchor="end" fontSize={12} fill="var(--color-muted)">{compact.format(max * f)}</text>
             </g>
           ))}
+          {hover != null && <line x1={cx(hover)} x2={cx(hover)} y1={PAD.top} y2={PAD.top + innerH} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="3 3" />}
+          <polyline points={rows.map((r, i) => `${cx(i)},${y(r.total)}`).join(" ")} fill="none" stroke="var(--color-primary)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
           {rows.map((r, i) => {
-            const cx = PAD.left + slot * i + slot / 2;
-            const top = y(r.total);
-            const bh = Math.max(0, PAD.top + innerH - top);
-            const rr = Math.min(4, bh / 2);
-            const x0 = cx - barW / 2 + GAP / 2;
-            const w = barW - GAP;
-            const base = PAD.top + innerH;
-            // Rounded data end (top), square baseline.
-            const path = bh > 0 ? `M${x0},${base} L${x0},${top + rr} Q${x0},${top} ${x0 + rr},${top} L${x0 + w - rr},${top} Q${x0 + w},${top} ${x0 + w},${top + rr} L${x0 + w},${base} Z` : "";
+            const py = y(r.total);
+            // the amount above its point; below it when the point is near the top of the chart
+            const ly = py - 12 < PAD.top + 4 ? py + 20 : py - 12;
             return (
               <g key={r.day} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
-                <rect x={PAD.left + slot * i} y={PAD.top} width={slot} height={innerH} fill="transparent" />
-                {path && <path d={path} fill="var(--color-primary)" opacity={hover == null || hover === i ? 1 : 0.55} />}
-                <text x={cx} y={Math.max(PAD.top + 10, top - 6)} textAnchor="middle" fontSize={12} fontWeight={600} fill="var(--color-ink)">{r.total ? compact.format(r.total) : "0"}</text>
-                <text x={cx} y={H - 10} textAnchor="middle" fontSize={12} fill="var(--color-muted)">{fmtShortDate(dayDate(r.day).toISOString())}</text>
+                <rect x={PAD.left + slot * i} y={PAD.top} width={slot} height={innerH + PAD.bottom} fill="transparent" />
+                <circle cx={cx(i)} cy={py} r={hover === i ? 6 : 4.5} fill="var(--color-primary)" stroke="var(--color-surface)" strokeWidth={2} />
+                <text x={cx(i)} y={ly} textAnchor="middle" fontSize={12.5} fontWeight={600} fill="var(--color-ink)" className="tabular-nums">{full(r.total)}</text>
+                <text x={cx(i)} y={H - 10} textAnchor="middle" fontSize={12} fill="var(--color-muted)">{fmtShortDate(dayDate(r.day).toISOString())}</text>
               </g>
             );
           })}

@@ -23,7 +23,6 @@ import { PaymentActions } from "./PaymentActions";
 import { QuotaLive } from "./QuotaLive";
 import { RelationLink } from "./Relation";
 import { relationLink } from "./relation-link";
-import { ServerBill } from "./ServerBill";
 import { Can } from "@/components/shell/perms-context";
 
 export const metadata: Metadata = { title: "รายการชำระเงิน — Option Pay Admin" };
@@ -211,9 +210,12 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
   const win = rangeWindow(range);
   const status = param(params, "status");
   const common = { q: param(params, "q"), bank: param(params, "bank"), merchantId: param(params, "merchantId"), group: param(params, "group"), status };
-  const sp = pageState(params, "s");
-  const dp = pageState(params, "d");
-  const cp = pageState(params, "c");
+  // History lists: 25 rows per page by default (1 Nov 2026 — each row carries its action buttons, so the page was ~3 MB
+  // and was sent again on every 10-s refresh; the review queue stays complete). Admins can still pick 50 / 100 / 200.
+  const sp = pageState(params, "s", 25);
+  const dp = pageState(params, "d", 25);
+  const cp = pageState(params, "c", 25);
+  const wp = pageState(params, "w", 25);   // รอลูกค้าชำระ (was all 200 at once)
 
   let data;
   try {
@@ -221,7 +223,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
       listResource<PaymentRow>("payments", { ...common, ...win, limit: 1 }),
       // Work queues are live: not limited by the date range, so nothing waiting drops out of view.
       listResource<PaymentRow>("payments", { ...common, bucket: "review", limit: 200 }),
-      listResource<PaymentRow>("payments", { ...common, bucket: "waiting", limit: 200 }),
+      listResource<PaymentRow>("payments", { ...common, bucket: "waiting", limit: wp.size, offset: (wp.page - 1) * wp.size }),
       listResource<PaymentRow>("payments", { ...common, ...win, bucket: "dup", limit: dp.size, offset: (dp.page - 1) * dp.size }),
       listResource<PaymentRow>("payments", { ...common, ...win, bucket: "success", limit: sp.size, offset: (sp.page - 1) * sp.size }),
       listResource<PaymentRow>("payments", { ...common, ...win, bucket: "closed", limit: cp.size, offset: (cp.page - 1) * cp.size }),
@@ -261,7 +263,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
   return shell(
     <>
       <AutoRefresh seconds={10} />
-      <RangeBar sel={sel} label={range.label} />
+      <RangeBar sel={sel} label={range.label} page="payments" />
 
       <StatGrid>
         <StatTile tone="emerald" icon={<DollarSign size={24} />} label="ชำระสำเร็จ" value={fmtMoney(amt("approved"))} note={`${n("approved")} รายการ`} />
@@ -286,7 +288,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
         badge={{ text: `${data.review.pagination.total} รายการ`, bg: "#fee2e2", fg: "#b91c1c" }}
         hint="ต้องมีคนดู — มีสลิป/แจ้งเตือนที่ระบบจับคู่เองไม่ได้, เงินเข้าโดยไม่มีออเดอร์, หรือ P2P ติด"
       >
-        <BulkSelect perm="payment.approve" items={data.review.data.map((p) => ({ ref: p.ref, amount: p.amount, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount ?? null, slipDecision: p.slipDecision ?? null, slipTransferLeft: p.slipTransferLeft ?? null, slipTransferUsedBy: p.slipTransferUsedBy ?? null, customerLeftover: p.customerLeftover ?? null, reviewNote: p.reviewNote }))} bulk={bulkPayments} confirmApprove>
+        <BulkSelect perm="payment.approve" items={data.review.data.map((p) => ({ ref: p.ref, amount: p.amount, merchantId: p.merchantId ?? null, merchantOrderId: p.merchantOrderId ?? null, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount ?? null, slipDecision: p.slipDecision ?? null, slipTransferLeft: p.slipTransferLeft ?? null, slipTransferUsedBy: p.slipTransferUsedBy ?? null, customerLeftover: p.customerLeftover ?? null, reviewNote: p.reviewNote }))} bulk={bulkPayments} confirmApprove>
           <Table rows={data.review.data} selectable empty="ไม่มีรายการที่ต้องตรวจสอบ ✓" merchants={pickList} />
         </BulkSelect>
       </Bucket>
@@ -299,6 +301,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
           hint="สร้างออเดอร์แล้ว ลูกค้ายังไม่ได้โอน / ยังไม่มีสลิป — ไม่ต้องทำอะไร ระบบจับคู่ให้เองเมื่อเงินเข้า"
         >
           <Table rows={data.waiting.data} empty="ไม่มีรายการ" merchants={pickList} />
+          <Pager path={PATH} params={params} bucket="w" page={wp.page} size={wp.size} total={data.waiting.pagination.total} />
         </Bucket>
       )}
 
@@ -325,7 +328,6 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
       </Folded>
     </>,
     <>
-      <ServerBill />
       <QuotaLive />
       <div className="self-start">
         <Can perm="payment.create"><CreatePayment

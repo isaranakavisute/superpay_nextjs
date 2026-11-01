@@ -9,6 +9,8 @@ import type { ActionResult } from "@/lib/api";
 import type { PaymentStatus } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
 import { ApproveDialog } from "./ApproveDialog";
+import { precheckPayment, type PrecheckSuggestion, type PrecheckWarning } from "./precheck";
+import { PrecheckPanel } from "./PrecheckPanel";
 import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 import { slipCheckDone, slipCheckStart } from "./SlipCheckHost";
 import {
@@ -68,6 +70,11 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
   const [merchantId, setMerchantId] = useState(p.merchantId ? String(p.merchantId) : "");
   const [orderId, setOrderId] = useState(p.merchantOrderId ?? "");
   const [slipVersion, setSlipVersion] = useState(0);
+  // "ระบุร้าน": the same checks as creating an order (precheck.ts); red ones must be ticked before saving (1 Nov 2026)
+  const [check, setCheck] = useState<{ warnings: PrecheckWarning[]; suggestions: PrecheckSuggestion[] } | null>(null);
+  const [acks, setAcks] = useState<boolean[]>([]);
+  const [checking, setChecking] = useState(false);   // outside the transition — see CreatePayment
+  const allAcked = !check || check.warnings.every((w, i) => w.level !== "red" || acks[i]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const run = (fn: () => Promise<ActionResult>, close = true) =>
@@ -79,12 +86,27 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
       } else setError(r.error);
     });
 
+  const saveAssign = async () => {
+    setError(null);
+    const mid = merchantId ? Number(merchantId) : null;
+    if (!check) {
+      setChecking(true);
+      const c = await precheckPayment({ merchantId: mid, merchantOrderId: orderId || undefined, customerName: p.customerName ?? undefined, amount: Number(p.amount), exceptRef: p.ref })
+        .catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) }));
+      setChecking(false);
+      if (!c.ok) { setError(`ตรวจข้อมูลไม่สำเร็จ: ${c.error}`); return; }
+      if (c.warnings.length) { setCheck({ warnings: c.warnings, suggestions: c.suggestions }); setAcks([]); return; }
+    }
+    run(() => assignPayment(p.ref, mid, orderId));
+  };
+
   const open = (d: Dialog) => {
     setError(null);
     setReason("");
     setAmount(p.amount);
     setMerchantId(p.merchantId ? String(p.merchantId) : "");
     setOrderId(p.merchantOrderId ?? "");
+    setCheck(null);
     setDialog(d);
   };
 
@@ -221,7 +243,7 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
 
       {dialog === "approve" && (
         <ApproveDialog
-          items={[{ ref: p.ref, amount: p.amount, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount, slipDecision: p.slipDecision, slipTransferLeft: p.slipTransferLeft, slipTransferUsedBy: p.slipTransferUsedBy, customerLeftover: p.customerLeftover, reviewNote: p.reviewNote }]}
+          items={[{ ref: p.ref, amount: p.amount, customerName: p.customerName, status: p.status, hasSlipImage: p.hasSlipImage, slipAmount: p.slipAmount, slipDecision: p.slipDecision, slipTransferLeft: p.slipTransferLeft, slipTransferUsedBy: p.slipTransferUsedBy, customerLeftover: p.customerLeftover, reviewNote: p.reviewNote, merchantId: p.merchantId, merchantOrderId: p.merchantOrderId }]}
           pending={pending} error={error} onClose={() => setDialog(null)} onConfirm={() => run(() => approvePayment(p.ref))}
         />
       )}
@@ -261,22 +283,23 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
         <Modal
           title={`ระบุร้าน ${p.ref}`}
           onClose={close}
-          footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending} onClick={() => run(() => assignPayment(p.ref, merchantId ? Number(merchantId) : null, orderId))}>บันทึก</button></>}
+          footer={<>{cancel}<button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending || checking || !allAcked} onClick={saveAssign}>{checking ? "กำลังตรวจ…" : pending ? "กำลังบันทึก…" : check ? (allAcked ? "ยืนยันบันทึก" : "ติ๊กยืนยันทุกข้อสีแดงก่อน") : "บันทึก"}</button></>}
         >
           <p className="mb-3 text-[13px] text-muted">เลือกว่าเงินก้อนนี้เข้าร้านไหน — ค่าธรรมเนียมจะคำนวณใหม่ตามเรตของร้านที่เลือก</p>
           <div className="grid gap-4">
             <div>
               <label className={fieldLabel} htmlFor={`as-m-${p.ref}`}>ร้านค้า</label>
-              <select id={`as-m-${p.ref}`} className={field} value={merchantId} onChange={(e) => setMerchantId(e.target.value)}>
+              <select id={`as-m-${p.ref}`} className={field} value={merchantId} onChange={(e) => { setMerchantId(e.target.value); setCheck(null); }}>
                 <option value="">— ไม่ผูกร้าน (house) —</option>
                 {merchants.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </div>
             <div>
               <label className={fieldLabel} htmlFor={`as-o-${p.ref}`}>Order ID ของร้าน</label>
-              <input id={`as-o-${p.ref}`} className={field} value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="ไม่บังคับ" />
+              <input id={`as-o-${p.ref}`} className={field} value={orderId} onChange={(e) => { setOrderId(e.target.value); setCheck(null); }} placeholder="ไม่บังคับ" />
             </div>
           </div>
+          {check && <PrecheckPanel warnings={check.warnings} suggestions={check.suggestions} acks={acks} setAck={(i, v) => setAcks((a) => { const n = [...a]; n[i] = v; return n; })} />}
           {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
         </Modal>
       )}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { LoadingDialog } from "./LoadingDialog";
+import { LoadingCountdown } from "../shell/LoadingCountdown";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { RANGE_OPTIONS, rangeParams, type RangeSel } from "../dashboard/range";
 
@@ -9,12 +10,15 @@ import { RANGE_OPTIONS, rangeParams, type RangeSel } from "../dashboard/range";
  * วันนี้ / เมื่อวาน / 7 วัน / เดือนนี้ / ทั้งหมด tabs, then "จาก [date] ถึง [date]"
  * and the resolved label, as on the original. Writes ?range=&from=&to= and
  * keeps the page's other params (status, q, …); paging resets.
+ * With `page` (payments, outflows — user, 2 Nov 2026) the wait shows the menus' countdown popup, timed per page + tab
+ * (e.g. "payments-all"; "today" falls back to the menu's own time); without it, the plain "โปรดคอยสักครู่" dialog.
  */
-export function RangeBar({ sel, label }: { sel: RangeSel; label: string }) {
+export function RangeBar({ sel, label, page }: { sel: RangeSel; label: string; page?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const [target, setTarget] = useState<{ href: string; mode: RangeSel["mode"] }>({ href: pathname, mode: sel.mode });
 
   const go = (next: RangeSel) => {
     const q = new URLSearchParams(search.toString());
@@ -23,6 +27,7 @@ export function RangeBar({ sel, label }: { sel: RangeSel; label: string }) {
       if (v == null) q.delete(k);
       else q.set(k, v);
     }
+    setTarget({ href: `${pathname}?${q}`, mode: next.mode });
     startTransition(() => router.push(`${pathname}?${q}`, { scroll: false }));
   };
 
@@ -32,7 +37,12 @@ export function RangeBar({ sel, label }: { sel: RangeSel; label: string }) {
 
   return (
     <div className={`mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line transition-opacity ${pending ? "opacity-60" : ""}`}>
-      <LoadingDialog open={pending} text="กำลังโหลดรายการตามช่วงเวลาที่เลือก…" />
+      {page ? (
+        <LoadingCountdown pending={pending} page={`${page}-${target.mode}`} fallbackPage={target.mode === "today" ? page : undefined} href={target.href}
+          title={`กำลังโหลดรายการ “${RANGE_OPTIONS.find((o) => o.mode === target.mode)?.label ?? "ช่วงวันที่ที่เลือก"}”`} />
+      ) : (
+        <LoadingDialog open={pending} text="กำลังโหลดรายการตามช่วงเวลาที่เลือก…" />
+      )}
       <div className="flex flex-wrap gap-1">
         {RANGE_OPTIONS.map((o) => (
           <button

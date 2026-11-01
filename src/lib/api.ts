@@ -101,8 +101,23 @@ export type DashboardSummary = {
 
 export type TrendPoint = { day: string; amount: Money; fee?: Money; count: number };
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(BASE + path, { cache: "no-store", headers: await viewerHeaders() });
+/**
+ * A page's data read gives up after this long (1 Nov 2026): the page shows "could not load" instead of hanging. A page
+ * waits for its data, then the shell (settings / profile, 4 s each) and the alert badges (ALERTS_TIMEOUT_MS) — so with the
+ * backend down a page shows the message after ~17 s at most. The slowest page normally loads in about 1 s.
+ */
+export const READ_TIMEOUT_MS = 10_000;
+const ALERTS_TIMEOUT_MS = 3_000;   // the menu badges are optional: never hold a page for them
+export const TIMEOUT_TEXT = "ระบบไม่ตอบภายในเวลาที่กำหนด — โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่";
+const isTimeout = (err: unknown) => err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+
+async function get<T>(path: string, timeoutMs = READ_TIMEOUT_MS): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(BASE + path, { cache: "no-store", headers: await viewerHeaders(), signal: AbortSignal.timeout(timeoutMs) });
+  } catch (err) {
+    throw isTimeout(err) ? new Error(TIMEOUT_TEXT) : err;
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(errorText(body, `${path} → HTTP ${res.status}`));
@@ -176,7 +191,7 @@ export type Alerts = {
   lowBalanceMerchants: { id: number; name: string; slug: string; currentBalance: Money; minBalance: Money }[];
 };
 
-export const getAlerts = () => get<Alerts>("/api/dashboard/alerts");
+export const getAlerts = () => get<Alerts>("/api/dashboard/alerts", ALERTS_TIMEOUT_MS);
 export type DupOrder = {
   ref: string; merchantOrderId: string | null; merchantName: string | null; customerName: string | null; senderBank: string | null; senderLast4: string | null;
   amount: string; status: string; accountBank: string | null; accountLast4: string | null; createdAt: string; completedAt: string | null; reviewedBy: string | null;

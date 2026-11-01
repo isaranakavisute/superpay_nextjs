@@ -5,10 +5,11 @@ import { withParams, type Params } from "./query";
 export const PAGE_SIZES = [25, 50, 100, 200] as const;
 
 /** Reads a bucket's page/size from ?{key}p= and ?{key}s= (default 50, as on the original). */
-export function pageState(params: Params, key: string) {
+/** `def`: the page size when none is chosen (payments page history lists: 25 — 1 Nov 2026, a 50-row page was ~3 MB). */
+export function pageState(params: Params, key: string, def: (typeof PAGE_SIZES)[number] = 50) {
   const p = Number.parseInt(String(params[`${key}p`] ?? "1"), 10);
-  const s = Number.parseInt(String(params[`${key}s`] ?? "50"), 10);
-  const size = (PAGE_SIZES as readonly number[]).includes(s) ? s : 50;
+  const s = Number.parseInt(String(params[`${key}s`] ?? String(def)), 10);
+  const size = (PAGE_SIZES as readonly number[]).includes(s) ? s : def;
   return { page: Number.isFinite(p) && p > 0 ? p : 1, size };
 }
 

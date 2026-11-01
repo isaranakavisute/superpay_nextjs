@@ -38,6 +38,17 @@ export async function createSession(user: { id: number; username: string; fullNa
   });
 }
 
+/**
+ * Background page-timing check (lib/page-probe.ts, 1 Nov 2026): a session for the built-in read-only identity
+ * "page-probe" — signed here, valid 60 s, only ever sent from this server to itself (never to a browser). The backend
+ * lets this identity READ only; any change it would try is refused (middleware/consolePerms.js).
+ */
+export const PROBE_USER = "page-probe";
+export function probeSessionCookie() {
+  const payload = Buffer.from(JSON.stringify({ id: 0, u: PROBE_USER, n: "ตรวจเวลาโหลดอัตโนมัติ", r: "ระบบ", exp: Date.now() + 60_000 })).toString("base64url");
+  return `${SESSION_COOKIE}=${payload}.${sign(payload)}`;
+}
+
 export async function destroySession() {
   (await cookies()).delete(SESSION_COOKIE);
 }

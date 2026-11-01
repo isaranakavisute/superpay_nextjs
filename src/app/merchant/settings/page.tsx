@@ -53,6 +53,10 @@ export default async function PortalSettings({ searchParams }: PageProps<"/merch
                 {row("ค่าธรรมเนียมเงินเข้า", `${Number(m.feePercent)}% + ${fmtMoney(m.feeFlat)} ต่อรายการ (หักจากยอดที่ลูกค้าโอน)`)}
                 {row("ค่าธรรมเนียมเงินออก", `${Number(m.outFeePercent)}% + ${fmtMoney(m.outFeeFlat)} ต่อรายการ (บวกเพิ่มจากยอดถอน / payout)`)}
                 {row("ยอดขั้นต่ำในบัญชี", fmtMoney(m.minBalance))}
+                {/* Per-shop minimums (1 Nov 2026): set by the admin only — read-only here; the shop asks the admin to change them. */}
+                {row("ยอดฝากขั้นต่ำต่อรายการ", <>{m.effMinDeposit ? fmtMoney(m.effMinDeposit) : "ไม่มีขั้นต่ำ"}<div className="text-[11px] text-muted">ตั้งโดยผู้ดูแลระบบ · ดูได้อย่างเดียว</div></>)}
+                {row("ยอดถอนขั้นต่ำต่อรายการ", <>{m.effMinWithdraw ? fmtMoney(m.effMinWithdraw) : "ไม่มีขั้นต่ำ"}<div className="text-[11px] text-muted">ตั้งโดยผู้ดูแลระบบ · ดูได้อย่างเดียว</div></>)}
+                <div className="px-[22px] py-2.5 text-[11.5px] text-muted">ต้องการเปลี่ยนยอดฝาก/ถอนขั้นต่ำ กรุณาติดต่อผู้ดูแลระบบ Option Pay — ร้านค้าแก้ไขเองไม่ได้</div>
                 {m.parentId != null && row("ร้านแม่", shops?.data.find((x) => x.id === m.parentId)?.name ?? `#${m.parentId}`)}
                 {row("เริ่มใช้งาน", fmtDate(m.createdAt))}
               </dl>

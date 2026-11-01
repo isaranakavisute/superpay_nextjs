@@ -53,7 +53,8 @@ const headers = (u: PortalUser) => ({
 /** Backend portal call scoped to the session's shop. */
 export async function portalCall<T = Record<string, unknown>>(u: PortalUser, method: "GET" | "POST", path: string, body?: unknown): Promise<ActionResult & Partial<T>> {
   try {
-    const r = await fetch(`${BASE}/api/console/portal/${u.merchantId}${path}`, { method, headers: headers(u), body: body === undefined ? undefined : JSON.stringify(body), cache: "no-store" });
+    // reads give up after 10 s (writes are never cut off)
+    const r = await fetch(`${BASE}/api/console/portal/${u.merchantId}${path}`, { method, headers: headers(u), body: body === undefined ? undefined : JSON.stringify(body), cache: "no-store", ...(method === "GET" ? { signal: AbortSignal.timeout(10_000) } : {}) });
     const j = await r.json().catch(() => null);
     if (!r.ok) return { ok: false, error: errorText(j, `HTTP ${r.status}`) } as ActionResult & Partial<T>;
     return { ok: true, ...(j ?? {}) };

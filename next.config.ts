@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: { "/merchant/docs/[file]": ["./content/merchant-docs/**"] },
   // Old-style addresses from the original site (payments.html, merchant/settings.html, …)
   // land on the clean routes, so existing links and bookmarks keep working.
+  // Search engines must not list any part of the site (user, 31 Oct 2026) — every response, including images, PDFs and
+  // API answers, carries the header; pages also carry <meta name="robots">. Direct links keep working as before.
+  async headers() {
+    return [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }] }];
+  },
   async redirects() {
     return [
       { source: "/index.html", destination: "/", permanent: false },

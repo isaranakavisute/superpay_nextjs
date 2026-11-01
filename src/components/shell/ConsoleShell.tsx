@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { consoleHeaders, getAlerts } from "@/lib/api";
 import { THEMES, THEME_COOKIE, brandView, getBranding, pickTheme } from "@/lib/branding";
 import { getSessionUser } from "@/lib/session";
-import { canOpen, pageKeyOf } from "@/lib/page-perms";
+import { canOpen, firstPage, HIDDEN_MENU, pageKeyOf } from "@/lib/page-perms";
+import { NAV_GROUPS, PROFILE_ITEM, TOP_ITEMS } from "@/components/shell/nav";
+import { AutoRecover } from "@/components/shell/AutoRecover";
 import { AppShell, type ShellAlerts, type ShellLook, type ShellSearch } from "./AppShell";
 import type { Params } from "../list/query";
 
@@ -30,9 +32,8 @@ export async function ConsoleShell({
 
   const [branding, me] = await Promise.all([getBranding(), getMe(user.id, user.username)]);
   // Settings → security: everyone but the owner must turn on 2FA first; they can still sign in.
-  if (branding.security.enforce2fa && me && !me.twoFactor && user.id !== branding.security.ownerUserId && path !== "/profile") {
-    redirect("/profile?setup2fa=1");
-  }
+  const must2fa = branding.security.enforce2fa && me && !me.twoFactor && user.id !== branding.security.ownerUserId;
+  if (must2fa && path !== "/profile") redirect("/profile?setup2fa=1");
   const themeIds = branding.theme.allowUser ? branding.theme.enabled : [branding.theme.default];
   const look: ShellLook = {
     brand: brandView(branding),
@@ -48,7 +49,13 @@ export async function ConsoleShell({
   // สิทธิ์การเข้าถึง: menu items, bell entries and the page itself follow the operator's role.
   const perms = me?.perms ?? null;
   const pageKey = pageKeyOf(path);
-  const allowedPage = canOpen(perms, pageKey);
+  // A hidden profile still opens while 2FA must be set up (else the operator could never finish it).
+  const allowedPage = canOpen(perms, pageKey) || (pageKey === "profile" && !!must2fa);
+  // Dashboard hidden for this role (เมนูที่แสดง): land on its first visible page instead of "no access".
+  if (pageKey === "dashboard" && !allowedPage) {
+    const to = firstPage(perms, [...TOP_ITEMS, ...NAV_GROUPS.flatMap((g) => g.items), PROFILE_ITEM]);
+    if (to && to !== "/dashboard") redirect(to);
+  }
 
   let alerts: ShellAlerts | null = null;
   try {
@@ -93,6 +100,7 @@ export async function ConsoleShell({
   return (
     <AppShell title={title} user={user} alerts={alerts} search={shellSearch} look={look} perms={perms}>
       {allowedPage ? children : <NoAccess />}
+      <AutoRecover />
     </AppShell>
   );
 }
@@ -104,8 +112,8 @@ async function getMe(id: number, username: string) {
   try {
     const r = await fetch(`${BASE}/api/console/profile/${id}`, { headers: { ...consoleHeaders(username), "x-console-user-id": String(id) }, cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (!r.ok) return null;
-    const p = ((await r.json()) as { profile: { roleCode: string; permissions: string[]; twoFactorEnabledAt: string | null } }).profile;
-    const perms = p.roleCode === "super_admin" ? ["*"] : p.permissions ?? [];
+    const p = ((await r.json()) as { profile: { roleCode: string; permissions: string[]; hiddenMenus?: string[]; twoFactorEnabledAt: string | null } }).profile;
+    const perms = p.roleCode === "super_admin" ? ["*"] : [...(p.permissions ?? []), ...(p.hiddenMenus ?? []).map((k) => HIDDEN_MENU + k)];
     return { twoFactor: !!p.twoFactorEnabledAt, perms, canApprovePayouts: perms.includes("*") || perms.includes("outflow.approve") };
   } catch {
     return null;

@@ -44,10 +44,17 @@ export type AccountRow = {
   lastPaymentAt: When | null; countersResetAt: When | null; createdAt: When;
 };
 
+/** Where a shop's minimum comes from. */
+export type LimitSrc = "own" | "parent" | "global";
+
 export type MerchantRow = {
   id: number; name: string; slug: string; feePercent: Money; feeFlat: Money; outFeePercent: Money; outFeeFlat: Money; outFeeTotal: Money; status: "active" | "suspended" | "pending";
   parentId: number | null; depth: number; path: number[]; allowSubMerchants: boolean; commissionEarned: Money;
   kycStatus: "pending" | "verified" | "rejected"; minBalance: Money; createdAt: When;
+  /** Per-shop minimum deposit / withdrawal (1 Nov 2026): own value (null = not set) and what applies (own → nearest parent → Settings). */
+  minDeposit: Money | null; minWithdraw: Money | null;
+  effMinDeposit: number; effMinDepositSrc: LimitSrc; effMinWithdraw: number; effMinWithdrawSrc: LimitSrc;
+  inheritMinDeposit: number; inheritMinDepositSrc: LimitSrc; inheritMinWithdraw: number; inheritMinWithdrawSrc: LimitSrc;
   depositTotal: Money; depositCount: number; feeTotal: Money; withdrawTotal: Money; withdrawCount: number;
   currentBalance: Money; pendingCount: number;
   /** ค่าคอม from sub-shops in the selected window (merchants list with from/to). */

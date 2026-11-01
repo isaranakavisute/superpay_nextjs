@@ -3,9 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import { Check, Search } from "lucide-react";
 import { btn } from "@/components/interactive/Modal";
+import { NAV_GROUPS, PROFILE_ITEM, TOP_ITEMS } from "@/components/shell/nav";
+import { canOpen } from "@/lib/page-perms";
 import { saveRoles } from "./actions";
 
-export type Role = { code: string; name: string; description: string; permissions: string[]; memberCount: number };
+export type Role = { code: string; name: string; description: string; permissions: string[]; hiddenMenus?: string[]; memberCount: number };
 export type Group = { name: string; perms: string[] };
 
 // Human labels for permission keys.
@@ -35,12 +37,19 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
 export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }) {
   const initial = useMemo(() => Object.fromEntries(roles.map((r) => [r.code, new Set(r.permissions)])), [roles]);
   const [state, setState] = useState<Record<string, Set<string>>>(initial);
+  // เมนูที่แสดง: menu keys each role does not see (permissions above still decide what it may do).
+  const initialHidden = useMemo(() => Object.fromEntries(roles.map((r) => [r.code, new Set(r.hiddenMenus ?? [])])), [roles]);
+  const [hidden, setHidden] = useState<Record<string, Set<string>>>(initialHidden);
+  const toggleMenu = (code: string, key: string) =>
+    setHidden((h) => { const next = new Set(h[code]); if (next.has(key)) next.delete(key); else next.add(key); return { ...h, [code]: next }; });
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
   const total = groups.reduce((n, g) => n + g.perms.length, 0);
   const locked = (code: string) => state[code]?.has("*");
-  const dirty = roles.filter((r) => !locked(r.code) && [...state[r.code]].sort().join() !== [...initial[r.code]].sort().join());
+  const permsDirty = roles.filter((r) => !locked(r.code) && [...state[r.code]].sort().join() !== [...initial[r.code]].sort().join());
+  const menusDirty = roles.filter((r) => !locked(r.code) && [...hidden[r.code]].sort().join() !== [...initialHidden[r.code]].sort().join());
+  const dirty = roles.filter((r) => permsDirty.includes(r) || menusDirty.includes(r));
   const needle = q.trim().toLowerCase();
   const visible = groups.map((g) => ({ ...g, perms: g.perms.filter((p) => !needle || p.includes(needle) || (LABEL[p] ?? "").toLowerCase().includes(needle)) })).filter((g) => g.perms.length);
   const visibleKeys = visible.flatMap((g) => g.perms);
@@ -58,8 +67,8 @@ export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }
   const save = () =>
     start(async () => {
       setMsg(null);
-      const r = await saveRoles(Object.fromEntries(dirty.map((d) => [d.code, [...state[d.code]]])));
-      setMsg(r.ok ? { ok: true, text: "บันทึกสิทธิ์เรียบร้อย — มีผลทันที" } : { ok: false, text: r.error });
+      const r = await saveRoles(Object.fromEntries(permsDirty.map((d) => [d.code, [...state[d.code]]])), Object.fromEntries(menusDirty.map((d) => [d.code, [...hidden[d.code]]])));
+      setMsg(r.ok ? { ok: true, text: "บันทึกสิทธิ์และเมนูเรียบร้อย — มีผลทันที" } : { ok: false, text: r.error });
     });
 
   return (
@@ -123,6 +132,8 @@ export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }
         </div>
       </section>
 
+      <MenuMatrix roles={roles} state={state} hidden={hidden} locked={locked} toggle={toggleMenu} />
+
       {(dirty.length > 0 || msg) && (
         <div className="sticky bottom-4 z-10 mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-5 py-3 shadow-lift">
           {dirty.length > 0 ? (
@@ -133,7 +144,7 @@ export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }
           {dirty.length > 0 && (
             <span className="ml-auto flex gap-2">
               {msg && !msg.ok && <span className="self-center text-[12.5px] text-danger">{msg.text}</span>}
-              <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={() => { setState(initial); setMsg(null); }}>ยกเลิก</button>
+              <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={() => { setState(initial); setHidden(initialHidden); setMsg(null); }}>ยกเลิก</button>
               <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={pending} onClick={save}>บันทึกสิทธิ์</button>
             </span>
           )}
@@ -162,6 +173,62 @@ function FragmentGroup({ group, roles, state, locked, set }: { group: Group; rol
               {locked(r.code) ? <Check size={16} className="inline text-primary" /> : <Toggle on={state[r.code].has(p)} onChange={() => set(r.code, [p], !state[r.code].has(p))} />}
             </td>
           ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+/** เมนูที่แสดง: which sidebar menus each role sees. Off = hidden from the menu and the page shows "no access". */
+function MenuMatrix({ roles, state, hidden, locked, toggle }: { roles: Role[]; state: Record<string, Set<string>>; hidden: Record<string, Set<string>>; locked: (c: string) => boolean | undefined; toggle: (c: string, k: string) => void }) {
+  return (
+    <section className="mt-5 overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="border-b border-line px-[22px] py-4">
+        <div className="text-[15px] font-bold">เมนูที่แสดง</div>
+        <div className="mt-1 text-[12.5px] text-muted">ปิด = ซ่อนเมนูนั้นจากแถบเมนู และเปิดหน้านั้นไม่ได้ · ปิดแดชบอร์ด = เข้าระบบแล้วไปที่เมนูแรกที่เปิดได้ · ปิดโปรไฟล์ = เปลี่ยนรหัสผ่าน/2FA เองไม่ได้ (ยกเว้นตอนระบบบังคับตั้ง 2FA) · สิทธิ์ด้านบนยังเป็นตัวกำหนดว่าทำอะไรได้ — เมนูที่บทบาทไม่มีสิทธิ์จะไม่แสดงอยู่แล้ว (ไม่มีสิทธิ์)</div>
+      </div>
+      <div className="max-h-[560px] overflow-auto">
+        <table className="w-full min-w-[640px] border-collapse text-[13px]">
+          <thead className="sticky top-0 z-[2]">
+            <tr>
+              <th className="sticky left-0 z-[3] min-w-[230px] border-b border-line bg-surface-alt px-4 py-3 text-left text-xs font-semibold text-muted uppercase">เมนู</th>
+              {roles.map((r) => (
+                <th key={r.code} className={`w-[120px] border-b border-line px-2 py-3 text-center text-xs font-semibold ${locked(r.code) ? "bg-primary-50" : "bg-surface-alt"}`}>
+                  <div className="text-ink">{r.name}</div>
+                  {locked(r.code) && <div className="mt-1 text-[10.5px] text-primary">เห็นทุกเมนู</div>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[{ id: "general", label: "ทั่วไป", items: [...TOP_ITEMS, PROFILE_ITEM] }, ...NAV_GROUPS].map((g) => (
+              <MenuGroup key={g.id} name={g.label} items={g.items} roles={roles} state={state} hidden={hidden} locked={locked} toggle={toggle} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function MenuGroup({ name, items, roles, state, hidden, locked, toggle }: { name: string; items: { key: string; label: string }[]; roles: Role[]; state: Record<string, Set<string>>; hidden: Record<string, Set<string>>; locked: (c: string) => boolean | undefined; toggle: (c: string, k: string) => void }) {
+  return (
+    <>
+      <tr>
+        <td colSpan={roles.length + 1} className="border-b border-line border-l-[3px] border-l-accent bg-surface-alt px-4 py-2 text-[11.5px] font-semibold tracking-wide text-muted uppercase">{name}</td>
+      </tr>
+      {items.map((i) => (
+        <tr key={i.key} className="hover:bg-surface-alt">
+          <td className="sticky left-0 border-b border-line bg-surface px-4 py-2.5 font-medium">{i.label}</td>
+          {roles.map((r) => {
+            if (locked(r.code)) return <td key={r.code} className="border-b border-line bg-primary-50 text-center"><Check size={16} className="inline text-primary" /></td>;
+            const allowed = canOpen([...state[r.code]], i.key);
+            return (
+              <td key={r.code} className="border-b border-line text-center">
+                {allowed ? <Toggle on={!hidden[r.code].has(i.key)} onChange={() => toggle(r.code, i.key)} /> : <span className="text-[11px] text-soft">ไม่มีสิทธิ์</span>}
+              </td>
+            );
+          })}
         </tr>
       ))}
     </>

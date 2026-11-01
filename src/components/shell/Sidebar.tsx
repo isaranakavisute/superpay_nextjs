@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { ChevronRight, LogOut, X } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import type { SessionUser } from "@/lib/session";
@@ -10,6 +10,8 @@ import { initials } from "@/lib/format";
 import { Logo, type LogoBrand } from "../Logo";
 import { NAV_GROUPS, PROFILE_ITEM, TOP_ITEMS, type NavItem } from "./nav";
 import { canOpen } from "@/lib/page-perms";
+import { refreshShared } from "@/lib/load-times";
+import { LoadingCountdown } from "./LoadingCountdown";
 
 const OPEN_GROUPS_KEY = "superpay_nav_groups";
 const CHANGE_EVENT = "superpay:nav-groups";
@@ -65,8 +67,15 @@ function NavLink({ item, active, inGroup, badge }: { item: NavItem; active: bool
       <Icon size={18} strokeWidth={2} className={`shrink-0 ${active ? "" : "opacity-85"}`} />
       <span className="truncate">{item.label}</span>
       {!!badge && <NavBadge n={badge} active={active} />}
+      <NavLoading page={item.key} href={item.href} label={item.label} />
     </Link>
   );
+}
+
+/** Loading popup while a menu's page opens (useLinkStatus) — the countdown itself is LoadingCountdown. */
+function NavLoading({ page, href, label }: { page: string; href: string; label: string }) {
+  const { pending } = useLinkStatus();
+  return <LoadingCountdown pending={pending} page={page} href={href} title={`กำลังเปิด “${label}”`} />;
 }
 
 function NavBadge({ n, active }: { n: number; active?: boolean }) {
@@ -105,6 +114,7 @@ export function Sidebar({
   // render matches the server and saved groups appear right after hydration.
   const saved = useSyncExternalStore(subscribeSavedGroups, readSavedGroups, () => "[]");
   const savedGroups = parseGroups(saved);
+  useEffect(() => { refreshShared(); const id = setInterval(refreshShared, 120_000); return () => clearInterval(id); }, []);
   const isOpen = (id: string) =>
     savedGroups.includes(id) || NAV_GROUPS.some((g) => g.id === id && g.items.some((i) => isActive(i.href)));
 
@@ -133,7 +143,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-3.5 [scrollbar-color:rgba(255,255,255,0.13)_transparent] hover:[scrollbar-color:rgba(255,255,255,0.26)_transparent]">
-        {TOP_ITEMS.map((item) => (
+        {TOP_ITEMS.filter((i) => canOpen(perms, i.key)).map((item) => (
           <NavLink key={item.key} item={item} active={isActive(item.href)} badge={badges[item.key]} />
         ))}
         {NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => canOpen(perms, i.key)) })).filter((g) => g.items.length).map((group) => {
@@ -169,7 +179,7 @@ export function Sidebar({
             </div>
           );
         })}
-        <NavLink item={PROFILE_ITEM} active={isActive(PROFILE_ITEM.href)} />
+        {canOpen(perms, PROFILE_ITEM.key) && <NavLink item={PROFILE_ITEM} active={isActive(PROFILE_ITEM.href)} />}
       </nav>
 
       <div className="flex items-center gap-2.5 border-t border-white/[0.06] px-[18px] py-3.5">

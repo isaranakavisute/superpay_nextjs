@@ -33,6 +33,9 @@ export type MerchantInput = {
   outFeePercent: number;
   outFeeFlat: number;
   minBalance: number;
+  /** Per-shop minimum deposit / withdrawal: null = not set (nearest parent shop, else Settings). */
+  minDeposit?: number | null;
+  minWithdraw?: number | null;
   openingBalance?: number;
   status: "active" | "suspended" | "pending";
   kycStatus: "pending" | "verified" | "rejected";
@@ -49,8 +52,8 @@ export async function createMerchant(input: MerchantInput) {
 export async function updateMerchant(id: number, input: MerchantInput) {
   if (!okId(id)) return bad("ร้านไม่ถูกต้อง");
   // slug and opening balance are set at creation only.
-  const { name, feePercent, feeFlat, outFeePercent, outFeeFlat, minBalance, status, kycStatus, contactEmail, contactPhone, parentId, allowSubMerchants } = input;
-  const body = { name, feePercent, feeFlat, outFeePercent, outFeeFlat, minBalance, status, kycStatus, contactEmail, contactPhone, parentId, allowSubMerchants };
+  const { name, feePercent, feeFlat, outFeePercent, outFeeFlat, minBalance, minDeposit, minWithdraw, status, kycStatus, contactEmail, contactPhone, parentId, allowSubMerchants } = input;
+  const body = { name, feePercent, feeFlat, outFeePercent, outFeeFlat, minBalance, minDeposit, minWithdraw, status, kycStatus, contactEmail, contactPhone, parentId, allowSubMerchants };
   return as((actor) => consoleWrite("POST", `/api/console/merchants/${id}/update`, actor, body));
 }
 export async function deleteMerchant(id: number, reason: string) {

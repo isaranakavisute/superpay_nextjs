@@ -9,6 +9,8 @@ export type ApprovalInput = {
   slipTransferLeft?: string | null; slipTransferUsedBy?: string | null;
   /** The most this customer has left on earlier transfers at this shop (pays a short slip's difference). */
   customerLeftover?: string | null;
+  /** The shop and the shop's own order number: without the number the shop's system cannot find the order (1 Nov 2026). */
+  merchantId?: number | null; merchantOrderId?: string | null;
 };
 
 const baht = (v: string | number) => `฿${Number(v).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -30,6 +32,7 @@ export function approvalWarnings(p: ApprovalInput): string[] {
         ? `ยอดในสลิป ${baht(p.slipAmount)} น้อยกว่ายอดออเดอร์ ${baht(p.amount)} — ส่วนที่ขาด ${baht(-over)} จะหักจากยอดคงเหลือของลูกค้าคนนี้ (มี ${baht(p.customerLeftover ?? 0)}) รวมครบ ${baht(p.amount)}`
         : `ยอดในสลิป ${baht(p.slipAmount)} น้อยกว่ายอดออเดอร์ ${baht(p.amount)} — ถ้าอนุมัติ ลูกค้าจะได้รับเครดิต ${baht(p.amount)} มากกว่าเงินที่โอนจริง ควรแก้ยอดให้ตรงก่อน`);
   }
+  if (p.merchantId != null && !p.merchantOrderId?.trim()) w.push("ไม่มี Order ID ของร้าน — ระบบร้านจะหาออเดอร์นี้ไม่พบ (PAYMENT_LOG_NOT_FOUND) และลูกค้าจะไม่ได้รับเครดิตฝั่งร้าน · ถ้าลูกค้ามีออเดอร์เดิมของร้าน ให้ชำระออเดอร์เดิมแทน");
   if (p.slipDecision === "invalid") w.push(`ระบบตรวจสลิปไม่ผ่าน: ${p.reviewNote ?? "สลิปไม่ถูกต้อง"}`);
   if (p.status === "expired") w.push("ออเดอร์นี้หมดอายุแล้ว — ตรวจให้แน่ใจว่าลูกค้าไม่ได้ชำระผ่านออเดอร์อื่นไปแล้ว");
   return w;

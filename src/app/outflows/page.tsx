@@ -243,7 +243,7 @@ export default async function OutflowsPage({ searchParams }: PageProps<"/outflow
   return shell(
     <>
       <AutoRefresh seconds={10} />
-      <RangeBar sel={sel} label={range.label} />
+      <RangeBar sel={sel} label={range.label} page="outflows" />
 
       <FilterCard txn
         searchPlaceholder="ค้นหาเลขที่ / รายละเอียด..."
