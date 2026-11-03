@@ -205,7 +205,7 @@ export type Relation = { kind: RelationKind; other: DupOrder | null; order: DupO
 export const getRelation = (ref: string) => get<Relation>(`/api/console/payments/${encodeURIComponent(ref)}/relation`);
 export type LiveQuota = {
   checkedAt: string; threshold: number; provider: string | null; ok: boolean; message: string;
-  quota: { remaining: number | null; total: number | null; used: number | null; expiresAt: string | null } | null;
+  quota: { remaining: number | null; total: number | null; used: number | null; expiresAt: string | null; credit?: number | null; plan?: string | null } | null;
 };
 /** Slip provider quota right now (backend caches it 30 s; the provider's account call uses no quota). */
 export const getLiveQuota = () => get<{ quota: LiveQuota }>("/api/console/config/quota/live").then((r) => r.quota);

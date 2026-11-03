@@ -12,7 +12,7 @@ export type Group = { name: string; perms: string[] };
 
 // Human labels for permission keys.
 const LABEL: Record<string, string> = {
-  "payment.view": "ดูรายการชำระเงิน", "payment.create": "สร้างรายการชำระเงิน", "payment.approve": "อนุมัติ / ปฏิเสธรายการชำระ",
+  "payment.view": "ดูรายการชำระเงิน", "payment.totals": "ดูยอดสรุปรายการชำระเงิน (การ์ดยอดรวม)", "payment.create": "สร้างรายการชำระเงิน", "payment.approve": "อนุมัติ / ปฏิเสธรายการชำระ",
   "payment.refund": "คืนเงิน", "payment.double_credit": "ตรวจเติมเงินซ้ำ", "outflow.view": "ดูรายการเงินออก", "outflow.approve": "อนุมัติเงินออก",
   "withdrawal.view": "ดูคำขอถอน", "withdrawal.approve": "อนุมัติคำขอถอน", "p2p.manage": "จัดการคู่ P2P", "merchant.view": "ดูร้านค้า",
   "merchant.manage": "เพิ่ม / แก้ไขร้านค้า", "merchant.credit": "ปรับเครดิตร้านค้า", "webhook.view": "ดู Webhook", "webhook.retry": "ยิง Webhook ซ้ำ",

@@ -24,6 +24,7 @@ import { QuotaLive } from "./QuotaLive";
 import { RelationLink } from "./Relation";
 import { relationLink } from "./relation-link";
 import { Can } from "@/components/shell/perms-context";
+import { hasPerm, myPerms } from "@/lib/my-perms";
 
 export const metadata: Metadata = { title: "รายการชำระเงิน — Option Pay Admin" };
 
@@ -217,10 +218,13 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
   const cp = pageState(params, "c", 25);
   const wp = pageState(params, "w", 25);   // รอลูกค้าชำระ (was all 200 at once)
 
+  // The summary cards (ชำระสำเร็จ · ค่าธรรมเนียม · ยอดสุทธิ · รอชำระ): only roles with "ดูยอดสรุปรายการชำระเงิน"
+  // (payment.totals — สิทธิ์การเข้าถึง; not User by default, 2 Nov 2026). Without it the totals are not even fetched.
+  const showTotals = hasPerm(await myPerms(), "payment.totals");
   let data;
   try {
     const [stats, review, waiting, dup, success, closed, merchants, accounts] = await Promise.all([
-      listResource<PaymentRow>("payments", { ...common, ...win, limit: 1 }),
+      showTotals ? listResource<PaymentRow>("payments", { ...common, ...win, limit: 1 }) : Promise.resolve({ data: [], total: 0, summary: [] } as unknown as ListResult<PaymentRow>),
       // Work queues are live: not limited by the date range, so nothing waiting drops out of view.
       listResource<PaymentRow>("payments", { ...common, bucket: "review", limit: 200 }),
       listResource<PaymentRow>("payments", { ...common, bucket: "waiting", limit: wp.size, offset: (wp.page - 1) * wp.size }),
@@ -265,12 +269,12 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
       <AutoRefresh seconds={10} />
       <RangeBar sel={sel} label={range.label} page="payments" />
 
-      <StatGrid>
+      {showTotals && <StatGrid>
         <StatTile tone="emerald" icon={<DollarSign size={24} />} label="ชำระสำเร็จ" value={fmtMoney(amt("approved"))} note={`${n("approved")} รายการ`} />
         <StatTile tone="amber" icon={<DollarSign size={24} />} label="ค่าธรรมเนียม" value={fmtMoney(fee("approved") + fee("refunded"))} note="ตามช่วง/ตัวกรองที่เลือก" />
         <StatTile tone="sky" icon={<DollarSign size={24} />} label="ยอดสุทธิ (หลังหักค่าธรรมเนียม)" value={fmtMoney(amt("approved") - fee("approved"))} note={`${n("approved")} รายการอนุมัติ`} />
         <StatTile tone="rose" icon={<DollarSign size={24} />} label="รอชำระ" value={fmtMoney(amt("pending"))} note={`${n("pending")} รายการ · ยกเลิก/หมดอายุ ${n("expired") + n("rejected")}`} />
-      </StatGrid>
+      </StatGrid>}
 
       <FilterCard txn
         searchPlaceholder="ค้นหาเลขที่ / ลูกค้า..."

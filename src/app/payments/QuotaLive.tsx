@@ -97,9 +97,39 @@ function DailyModal({ data, onClose }: { data: EasySlipDaily | "loading" | "erro
   }
   const used = data.quota?.ok ? data.quota.quota?.used ?? null : null;
   const cols = PURPOSE.filter(([k]) => data.days.some((d) => d.byPurpose?.[k]));
-  const tot = data.days.reduce((a, d) => ({ calls: a.calls + d.calls, found: a.found + d.found, notFound: a.notFound + d.notFound, other: a.other + d.pending + d.errors }), { calls: 0, found: 0, notFound: 0, other: 0 });
+  const tot = data.days.reduce((a, d) => ({ calls: a.calls + d.calls, found: a.found + d.found, notFound: a.notFound + d.notFound, other: a.other + d.pending + d.errors, errors: a.errors + d.errors }), { calls: 0, found: 0, notFound: 0, other: 0, errors: 0 });
+  // "รวม" = what EasySlip itself counts on the package (2 Nov 2026: the totals must match EasySlip). The rows above are
+  // this system's own log (why each call was made); the line between them shows the difference.
+  const diff = used != null ? tot.calls - used : null;
+  // The package (2 Nov 2026: "show the EasySlip package I am using") — EasySlip's own figures + a forecast from recent use.
+  const pk = data.quota?.ok ? data.quota.quota : null;
+  const recent = data.days.slice(0, 7).filter((d) => d.day !== data.days[0]?.day || data.days.length === 1);
+  const perDay = recent.length ? Math.round(recent.reduce((a, d) => a + d.calls, 0) / recent.length) : null;
+  const daysLeft = pk?.expiresAt ? Math.max(0, Math.ceil((new Date(pk.expiresAt).getTime() - new Date(data.quota!.checkedAt).getTime()) / 86_400_000)) : null;
+  const lastsDays = pk?.remaining != null && perDay ? Math.floor(pk.remaining / perDay) : null;
   return (
     <Modal title="การใช้งาน EasySlip รายวัน" onClose={onClose} width={Math.min(1100, 560 + cols.length * 90)}>
+      {pk && (
+        <div className="mb-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 text-[13px]">
+          <div className="mb-2 font-semibold">แพ็กเกจ EasySlip ที่ใช้อยู่{pk.plan ? ` — ${pk.plan}` : ""}</div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-3">
+            <div><span className="text-muted">ขนาดแพ็กเกจ</span> <b className="tabular-nums">{pk.total?.toLocaleString() ?? "—"}</b> ครั้ง</div>
+            <div><span className="text-muted">ใช้ไป</span> <b className="tabular-nums">{pk.used?.toLocaleString() ?? "—"}</b>{pk.total && pk.used != null ? <span className="text-muted"> ({Math.round((pk.used / pk.total) * 100)}%)</span> : null}</div>
+            <div><span className="text-muted">เหลือ</span> <b className="tabular-nums text-primary">{pk.remaining?.toLocaleString() ?? "—"}</b> ครั้ง</div>
+            <div><span className="text-muted">หมดอายุ</span> <b>{pk.expiresAt ? fmtDateTime(pk.expiresAt) : "—"}</b>{daysLeft != null ? <span className="text-muted"> (อีก {daysLeft} วัน)</span> : null}</div>
+            {pk.credit != null && <div><span className="text-muted">เครดิตคงเหลือ</span> <b className="tabular-nums">{pk.credit.toLocaleString()}</b></div>}
+            {perDay != null && <div><span className="text-muted">ใช้เฉลี่ย</span> <b className="tabular-nums">{perDay.toLocaleString()}</b> ครั้ง/วัน</div>}
+          </div>
+          {lastsDays != null && daysLeft != null && (
+            <div className={`mt-2 text-[12.5px] ${lastsDays < daysLeft ? "text-warning" : "text-muted"}`}>
+              {lastsDays < daysLeft
+                ? `⚠️ ที่อัตราใช้ปัจจุบัน โควตาจะหมดในประมาณ ${lastsDays} วัน — ก่อนแพ็กเกจหมดอายุ ${daysLeft - lastsDays} วัน`
+                : `ที่อัตราใช้ปัจจุบัน โควตาพอใช้ประมาณ ${lastsDays} วัน — เกินวันหมดอายุของแพ็กเกจ`}
+            </div>
+          )}
+          <div className="mt-1 text-[11.5px] text-soft">ข้อมูลจาก EasySlip โดยตรง · ตรวจเมื่อ {fmtDateTime(data.quota!.checkedAt)}</div>
+        </div>
+      )}
       <div className="mb-3 text-[12.5px] text-muted">
         นับทุกครั้งที่ระบบเรียก EasySlip ตรวจสลิป (1 สลิปอาจเรียกมากกว่า 1 ครั้ง เช่น ธนาคารยังประมวลผล — ระบบถามซ้ำหลัง 3 และ 5 วินาที)
         {data.loggingSince && <> · เริ่มบันทึก {fmtDateTime(data.loggingSince)}</>}
@@ -123,18 +153,32 @@ function DailyModal({ data, onClose }: { data: EasySlipDaily | "loading" | "erro
                 </tr>
               ))}
             </tbody>
-            <tfoot><tr className="bg-surface-alt font-bold">
-              <td className={`${td} text-left`}>รวม</td><td className={td}>{tot.calls.toLocaleString()}</td><td className={td}>{tot.found.toLocaleString()}</td>
-              <td className={td}>{tot.notFound.toLocaleString()}</td><td className={td}>{tot.other.toLocaleString()}</td>
-              {cols.map(([k]) => <td key={k} className={td}>{data.days.reduce((a, d) => a + (d.byPurpose?.[k] ?? 0), 0).toLocaleString()}</td>)}
-            </tr></tfoot>
+            <tfoot>
+              <tr className={used != null ? "text-muted" : "bg-surface-alt font-bold"}>
+                <td className={`${td} text-left whitespace-nowrap`}>{used != null ? "ระบบบันทึก" : "รวม"}</td><td className={td}>{tot.calls.toLocaleString()}</td><td className={td}>{tot.found.toLocaleString()}</td>
+                <td className={td}>{tot.notFound.toLocaleString()}</td><td className={td}>{tot.other.toLocaleString()}</td>
+                {cols.map(([k]) => <td key={k} className={td}>{data.days.reduce((a, d) => a + (d.byPurpose?.[k] ?? 0), 0).toLocaleString()}</td>)}
+              </tr>
+              {used != null && diff != null && (
+                <tr className="text-muted">
+                  <td className={`${td} text-left whitespace-nowrap`}>{diff >= 0 ? "EasySlip ไม่นับ" : "นับก่อนเริ่มบันทึก"}</td>
+                  <td className={td}>{diff >= 0 ? `−${diff.toLocaleString()}` : `+${(-diff).toLocaleString()}`}</td>
+                  <td className={`${td} text-left`} colSpan={3 + cols.length}>{diff >= 0 ? `การเรียกที่ EasySlip ไม่คิดโควตา — ส่วนใหญ่เป็นครั้งที่ไม่ได้คำตอบ (หมดเวลา/เชื่อมต่อไม่ได้ ${tot.errors.toLocaleString()} ครั้ง)` : "แพ็กเกจเริ่มก่อนวันที่ระบบเริ่มบันทึก"}</td>
+                </tr>
+              )}
+              {used != null && (
+                <tr className="bg-surface-alt font-bold">
+                  <td className={`${td} text-left`}>รวม (ตาม EasySlip)</td><td className={td}>{used.toLocaleString()}</td>
+                  <td className={`${td} text-left font-normal text-muted`} colSpan={3 + cols.length}>ตรงกับโควตาที่ EasySlip นับ (อัปเดต {data.quota?.ok && data.quota.checkedAt ? fmtDateTime(data.quota.checkedAt) : "ล่าสุด"})</td>
+                </tr>
+              )}
+            </tfoot>
           </table>
         </div>
       )}
       {used != null && (
         <div className="mt-3 text-[12.5px] text-muted">
-          EasySlip รายงานว่าแพ็กเกจปัจจุบันใช้ไป <strong className="text-ink">{used.toLocaleString()}</strong> ครั้ง · ระบบบันทึกการเรียกได้ <strong className="text-ink">{tot.calls.toLocaleString()}</strong> ครั้ง
-          (พบสลิป {tot.found.toLocaleString()}) — ตัวเลขอาจต่างกันได้ ถ้าแพ็กเกจเริ่มก่อนวันที่เริ่มบันทึก หรือ EasySlip นับโควตาเฉพาะบางผลลัพธ์
+          รวมด้านบนเป็นตัวเลขของ EasySlip (แพ็กเกจปัจจุบันใช้ไป <strong className="text-ink">{used.toLocaleString()}</strong> ครั้ง) · รายวันเป็นบันทึกของระบบเอง ({tot.calls.toLocaleString()} ครั้ง พบสลิป {tot.found.toLocaleString()}) ซึ่งรวมครั้งที่ EasySlip ไม่คิดโควตาด้วย
         </div>
       )}
     </Modal>

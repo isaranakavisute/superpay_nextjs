@@ -9,6 +9,7 @@ import type { ActionResult } from "@/lib/api";
 import type { PaymentStatus } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
 import { ApproveDialog } from "./ApproveDialog";
+import { SlipHistory } from "./SlipHistory";
 import { precheckPayment, type PrecheckSuggestion, type PrecheckWarning } from "./precheck";
 import { PrecheckPanel } from "./PrecheckPanel";
 import { DeleteDialog } from "@/components/interactive/DeleteDialog";
@@ -112,8 +113,12 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
 
   // แนบสลิป dialog: paste (Ctrl/⌘+V), drag & drop, or choose a file → preview → attach and check.
   const [picked, setPicked] = useState<{ file: File; url: string } | null>(null);
+  // Confirm step (2 Nov 2026, TXN222101 — another customer's slip attached to the wrong order): the admin ticks that the
+  // slip belongs to THIS order (customer + amount shown) before it is sent; ticked again for every new picture.
+  const [confirmed, setConfirmed] = useState(false);
   const pick = (file: File | null | undefined) => {
     if (!file) return;
+    setConfirmed(false);
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return setError("รองรับเฉพาะรูป JPG, PNG หรือ WebP");
     if (file.size > 5 * 1024 * 1024) return setError("ไฟล์ใหญ่เกิน 5 MB");
     setError(null);
@@ -132,7 +137,7 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
   }, [dialog]); // eslint-disable-line react-hooks/exhaustive-deps
-  const openAttach = () => { setPicked(null); open("attach"); };
+  const openAttach = () => { setPicked(null); setConfirmed(false); open("attach"); };
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -156,6 +161,9 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
 
   const s = p.status;
   const open_ = s === "pending" || s === "expired";
+  const finished = s === "approved" || s === "refunded" || s === "rejected";
+  // An approved / refunded order keeps the slip that was checked and passed — no replacing it (the backend refuses too).
+  const slipLocked = (s === "approved" || s === "refunded") && p.hasSlipImage && (p.slipDecision === "approve" || p.slipDecision === "evidence" || p.slipAmount != null);
   const sm = `${btn.base} ${btn.sm}`;
   const dangerGhost = `${sm} border-[#fecaca]/40 bg-transparent text-danger hover:bg-danger/10`;
   const close = () => setDialog(null);
@@ -168,7 +176,7 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
           <Eye size={14} />
         </button>
       )}
-      {canApprove && <button className={`${sm} ${btn.ghost}`} onClick={openAttach} disabled={pending} title={p.hasSlipImage ? "เปลี่ยนสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)" : "แนบสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)"} aria-label="แนบสลิป">
+      {canApprove && !slipLocked && <button className={`${sm} ${btn.ghost}`} onClick={openAttach} disabled={pending} title={p.hasSlipImage ? "เปลี่ยนสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)" : "แนบสลิป — ตรวจสลิปอัตโนมัติ (ผ่าน = อนุมัติทันที)"} aria-label="แนบสลิป">
         <Upload size={14} />
       </button>}
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
@@ -214,8 +222,18 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
         <Modal title={`${p.hasSlipImage ? "เปลี่ยนสลิป" : "แนบสลิป"} ${p.ref}`} onClose={() => { setDialog(null); setPicked(null); }} width={520}
           footer={<>
             <button className={`${btn.base} ${btn.md} ${btn.ghost}`} onClick={() => { setDialog(null); setPicked(null); }}>ยกเลิก</button>
-            <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={!picked || pending} onClick={attach}><Upload size={14} /> แนบและตรวจสลิป</button>
+            <button className={`${btn.base} ${btn.md} ${btn.primary}`} disabled={!picked || !confirmed || pending} onClick={attach}><Upload size={14} /> {picked && !confirmed ? "ติ๊กยืนยันก่อน" : "แนบและตรวจสลิป"}</button>
           </>}>
+          <div className="mb-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 text-[13px]">
+            <span className="text-muted">รายการ</span><b>{p.ref}{p.merchantOrderId ? <span className="font-normal text-muted"> · {p.merchantOrderId}</span> : null}</b>
+            <span className="text-muted">ลูกค้า</span><b>{p.customerName || "—"}</b>
+            <span className="text-muted">ยอด</span><b className="text-[16px] tabular-nums text-primary">{fmtMoney(p.amount)}</b>
+          </div>
+          {finished && (
+            <p className="mb-3 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-[12.5px] text-warning">
+              รายการนี้{s === "approved" ? "อนุมัติ" : s === "refunded" ? "คืนเงิน" : "ยกเลิก"}แล้ว — สลิปจะไม่เปลี่ยนสถานะรายการ ระบบจะตรวจกับธนาคาร และรับเฉพาะสลิปที่ยอดและผู้โอนตรงกับรายการนี้ · ทุกการแนบจะแจ้งกลุ่ม Option Pay Controller
+            </p>
+          )}
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files?.[0]); }}
@@ -234,8 +252,14 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
               {picked ? "เปลี่ยนรูป" : "เลือกไฟล์…"}
             </button>
           </div>
+          {picked && (
+            <label className="mt-3 flex items-start gap-2 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-[13px]">
+              <input type="checkbox" className="mt-0.5" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+              <span>ตรวจแล้ว — สลิปนี้เป็นของ <b>{p.customerName || "ลูกค้ารายการนี้"}</b> ยอด <b className="tabular-nums">{fmtMoney(p.amount)}</b> บาท (รายการ <b>{p.ref}</b>) ไม่ใช่สลิปของลูกค้าคนอื่น</span>
+            </label>
+          )}
           <p className="mt-3 text-[12.5px] text-muted">
-            ระบบจะตรวจสลิปกับธนาคารอัตโนมัติ (ยอด บัญชีรับเงิน เวลาโอน และสลิปซ้ำ) — <b className="text-ink">ผ่านแล้วอนุมัติรายการและแจ้งร้านค้าทันที</b>
+            ระบบจะตรวจสลิปกับธนาคารอัตโนมัติ (ยอด บัญชีรับเงิน เวลาโอน และสลิปซ้ำ) — {finished ? <b className="text-ink">รายการที่ปิดแล้ว: เก็บเป็นหลักฐานเมื่อยอดตรงเท่านั้น</b> : <b className="text-ink">ผ่านแล้วอนุมัติรายการและแจ้งร้านค้าทันที</b>}
           </p>
           {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
         </Modal>
@@ -250,7 +274,9 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
       {dialog === "slip" && (
         <Modal title={`สลิป ${p.ref}`} onClose={close} width={560}>
           {/* eslint-disable-next-line @next/next/no-img-element -- private, auth-gated image route */}
-          <img src={`/payments/${p.ref}/slip?v=${slipVersion}`} alt={`สลิปของ ${p.ref}`} className="mx-auto max-h-[70vh] rounded-lg bg-white" />
+          <img src={`/payments/${p.ref}/slip?v=${slipVersion}`} alt={`สลิปของ ${p.ref}`} className="mx-auto max-h-[60vh] rounded-lg bg-white" />
+          {slipLocked && <p className="mt-3 text-center text-[12.5px] text-muted">🔒 สลิปนี้ตรวจผ่านและใช้อนุมัติรายการแล้ว — เปลี่ยนสลิปไม่ได้</p>}
+          <SlipHistory paymentRef={p.ref} version={slipVersion} />
         </Modal>
       )}
 
