@@ -8,10 +8,11 @@ import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import { BANKS } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
+import { sendSlip } from "@/lib/slip-send";
 
 /** Standard reason when an admin rejects an auto-approved payout (shown to the shop with status FAILED). */
 const ADMIN_CANCEL_REASON = "ยกเลิกโดยผู้ดูแลระบบ";
-import { approveOutflow, deleteOutflow, rejectOutflow, updateOutflow, uploadOutflowSlip } from "./actions";
+import { approveOutflow, deleteOutflow, rejectOutflow, updateOutflow } from "./actions";
 import { OUTFLOW_CATEGORIES } from "./categories";
 import { DeleteDialog } from "@/components/interactive/DeleteDialog";
 
@@ -32,14 +33,6 @@ export type OutflowForActions = {
   adminDone?: boolean;
 };
 
-function toBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
 
 /** Copy-to-clipboard button showing "คัดลอกแล้ว" for 1.5s. */
 export function CopyButton({ text, label = "คัดลอกเลขบัญชี" }: { text: string; label?: string }) {
@@ -117,7 +110,7 @@ export function OutflowActions({ o, accounts }: { o: OutflowForActions; accounts
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) return setError("ไฟล์ใหญ่เกิน 5 MB");
     run(async () => {
-      const r = await uploadOutflowSlip(o.ref, file.type, await toBase64(file));
+      const r = await sendSlip(`/outflows/${o.ref}/slip`, file);
       if (r.ok) setSlipVersion((v) => v + 1);
       return r;
     }, false);

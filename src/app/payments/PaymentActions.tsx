@@ -8,6 +8,7 @@ import { Modal, btn, field, fieldLabel } from "@/components/interactive/Modal";
 import type { ActionResult } from "@/lib/api";
 import type { PaymentStatus } from "@/lib/domain";
 import { fmtMoney } from "@/lib/format";
+import { sendSlip } from "@/lib/slip-send";
 import { ApproveDialog } from "./ApproveDialog";
 import { SlipHistory } from "./SlipHistory";
 import { precheckPayment, type PrecheckSuggestion, type PrecheckWarning } from "./precheck";
@@ -22,7 +23,6 @@ import {
   refundPayment,
   rejectPayment,
   revivePayment,
-  uploadSlip,
 } from "./actions";
 
 type Dialog = null | "approve" | "reject" | "amount" | "refund" | "delete" | "assign" | "slip" | "attach";
@@ -43,16 +43,6 @@ export type PaymentForActions = {
   slipTransferUsedBy?: string | null;
   customerLeftover?: string | null;
 };
-
-/** Read a File as base64 (no data: prefix). */
-function toBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
 
 /**
  * Row actions in the original's order: ดูสลิป · แนบสลิป · webhook · แก้ยอด · ระบุร้าน ·
@@ -152,7 +142,8 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
     slipCheckStart(p.ref);
     run(async () => {
       // A passing slip approves the order and this row moves to another list — the result is shown by the page.
-      const r = await uploadSlip(p.ref, file.type, await toBase64(file)).catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) }));
+      // Sent as the request body (not a server-action argument: big pictures were refused — lib/slip-upload.ts).
+      const r = await sendSlip(`/payments/${p.ref}/slip`, file);
       slipCheckDone(r.ok ? { ref: p.ref, checked: false, ...(r as object) } : { ref: p.ref, checked: false, error: r.error });
       if (r.ok) setSlipVersion((v) => v + 1);
       return r;
@@ -162,8 +153,8 @@ export function PaymentActions({ p, merchants }: { p: PaymentForActions; merchan
   const s = p.status;
   const open_ = s === "pending" || s === "expired";
   const finished = s === "approved" || s === "refunded" || s === "rejected";
-  // An approved / refunded order keeps the slip that was checked and passed — no replacing it (the backend refuses too).
-  const slipLocked = (s === "approved" || s === "refunded") && p.hasSlipImage && (p.slipDecision === "approve" || p.slipDecision === "evidence" || p.slipAmount != null);
+  // An approved / refunded order keeps its slip — no replacing it (3 Nov 2026: any slip, not only bank-checked ones; the backend refuses too).
+  const slipLocked = (s === "approved" || s === "refunded") && p.hasSlipImage;
   const sm = `${btn.base} ${btn.sm}`;
   const dangerGhost = `${sm} border-[#fecaca]/40 bg-transparent text-danger hover:bg-danger/10`;
   const close = () => setDialog(null);
